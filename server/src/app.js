@@ -48,12 +48,24 @@ app.get('/health', (req, res) => {
 
 // Serve static files from the React app in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../../dist')));
-  
-  app.get('*', (req, res, next) => {
-    // If it's an API route that reached here, let it fall through to 404
-    if (req.url.startsWith('/api')) return next();
-    res.sendFile(path.resolve(__dirname, '../../', 'dist', 'index.html'));
+  const distDir = path.join(__dirname, '../../dist');
+  const indexHtml = path.resolve(distDir, 'index.html');
+
+  // Links antigos multi-tenant (ex.: /barberone/cliente → /cliente)
+  app.use((req, res, next) => {
+    if (req.path === '/barberone' || req.path.startsWith('/barberone/')) {
+      return res.redirect(301, '/cliente');
+    }
+    next();
+  });
+
+  app.use(express.static(distDir));
+
+  // Express 5: app.get('*') quebra path-to-regexp — fallback SPA via middleware
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(indexHtml, (err) => (err ? next(err) : undefined));
   });
 }
 
