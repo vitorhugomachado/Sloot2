@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const { invalidatePublicCache } = require('../middlewares/publicCache');
 const prisma = new PrismaClient();
 
 function nullableString(v) {
@@ -77,6 +78,7 @@ const updateBusinessInfo = async (req, res, next) => {
       });
     }
 
+    invalidatePublicCache();
     res.json(info);
   } catch (err) {
     next(err);

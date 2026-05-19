@@ -25,19 +25,20 @@ const {
 const { getBusinessInfo, updateBusinessInfo } = require('../controllers/businessController');
 const { getExpenses, createExpense, updateExpense, deleteExpense } = require('../controllers/expenseController');
 const { getMonthClosings, createMonthClosing } = require('../controllers/monthClosingController');
+const { cachePublic } = require('../middlewares/publicCache');
 
 const router = express.Router();
 
 // Public Routes
 router.use('/auth', authRoutes);
 router.use('/customer-auth', customerAuthRoutes);
-router.get('/services', getServices);
-router.get('/business', getBusinessInfo);
-router.get('/appointments/public', getPublicAppointments);
+router.get('/services', cachePublic(120), getServices);
+router.get('/business', cachePublic(300), getBusinessInfo);
+router.get('/appointments/public', cachePublic(45), getPublicAppointments);
 router.post('/appointments', optionalAuthMiddleware, createAppointment); // Public booking (optional auth)
 
 const { getPublicScheduleBlocks } = require('../controllers/scheduleBlockController');
-router.get('/schedule-blocks/public', getPublicScheduleBlocks);
+router.get('/schedule-blocks/public', cachePublic(60), getPublicScheduleBlocks);
 
 // Protected Routes (Require Login)
 router.use('/barbers', barberRoutes);

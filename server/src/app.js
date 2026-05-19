@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const compression = require('compression');
 const authMiddleware = require('./middlewares/authMiddleware');
 const { getPeriodClosings, createPeriodClosing } = require('./controllers/periodClosingController');
 const apiRoutes = require('./routes/api');
@@ -11,6 +12,7 @@ if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
+app.use(compression());
 app.use(cors());
 // Fotos em base64 no cadastro de barbeiro podem passar de 10mb; limite maior evita 500 genérico do body-parser
 app.use(express.json({ limit: '50mb' }));
@@ -59,7 +61,17 @@ if (process.env.NODE_ENV === 'production') {
     next();
   });
 
-  app.use(express.static(distDir));
+  app.use(
+    express.static(distDir, {
+      maxAge: '1y',
+      immutable: true,
+      setHeaders(res, filePath) {
+        if (filePath.endsWith('index.html')) {
+          res.setHeader('Cache-Control', 'no-cache');
+        }
+      },
+    }),
+  );
 
   // Express 5: app.get('*') quebra path-to-regexp — fallback SPA via middleware
   app.use((req, res, next) => {

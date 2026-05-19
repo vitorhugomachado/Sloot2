@@ -1,19 +1,36 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { API_URL } from '../config/apiUrl';
+import {
+  readBootstrapFromCache,
+  hasBootstrapCache,
+  writeCache,
+  clearClientDataCache,
+} from '../utils/clientDataCache';
 
 const AppContext = createContext();
 
+function getInitialBootstrapState() {
+  const cached = readBootstrapFromCache();
+  return {
+    barbers: Array.isArray(cached.barbers) ? cached.barbers : [],
+    appointments: Array.isArray(cached.appointments) ? cached.appointments : [],
+    services: Array.isArray(cached.services) ? cached.services : [],
+    businessInfo: cached.businessInfo && typeof cached.businessInfo === 'object' ? cached.businessInfo : {},
+  };
+}
+
 export const AppProvider = ({ children }) => {
-  const [barbers, setBarbers] = useState([]);
-  const [appointments, setAppointments] = useState([]);
-  const [services, setServices] = useState([]);
-  const [businessInfo, setBusinessInfo] = useState({});
+  const initialBootstrap = getInitialBootstrapState();
+  const [barbers, setBarbers] = useState(initialBootstrap.barbers);
+  const [appointments, setAppointments] = useState(initialBootstrap.appointments);
+  const [services, setServices] = useState(initialBootstrap.services);
+  const [businessInfo, setBusinessInfo] = useState(initialBootstrap.businessInfo);
   const [products, setProducts] = useState([]);
   const [productSales, setProductSales] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [monthClosings, setMonthClosings] = useState([]);
   const [periodClosings, setPeriodClosings] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !hasBootstrapCache());
   const [token, setToken] = useState(localStorage.getItem('barberpro_token'));
   const [currentUser, setCurrentUser] = useState(null);
   
@@ -59,9 +76,21 @@ export const AppProvider = ({ children }) => {
           fetch(`${API_URL}/business`)
         ]);
 
-        if (barbersRes.ok) setBarbers(await barbersRes.json());
-        if (servicesRes.ok) setServices(await servicesRes.json());
-        if (businessRes.ok) setBusinessInfo(await businessRes.json());
+        if (barbersRes.ok) {
+          const barbersData = await barbersRes.json();
+          setBarbers(barbersData);
+          if (!token) writeCache('barbers', barbersData);
+        }
+        if (servicesRes.ok) {
+          const servicesData = await servicesRes.json();
+          setServices(servicesData);
+          writeCache('services', servicesData);
+        }
+        if (businessRes.ok) {
+          const businessData = await businessRes.json();
+          setBusinessInfo(businessData);
+          writeCache('business', businessData);
+        }
 
         
         if (token) {
@@ -102,7 +131,10 @@ export const AppProvider = ({ children }) => {
              const pubRes = await fetch(`${API_URL}/appointments/public`);
              if (pubRes.ok) {
                const pubData = await pubRes.json();
-               if (Array.isArray(pubData)) setAppointments(pubData);
+               if (Array.isArray(pubData)) {
+                 setAppointments(pubData);
+                 writeCache('appointmentsPublic', pubData);
+               }
              }
            } catch (e) {
              console.error('Erro ao carregar horários ocupados (público):', e);
@@ -304,6 +336,8 @@ export const AppProvider = ({ children }) => {
       if (res.ok) {
         const updated = await res.json();
         setBusinessInfo(updated);
+        clearClientDataCache();
+        writeCache('business', updated);
         return updated;
       }
       const err = await res.json();
@@ -556,13 +590,25 @@ export const AppProvider = ({ children }) => {
     });
     if (res.ok) {
         const savedService = await res.json();
-        setServices(prev => [...prev, savedService]);
+        setServices((prev) => {
+          const next = [...prev, savedService];
+          clearClientDataCache();
+          writeCache('services', next);
+          return next;
+        });
     }
   };
 
   const removeService = async (id) => {
     const res = await apiFetch(`${API_URL}/services/${id}`, { method: 'DELETE' });
-    if (res.ok) setServices(prev => prev.filter(s => s.id !== id));
+    if (res.ok) {
+      setServices((prev) => {
+        const next = prev.filter(s => s.id !== id);
+        clearClientDataCache();
+        writeCache('services', next);
+        return next;
+      });
+    }
   };
 
   const updateService = async (id, data) => {
@@ -572,7 +618,12 @@ export const AppProvider = ({ children }) => {
     });
     if (res.ok) {
         const updated = await res.json();
-        setServices(prev => prev.map(s => s.id === id ? updated : s));
+        setServices((prev) => {
+          const next = prev.map(s => s.id === id ? updated : s);
+          clearClientDataCache();
+          writeCache('services', next);
+          return next;
+        });
     }
   };
 

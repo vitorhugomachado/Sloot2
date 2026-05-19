@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const { invalidatePublicCache } = require('../middlewares/publicCache');
 
 const prisma = new PrismaClient();
 
@@ -17,6 +18,7 @@ const createService = async (req, res) => {
     return res.status(403).json({ message: 'Apenas gestão pode alterar o catálogo de serviços.' });
   }
   const service = await prisma.service.create({ data: req.body });
+  invalidatePublicCache();
   res.json(service);
 };
 
@@ -26,6 +28,7 @@ const updateService = async (req, res) => {
   }
   const { id } = req.params;
   const service = await prisma.service.update({ where: { id: Number(id) }, data: req.body });
+  invalidatePublicCache();
   res.json(service);
 };
 
@@ -35,6 +38,7 @@ const deleteService = async (req, res) => {
   }
   const { id } = req.params;
   await prisma.service.delete({ where: { id: Number(id) } });
+  invalidatePublicCache();
   res.sendStatus(204);
 };
 

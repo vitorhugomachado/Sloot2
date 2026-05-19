@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { normalizeBookingTime } = require('../utils/appointmentTime');
 const { parseDurationMinutes, validateBarberAppointmentSlot } = require('../utils/barberAvailability');
+const { invalidatePublicCache } = require('../middlewares/publicCache');
 
 const prisma = new PrismaClient();
 
@@ -136,6 +137,7 @@ const createAppointment = async (req, res) => {
       data,
       include: includeBarber,
     });
+    invalidatePublicCache();
     res.status(201).json(appointment);
   } catch (error) {
     console.error('Create appointment error:', error);
@@ -191,6 +193,7 @@ const updateAppointment = async (req, res) => {
         data: payload,
         include: includeBarber,
       });
+      invalidatePublicCache();
       return res.json(appointment);
     }
 
@@ -225,6 +228,7 @@ const updateAppointment = async (req, res) => {
       data,
       include: includeBarber,
     });
+    invalidatePublicCache();
     res.json(appointment);
   } catch (error) {
     res.status(500).json({ message: 'Erro ao atualizar agendamento' });
