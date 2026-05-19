@@ -1,0 +1,4 @@
+# https://nixpacks.com/docs/configuration/file
+[variables]
+NODE_ENV = "production"
+NIXPACKS_NODE_VERSION = "20"

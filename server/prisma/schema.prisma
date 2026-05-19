@@ -1,0 +1,229 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Barber {
+  id            Int             @id @default(autoincrement())
+  name          String
+  email         String          @unique
+  password      String
+  role          String
+  status        String          @default("Ativo")
+  foto_perfil   String?
+  deletedAt     DateTime?
+  permissions   Json
+  whatsapp      String?
+  bio           String?
+  specialties   Json?
+  commission    Float?          @default(50)
+  chave_pix     String?
+  data_admissao String?
+  Appointment      Appointment[]
+  ProductSale      ProductSale[]
+  shifts           WorkingShifts[]
+  scheduleBlocks   BarberScheduleBlock[]
+
+  @@index([deletedAt], map: "idx_barber_deleted")
+}
+
+model Service {
+  id       Int    @id @default(autoincrement())
+  name     String
+  price    Float
+  duration String
+}
+
+model Customer {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String?   @unique
+  password  String?
+  phone     String
+  createdAt DateTime  @default(now())
+  birthday  DateTime? @db.Date
+  notes     String?
+  tags      Json?
+  updatedAt DateTime  @default(now()) @updatedAt
+
+  @@index([phone], map: "idx_customer_phone")
+}
+
+model Appointment {
+  id              Int     @id @default(autoincrement())
+  customer        String
+  phone           String?
+  service         String
+  barberId        Int
+  date            String
+  time            String
+  status          String  @default("Agendado")
+  price           Float
+  payments        Json?
+  customer_id     Int?
+  /// Avaliação 1–5 dada pelo cliente após o atendimento (área do cliente).
+  customer_rating Int?
+  Barber          Barber  @relation(fields: [barberId], references: [id])
+
+  @@index([barberId], map: "idx_appointment_barber")
+  @@index([date], map: "idx_appointment_date")
+  @@index([status], map: "idx_appointment_status")
+}
+
+model Product {
+  id       Int    @id @default(autoincrement())
+  name     String
+  price    Float
+  cost     Float
+  stock    Int
+  category String
+}
+
+model ProductSale {
+  id          Int     @id @default(autoincrement())
+  productId   Int
+  productName String
+  price       Float
+  cost        Float
+  quantity    Int
+  date        String
+  barberId    Int?
+  Barber      Barber? @relation(fields: [barberId], references: [id])
+
+  @@index([date], map: "idx_productsale_date")
+}
+
+model BusinessInfo {
+  id             Int     @id @default(1)
+  name           String
+  phone          String
+  email          String
+  address        String
+  logo_url       String?
+  instagram_url  String?
+  facebook_url   String?
+  whatsapp_url   String?
+  show_instagram Boolean @default(false)
+  show_facebook  Boolean @default(false)
+  show_whatsapp  Boolean @default(false)
+}
+
+model Expense {
+  id          Int     @id @default(autoincrement())
+  description String
+  amount      Float
+  date        String
+  category    String?
+}
+
+/// Fechamento financeiro mensal (um registo por YYYY-MM)
+model MonthClosing {
+  id           Int      @id @default(autoincrement())
+  yearMonth    String   @unique
+  closedAt     DateTime @default(now())
+  closedById   Int?
+  closedByName String?
+  snapshot     Json
+  notes        String?
+
+  @@index([yearMonth], map: "idx_monthclosing_year_month")
+}
+
+/// Fechamento por intervalo — SHOP (barberId=0) ou BARBER (id do profissional)
+model FinancialPeriodClosing {
+  id           Int      @id @default(autoincrement())
+  startDate    String
+  endDate      String
+  scope        String
+  barberId     Int      @default(0)
+  closedAt     DateTime @default(now())
+  closedById   Int?
+  closedByName String?
+  snapshot     Json
+  notes        String?
+
+  @@unique([startDate, endDate, scope, barberId], map: "uniq_period_closing_range_scope_barber")
+  @@index([closedAt], map: "idx_period_closing_closed")
+}
+
+model WorkingHours {
+  dia_semana      Int       @id
+  is_aberto       Boolean?  @default(true)
+  hora_abertura   DateTime  @db.Time(6)
+  hora_fechamento DateTime  @db.Time(6)
+  almoco_inicio   DateTime? @db.Time(6)
+  almoco_fim      DateTime? @db.Time(6)
+
+  @@map("horarios_funcionamento")
+}
+
+model Holiday {
+  id        BigInt   @id @default(autoincrement())
+  data      DateTime @unique @db.Date
+  descricao String?
+
+  @@map("feriados")
+}
+
+model WorkingShifts {
+  id_barbeiro   Int
+  dia_semana    Int
+  hora_inicio   String
+  hora_fim      String
+  ativo         Boolean? @default(true)
+  almoco_inicio String?
+  almoco_fim    String?
+  barber        Barber   @relation(fields: [id_barbeiro], references: [id], onDelete: Cascade)
+
+  @@id([id_barbeiro, dia_semana, hora_inicio])
+  @@map("horarios_trabalho")
+}
+
+/// Fechamentos pontuais (folga, horário bloqueado em data específica)
+model BarberScheduleBlock {
+  id        Int      @id @default(autoincrement())
+  barberId  Int
+  date      String
+  startTime String?
+  endTime   String?
+  reason    String?
+  createdAt DateTime @default(now())
+  barber    Barber   @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@index([barberId, date], map: "idx_barber_schedule_block_date")
+  @@map("barber_schedule_blocks")
+}
+
+model agendamentos {
+  id                    BigInt          @id @default(autoincrement())
+  id_cliente            String?         @db.Uuid
+  id_barbeiro           BigInt
+  id_servico            BigInt
+  data_hora_agendamento DateTime        @db.Timestamptz(6)
+  status                booking_status? @default(Pendente)
+  valor                 Decimal         @db.Decimal(10, 2)
+  created_at            DateTime?       @default(now()) @db.Timestamptz(6)
+  deleted_at            DateTime?       @db.Timestamptz(6)
+}
+
+model PlatformAdmin {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+}
+
+enum booking_status {
+  Pendente
+  Confirmado
+  Concluido
+  Cancelado
+  No_Show    @map("No-Show")
+}

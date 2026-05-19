@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1600" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <pattern id="diagonalStripes" width="72" height="72" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+      <rect width="72" height="72" fill="#f3f4f6" />
+      <rect x="0" y="0" width="34" height="72" fill="#1f2127" />
+    </pattern>
+  </defs>
+  <rect width="1600" height="1600" fill="url(#diagonalStripes)" />
+</svg>
