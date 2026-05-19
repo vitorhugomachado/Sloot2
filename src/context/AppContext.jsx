@@ -70,29 +70,49 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [barbersRes, servicesRes, businessRes] = await Promise.all([
-          apiFetch(`${API_URL}/barbers`, { authScope: 'staff' }),
-          fetch(`${API_URL}/services`),
-          fetch(`${API_URL}/business`)
-        ]);
+        if (!token) {
+          const bootstrapRes = await fetch(`${API_URL}/public/bootstrap`);
+          if (bootstrapRes.ok) {
+            const data = await bootstrapRes.json();
+            if (Array.isArray(data.barbers)) {
+              setBarbers(data.barbers);
+              writeCache('barbers', data.barbers);
+            }
+            if (Array.isArray(data.services)) {
+              setServices(data.services);
+              writeCache('services', data.services);
+            }
+            if (data.business != null) {
+              setBusinessInfo(data.business);
+              writeCache('business', data.business);
+            }
+            if (Array.isArray(data.appointments)) {
+              setAppointments(data.appointments);
+              writeCache('appointmentsPublic', data.appointments);
+            }
+          }
+        } else {
+          const [barbersRes, servicesRes, businessRes] = await Promise.all([
+            apiFetch(`${API_URL}/barbers`, { authScope: 'staff' }),
+            fetch(`${API_URL}/services`),
+            fetch(`${API_URL}/business`),
+          ]);
 
-        if (barbersRes.ok) {
-          const barbersData = await barbersRes.json();
-          setBarbers(barbersData);
-          if (!token) writeCache('barbers', barbersData);
-        }
-        if (servicesRes.ok) {
-          const servicesData = await servicesRes.json();
-          setServices(servicesData);
-          writeCache('services', servicesData);
-        }
-        if (businessRes.ok) {
-          const businessData = await businessRes.json();
-          setBusinessInfo(businessData);
-          writeCache('business', businessData);
+          if (barbersRes.ok) {
+            setBarbers(await barbersRes.json());
+          }
+          if (servicesRes.ok) {
+            const servicesData = await servicesRes.json();
+            setServices(servicesData);
+            writeCache('services', servicesData);
+          }
+          if (businessRes.ok) {
+            const businessData = await businessRes.json();
+            setBusinessInfo(businessData);
+            writeCache('business', businessData);
+          }
         }
 
-        
         if (token) {
            try {
              // Explicitly skip logout on this fetch if it's the first attempt
@@ -125,19 +145,6 @@ export const AppProvider = ({ children }) => {
              }
            } catch(e) {
              console.error("Auth error on reload:", e);
-           }
-         } else {
-           try {
-             const pubRes = await fetch(`${API_URL}/appointments/public`);
-             if (pubRes.ok) {
-               const pubData = await pubRes.json();
-               if (Array.isArray(pubData)) {
-                 setAppointments(pubData);
-                 writeCache('appointmentsPublic', pubData);
-               }
-             }
-           } catch (e) {
-             console.error('Erro ao carregar horários ocupados (público):', e);
            }
          }
 
@@ -377,7 +384,10 @@ export const AppProvider = ({ children }) => {
             .then(async (r) => {
               if (r.ok) {
                 const data = await r.json();
-                if (Array.isArray(data)) setAppointments(data);
+                if (Array.isArray(data)) {
+                  setAppointments(data);
+                  writeCache('appointmentsPublic', data);
+                }
               }
             })
             .catch((err) => console.error('Erro ao sincronizar horários públicos:', err));

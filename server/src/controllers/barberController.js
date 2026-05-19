@@ -115,6 +115,17 @@ const barberPublicSelect = {
   shifts: true,
 };
 
+async function fetchPublicBarbers(from, to) {
+  const range = defaultDateRange();
+  const fromDate = String(from || range.from);
+  const toDate = String(to || range.to);
+  const barbers = await prisma.barber.findMany({
+    where: { deletedAt: null, status: 'Ativo', role: 'Barbeiro' },
+    select: barberPublicSelect,
+  });
+  return attachScheduleBlocks(barbers, fromDate, toDate);
+}
+
 const getBarbers = async (req, res) => {
   try {
     const range = defaultDateRange();
@@ -122,11 +133,7 @@ const getBarbers = async (req, res) => {
     const to = String(req.query.to || range.to);
 
     if (!req.user) {
-      const barbers = await prisma.barber.findMany({
-        where: { deletedAt: null, status: 'Ativo', role: 'Barbeiro' },
-        select: barberPublicSelect,
-      });
-      return res.json(await attachScheduleBlocks(barbers, from, to));
+      return res.json(await fetchPublicBarbers(from, to));
     }
     if (req.user.role === 'Gerente') {
       const barbers = await prisma.barber.findMany({
@@ -344,7 +351,8 @@ const deleteBarber = async (req, res) => {
 
 module.exports = {
   getBarbers,
+  fetchPublicBarbers,
   createBarber,
   updateBarber,
-  deleteBarber
+  deleteBarber,
 };

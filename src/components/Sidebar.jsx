@@ -1,9 +1,9 @@
 import { useRef, useEffect } from 'react';
-import { LayoutDashboard, Calendar, Users, Settings, DollarSign, Shield, Menu, X, Package } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, Settings, DollarSign, Shield, Menu, X, Package, LogOut } from 'lucide-react';
 
 const SIDEBAR_LEAVE_MS = 110;
 
-const Sidebar = ({ activeTab, setActiveTab, user, isCollapsed, setIsCollapsed }) => {
+const Sidebar = ({ activeTab, setActiveTab, user, isCollapsed, setIsCollapsed, onLogout }) => {
   const leaveCloseTimer = useRef(null);
 
   const clearCloseTimer = () => {
@@ -68,7 +68,7 @@ const Sidebar = ({ activeTab, setActiveTab, user, isCollapsed, setIsCollapsed })
           >
             <Menu size={22} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
           </button>
-          <button type="button" className="sidebar-toggle-btn mobile-only" onClick={() => setIsCollapsed(false)} style={{ display: 'none' }} aria-label="Fechar menu">
+          <button type="button" className="sidebar-toggle-btn mobile-only" onClick={() => setIsCollapsed(true)} aria-label="Fechar menu">
             <X size={20} />
           </button>
         </div>
@@ -99,6 +99,31 @@ const Sidebar = ({ activeTab, setActiveTab, user, isCollapsed, setIsCollapsed })
           </a>
         ))}
       </nav>
+
+      {onLogout && (
+        <footer className="sidebar-footer">
+          <div className="sidebar-footer-user sidebar-footer-detail">
+            <div className="sidebar-footer-avatar" aria-hidden>
+              {user?.name?.charAt(0).toUpperCase() || '?'}
+            </div>
+            <div className="sidebar-footer-user-text">
+              <span className="sidebar-footer-name">{user?.name}</span>
+              <span className="sidebar-footer-role">{user?.role}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="sidebar-logout-btn"
+            onClick={() => {
+              onLogout();
+              if (window.innerWidth <= 768) setIsCollapsed(true);
+            }}
+          >
+            <LogOut size={20} strokeWidth={2} aria-hidden />
+            <span className="nav-item-label sidebar-footer-detail">Sair</span>
+          </button>
+        </footer>
+      )}
 
     </div>
   );

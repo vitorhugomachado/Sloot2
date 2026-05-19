@@ -2738,6 +2738,87 @@ button {
   display: none;
 }
 
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.sidebar-footer-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sidebar-footer-avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent-color);
+  color: var(--accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.sidebar-footer-user-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar-footer-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-footer-role {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.sidebar-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-logout-btn:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.sidebar.collapsed .sidebar-logout-btn {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.mobile-header-logout {
+  color: var(--text-primary);
+}
+
 .nav-item {
   display: flex;
   align-items: center;
@@ -3903,6 +3984,44 @@ button {
   
   .desktop-only {
     display: none !important;
+  }
+
+  /* Mobile: cards e modais brancos sólidos (evita vidro/cinza translúcido) */
+  .glass-card,
+  .modal-glass-panel {
+    background: var(--panel-bg) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .modal-glass-panel:has(.booking-reserve-form) {
+    background: var(--panel-bg) !important;
+    box-shadow:
+      0 14px 44px rgba(0, 0, 0, 0.11),
+      0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .modal-glass-panel:has(.booking-reserve-form) input.booking-reserve-form__field,
+  .modal-glass-panel:has(.booking-reserve-form) select.booking-reserve-form__field,
+  .modal-glass-panel:has(.booking-reserve-form) .booking-reserve-form__static {
+    background: var(--panel-bg) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .modal-glass-panel:has(.booking-reserve-form) input.booking-reserve-form__field:not([type='date']):focus,
+  .modal-glass-panel:has(.booking-reserve-form) select.booking-reserve-form__field:focus {
+    background: var(--panel-bg) !important;
+  }
+
+  .public-booking-page .booking-slot-btn--available {
+    background: var(--panel-bg);
+    border-color: var(--card-outline);
+  }
+
+  .public-booking-page .booking-date-trigger,
+  .public-booking-page .booking-calendar-popover {
+    background: var(--panel-bg);
   }
 }
 

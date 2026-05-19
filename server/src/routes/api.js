@@ -26,12 +26,14 @@ const { getBusinessInfo, updateBusinessInfo } = require('../controllers/business
 const { getExpenses, createExpense, updateExpense, deleteExpense } = require('../controllers/expenseController');
 const { getMonthClosings, createMonthClosing } = require('../controllers/monthClosingController');
 const { cachePublic } = require('../middlewares/publicCache');
+const { getPublicBootstrap } = require('../controllers/publicBootstrapController');
 
 const router = express.Router();
 
 // Public Routes
 router.use('/auth', authRoutes);
 router.use('/customer-auth', customerAuthRoutes);
+router.get('/public/bootstrap', cachePublic(50), getPublicBootstrap);
 router.get('/services', cachePublic(120), getServices);
 router.get('/business', cachePublic(300), getBusinessInfo);
 router.get('/appointments/public', cachePublic(45), getPublicAppointments);

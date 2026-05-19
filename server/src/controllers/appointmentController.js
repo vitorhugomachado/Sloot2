@@ -37,17 +37,20 @@ const getAppointments = async (req, res) => {
 };
 
 /** Lista mínima para o agendamento público (horários ocupados, sem auth). */
+async function fetchPublicAppointments() {
+  const appointments = await prisma.appointment.findMany({
+    where: { status: { in: BLOCKING_STATUSES } },
+    select: { id: true, date: true, time: true, barberId: true, status: true },
+  });
+  return appointments.map((a) => ({
+    ...a,
+    time: normalizeBookingTime(a.time) || a.time,
+  }));
+}
+
 const getPublicAppointments = async (req, res) => {
   try {
-    const appointments = await prisma.appointment.findMany({
-      where: { status: { in: BLOCKING_STATUSES } },
-      select: { id: true, date: true, time: true, barberId: true, status: true },
-    });
-    const normalized = appointments.map((a) => ({
-      ...a,
-      time: normalizeBookingTime(a.time) || a.time,
-    }));
-    res.json(normalized);
+    res.json(await fetchPublicAppointments());
   } catch (error) {
     console.error('Error fetching public appointments:', error);
     res.status(500).json({ message: 'Erro ao buscar disponibilidade' });
@@ -238,6 +241,7 @@ const updateAppointment = async (req, res) => {
 module.exports = {
   getAppointments,
   getPublicAppointments,
+  fetchPublicAppointments,
   createAppointment,
   updateAppointment,
 };

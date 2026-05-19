@@ -6,7 +6,7 @@ import TabLoadingFallback from './components/TabLoadingFallback';
 
 import { useApp } from './context/AppContext';
 import { isValidPhone } from './utils/phone';
-import { Menu } from 'lucide-react';
+import { Menu, LogOut } from 'lucide-react';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Clients = lazy(() => import('./pages/Clients'));
@@ -205,7 +205,15 @@ const StaffArea = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className="sloot-logo-text" style={{ fontSize: '1.2rem', paddingTop: '2px' }}>SLOOT</span>
           </div>
-          <div style={{ width: '24px' }} />
+          <button
+            type="button"
+            className="sidebar-toggle-btn mobile-header-logout"
+            onClick={handleLogout}
+            aria-label="Sair da conta"
+            title="Sair"
+          >
+            <LogOut size={22} strokeWidth={2} aria-hidden />
+          </button>
         </div>
 
         <div
@@ -219,6 +227,7 @@ const StaffArea = () => {
           user={currentUser}
           isCollapsed={isSidebarCollapsed}
           setIsCollapsed={setIsSidebarCollapsed}
+          onLogout={handleLogout}
         />
         <main className={`main-content ${isSidebarCollapsed ? 'expanded' : ''}`}>
           <header className="desktop-only" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '20px', marginBottom: '1rem' }}>
