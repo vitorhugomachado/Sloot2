@@ -50,7 +50,7 @@ VITE_GOOGLE_CLIENT_ID=
 |----------|--------|
 | `NODE_ENV` | `production` — ativa servir `dist/` e `trust proxy` |
 | `DATABASE_URL` | Igual ao teu `server/.env` (pooler 6543) |
-| `DIRECT_URL` | Igual ao teu `server/.env` (5432) — **não** uses a mesma URL que no Railway Postgres |
+| `DIRECT_URL` | **Direct connection** do Supabase (`*.connect.supabase.com` ou `db.*.supabase.co`) — **não** `pooler.supabase.com:5432` |
 | `JWT_SECRET` | Para teste podes usar o de cima; para produção: `openssl rand -base64 48` |
 | `GOOGLE_CLIENT_ID` | Backend — vazio até criares credencial Web no Google Cloud |
 | `VITE_GOOGLE_CLIENT_ID` | **Mesmo** valor que `GOOGLE_CLIENT_ID`; obrigatório no **build** |
@@ -137,7 +137,8 @@ railway up
 |----------|---------|
 | Build `EBUSY` em `node_modules/.cache` | Usar `npm run build:railway` (já em `railway.toml`); ou variável `NIXPACKS_NO_CACHE=1` + redeploy |
 | Build falha Prisma | `DATABASE_URL` / `DIRECT_URL` no serviço antes do deploy |
-| Migration falha Supabase | Confirma `DIRECT_URL` na porta **5432**, não 6543 |
+| `P1001` / migrate no build | Migrations correm no **start**, não no build; corrige `DIRECT_URL` (URI Direct no Supabase) |
+| Migration falha Supabase | `DIRECT_URL` = Connection string **Direct** (não pooler `:5432`) |
 | Healthcheck failure | Apaga `PORT=3001`; confirma `DATABASE_URL` + `JWT_SECRET`; migrations correm no **build** (`build:railway`) |
 | 502 / healthcheck | Deploy Logs; `JWT_SECRET` definido |
 | Login Google | Preenche `VITE_GOOGLE_CLIENT_ID` + origem no Google + redeploy |
