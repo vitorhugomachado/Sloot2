@@ -1,12 +1,18 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Users, Calendar, Banknote, Clock, X, ShoppingBag, Plus, ChevronLeft, ChevronRight, ChevronDown, LayoutGrid, ArrowUpRight, BarChart3, Play, CheckCircle, XCircle } from 'lucide-react';
+﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Users, Calendar, Clock, X, ShoppingBag, Plus, ChevronLeft, ChevronRight, ChevronDown, LayoutGrid, Play, CheckCircle, XCircle } from 'lucide-react';
 import WhatsAppIcon from '../components/icons/WhatsAppIcon';
 import { useApp } from '../context/AppContext';
-import { filterAvailableBookingTimes, isBookingSlotTaken, normalizeBookingTime } from '../utils/bookingAvailability';
+import { filterAvailableBookingTimes, isBookingSlotTaken } from '../utils/bookingAvailability';
 import OccupancyGauge from '../components/OccupancyGauge';
+import DashUpcomingEmpty from '../components/dashboard/DashUpcomingEmpty';
+import {
+  RevenueIllustration,
+  CancellationIllustration,
+  TicketAverageIllustration,
+} from '../components/dashboard/DashKpiIllustrations';
 
 /* ─────────── KPI Card ─────────── */
-const KpiCard = ({ label, value, trend, trendLabel, iconEl, iconClass, stagger, invertTrend }) => {
+const KpiCard = ({ label, value, trend, trendLabel, illustration, stagger, invertTrend }) => {
   const isPositive = invertTrend ? trend <= 0 : trend >= 0;
   return (
     <div className={`dash-kpi-card stagger-${stagger}`}>
@@ -14,8 +20,8 @@ const KpiCard = ({ label, value, trend, trendLabel, iconEl, iconClass, stagger, 
         <span className="dash-kpi-label">{label}</span>
         <div className="dash-kpi-arrow"><ChevronRight size={14} /></div>
       </div>
-      <div className="dash-kpi-bottom">
-        <div>
+      <div className="dash-kpi-main">
+        <div className="dash-kpi-data">
           <div className="dash-kpi-value">{value}</div>
           {trend !== undefined && (
             <span className={`dash-kpi-trend ${isPositive ? 'up' : 'down'}`}>
@@ -23,9 +29,11 @@ const KpiCard = ({ label, value, trend, trendLabel, iconEl, iconClass, stagger, 
             </span>
           )}
         </div>
-        <div className={`dash-kpi-icon ${iconClass}`}>
-          {iconEl}
-        </div>
+        {illustration && (
+          <div className="dash-kpi-illustration" aria-hidden>
+            {illustration}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -336,7 +344,7 @@ const Dashboard = () => {
     });
   }, [isModalOpen, formData.date, dashboardBookingBarberId, appointments]);
 
-  const handleSaveAppointment = async () => {
+  const handleSaveAppointment = () => {
     const phoneOk = String(formData.phone || '').replace(/\D/g, '').length >= 8;
     if (!formData.customer.trim() || !phoneOk || !formData.serviceId || !formData.barberId) return;
     const effectiveTime =
@@ -345,38 +353,30 @@ const Dashboard = () => {
           ? formData.time
           : availableDashboardBookingTimes[0]
         : '';
-    const normalizedTime = normalizeBookingTime(effectiveTime);
-    if (!normalizedTime) {
+    if (!effectiveTime) {
       window.alert('Não há horário disponível para concluir a reserva.');
       return;
     }
-    if (isBookingSlotTaken(appointments, formData.date, normalizedTime, formData.barberId)) {
+    if (isBookingSlotTaken(appointments, formData.date, effectiveTime, formData.barberId)) {
       window.alert(
         'Este horário já está reservado para o profissional selecionado. Escolha outro horário disponível na lista.'
       );
       return;
     }
     const selectedService = services.find(s => String(s.id) === String(formData.serviceId));
-    const result = await addAppointment({
-      customer: formData.customer,
-      phone: formData.phone,
+    addAppointment({
+      customer: formData.customer, phone: formData.phone,
       service: selectedService?.name || 'Serviço',
-      barberId: parseInt(formData.barberId, 10),
-      date: formData.date,
-      time: normalizedTime,
-      status: 'Agendado',
-      price: selectedService?.price || 0,
+      barberId: parseInt(formData.barberId),
+      date: formData.date, time: effectiveTime,
+      status: 'Agendado', price: selectedService?.price || 0
     });
-    if (result?.ok) {
-      setIsModalOpen(false);
-      setFormData({ customer: '', phone: '', serviceId: '', barberId: '', time: '09:00', date: focusDate });
-    } else {
-      window.alert(result?.message || 'Não foi possível salvar o agendamento.');
-    }
+    setIsModalOpen(false);
+    setFormData({ customer: '', phone: '', serviceId: '', barberId: '', time: '09:00', date: focusDate });
   };
 
   const periodLabel = `Últimos ${periodDays} dias`;
-  const barberColors = ['var(--brand-950)', 'var(--brand-800)', 'var(--brand-700)', 'var(--brand-600)', 'var(--brand-500)'];
+  const barberColors = ['#5d5fef', '#14b8a6', '#f59e0b', '#ec4899', '#8b5cf6'];
   const maxRevenue = ranking.length > 0 ? Math.max(...ranking.map(b => b.revenue), 1) : 1;
   const formatCurrency = (value) => `R$ ${Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
   const checkoutProductsTotal = useMemo(() => {
@@ -504,6 +504,7 @@ const Dashboard = () => {
 
   return (
     <div className="dash-page">
+      <div className="dash-page__inner">
 
       {/* ═══════ HEADER ═══════ */}
       <div className="dash-header">
@@ -550,10 +551,10 @@ const Dashboard = () => {
 
       {/* ═══════ KPI ROW ═══════ */}
       <div className="dash-kpi-row">
-        <KpiCard label="Receita Total" value={`R$${stats.revenue.toLocaleString('pt-BR')}`} trend={8} trendLabel="vs último período" iconEl={<Banknote size={22} />} iconClass="green" stagger={1} />
+        <KpiCard label="Receita Total" value={`R$${stats.revenue.toLocaleString('pt-BR')}`} trend={8} trendLabel="vs último período" illustration={<RevenueIllustration />} stagger={1} />
         <OccupancyGauge value={occupancyRate} trend={-3} trendLabel="vs último período" stagger={2} />
-        <KpiCard label="Taxa de Cancelamento" value={`${cancelRateKpi.cancelRate}%`} trend={cancelRateKpi.cancelTrend} trendLabel="vs último período" iconEl={<XCircle size={22} />} iconClass="amber" stagger={3} invertTrend />
-        <KpiCard label="Ticket Médio" value={`R$${stats.averageTicket.toFixed(0)}`} trend={2} trendLabel="vs último período" iconEl={<BarChart3 size={22} />} iconClass="slate" stagger={4} />
+        <KpiCard label="Taxa de Cancelamento" value={`${cancelRateKpi.cancelRate}%`} trend={cancelRateKpi.cancelTrend} trendLabel="vs último período" illustration={<CancellationIllustration />} stagger={3} invertTrend />
+        <KpiCard label="Ticket Médio" value={`R$${stats.averageTicket.toFixed(0)}`} trend={2} trendLabel="vs último período" illustration={<TicketAverageIllustration />} stagger={4} />
       </div>
 
       {/* ═══════ BOTTOM 3-COLUMN GRID ═══════ */}
@@ -562,7 +563,7 @@ const Dashboard = () => {
         {/* ─── Col 1: Performance ─── */}
         <div className="dash-panel dash-panel-performance">
           <div className="dash-panel-header">
-            <h3>{isBarber ? 'Minha Performance' : 'Performance por Barbeiro'}</h3>
+            <h3>{isBarber ? 'Minha Performance' : 'Performance por Profissional'}</h3>
             <div className="dash-toggle-group">
               {[{ d: 0, l: 'Hoje' }, { d: 7, l: '7 dias' }, { d: 15, l: '15 dias' }, { d: 30, l: '30 dias' }].map(p => (
                 <button key={p.d} className={`dash-toggle-btn ${performancePeriodDays === p.d ? 'active' : ''}`} onClick={() => setPerformancePeriodDays(p.d)}>
@@ -624,7 +625,7 @@ const Dashboard = () => {
               <div style={{ display: 'flex', gap: '20px', marginTop: '8px', flexWrap: 'wrap' }}>
                 {ranking.slice(0, 3).map((b, idx) => (
                   <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-color)' }} />
+                    <div className="dash-legend-dot" style={{ background: barberColors[idx % barberColors.length] }} />
                     {b.name.split(' ')[0]}
                   </div>
                 ))}
@@ -690,9 +691,7 @@ const Dashboard = () => {
           <div className="dash-panel-body">
             <MiniCalendar focusDate={focusDate} onDateSelect={setFocusDate} />
             {upcoming.length === 0 ? (
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'center', padding: '1rem 0' }}>
-                Nenhum agendamento para esta data.
-              </p>
+              <DashUpcomingEmpty />
             ) : (
               upcoming.map((app) => {
                 const barberForApp = barbers.find((b) => b.id === app.barberId);
@@ -769,6 +768,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      </div>
 
       {/* ═══════ ACTION MODAL (Pago / Cancelar / Em Progresso) ═══════ */}
       {actionModal.open && actionModal.app && (
@@ -795,7 +795,7 @@ const Dashboard = () => {
                 <span style={{ fontWeight: 600 }}>{actionModal.app.customer}</span>
                 <span style={{ fontWeight: 700, color: 'var(--brand-600)', fontSize: '1.1rem' }}>R$ {actionModal.app.price.toFixed(2)}</span>
               </div>
-              <div style={{ fontSize: '0.85rem' }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 {actionModal.app.service} — {actionModal.app.time} — {actionModal.app.date}
               </div>
               <div style={{ marginTop: '6px' }}>
@@ -871,7 +871,7 @@ const Dashboard = () => {
                   <button onClick={() => setActionModal({ ...actionModal, step: 'choose' })} className="btn-secondary" style={{ flex: 1, padding: '14px' }}>
                     ← Voltar
                   </button>
-                  <button type="button" onClick={handleMarkInProgress} className="action-modal-cta-btn action-modal-cta-btn--start" style={{ flex: 2, padding: '14px' }}>
+                  <button onClick={handleMarkInProgress} style={{ flex: 2, padding: '14px', background: 'var(--accent-color)', color: 'var(--accent-text)', borderRadius: '9999px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
                     <Play size={18} /> Confirmar Início
                   </button>
                 </div>
@@ -970,11 +970,11 @@ const Dashboard = () => {
                 </div>
                 <div className="action-modal-panel action-modal-panel--dashed" style={{ fontSize: '0.82rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span>Serviço</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>Serviço</span>
                     <strong>{formatCurrency(checkoutServiceTotal)}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span>Produtos</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>Produtos</span>
                     <strong>{formatCurrency(checkoutProductsTotal)}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '6px' }}>
@@ -1004,7 +1004,7 @@ const Dashboard = () => {
                   <button onClick={() => setActionModal({ ...actionModal, step: 'choose' })} className="btn-secondary" style={{ flex: 1, padding: '14px' }}>
                     ← Voltar
                   </button>
-                  <button type="button" onClick={handleCancelAppointment} className="action-modal-cta-btn action-modal-cta-btn--danger" style={{ flex: 2, padding: '14px' }}>
+                  <button onClick={handleCancelAppointment} style={{ flex: 2, padding: '14px', background: '#ef4444', color: '#fff', borderRadius: '9999px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
                     <XCircle size={18} /> Confirmar Cancelamento
                   </button>
                 </div>

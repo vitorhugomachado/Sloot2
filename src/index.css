@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@400;600;700&family=Inter:wght@400;500;600&family=Montserrat:wght@900&family=Roboto:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@400;600;700&family=Inter:wght@400;500;600&family=Poppins:wght@400;500;600;700&family=Montserrat:wght@900&family=Roboto:wght@400;500&display=swap');
 
 /* Painéis staff: abas inativas ficam ocultas mas montadas (troca rápida) */
 .staff-tab-panel[hidden] {
@@ -23,15 +23,16 @@
   --brand-900: #0a0a0a;
   --brand-950: #000000;
 
-  --bg-color: #ffffff;
-  --surface-color: rgba(255, 255, 255, 0.95);
-  --border-color: rgba(0, 0, 0, 0.08);
-  --text-primary: #000000;
-  --text-secondary: #4b5563;
-  /* Cor primária da marca (lima) */
-  --accent-color: #d6fe20;
-  --accent-hover: #c2ef18;
-  --accent-text: #000000;
+  --bg-color: #f8f9fa;
+  --surface-color: #ffffff;
+  --border-color: #e5e7eb;
+  --text-primary: #1a1a1a;
+  --text-secondary: #6c757d;
+  /* Cor primária — periwinkle (mockup Soft UI) */
+  --accent-color: #5d5fef;
+  --accent-hover: #4b4de0;
+  --accent-text: #ffffff;
+  --accent-soft: rgba(93, 95, 239, 0.12);
   --success-color: #059669;
 
   /* KPI Accent Colors */
@@ -48,9 +49,10 @@
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(0, 0, 0, 0.05);
   --glass-blur: blur(12px);
-  /* Contorno de cards (referência: borda preta fina, cantos ~12px) */
-  --card-outline: #000000;
-  --card-radius: 12px;
+  /* Contorno de cards — borda cinza suave, cantos arredondados */
+  --card-outline: #e5e7eb;
+  --card-radius: 16px;
+  --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
   --modal-backdrop-bg: rgba(0, 0, 0, 0.5);
   --modal-backdrop-filter: blur(8px);
   /* Above .sidebar (1001); use --modal-z-popover for layers on top (e.g. mini receipt) */
@@ -61,8 +63,8 @@
   --icon-bg: rgba(0,0,0,0.05);
   --icon-hover: rgba(0,0,0,0.1);
   --line-color: rgba(0,0,0,0.08);
-  --dash-card-bg: #f3f4f6;
-  --dash-panel-bg: #f7f7f8;
+  --dash-card-bg: #ffffff;
+  --dash-panel-bg: #ffffff;
   /* Seleção de texto (padrão azul do sistema — não usa o verde da marca) */
   --selection-bg: #b3d7ff;
   --selection-color: #000000;
@@ -104,7 +106,7 @@
 
 body {
   transition: background-color 0.3s ease, color 0.3s ease;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg-color);
   color: var(--text-primary);
   line-height: 1.6;
@@ -577,7 +579,9 @@ h1, h2, h3, h4, .brand-font {
 
 .scheduler-desktop-week-header__cell--selected {
   background: var(--accent-color);
-  color: var(--accent-text);
+  color: #ffffff;
+  border-radius: 12px 12px 0 0;
+  margin: 4px 4px 0;
 }
 
 .scheduler-desktop-week-header__wd {
@@ -595,8 +599,9 @@ h1, h2, h3, h4, .brand-font {
 }
 
 .scheduler-desktop-week-header__cell--selected .scheduler-desktop-week-header__wd,
-.scheduler-desktop-week-header__cell--selected .scheduler-desktop-week-header__num {
-  color: var(--accent-text);
+.scheduler-desktop-week-header__cell--selected .scheduler-desktop-week-header__num,
+.scheduler-desktop-week-header__cell--selected .scheduler-desktop-week-header__combined {
+  color: #ffffff;
 }
 
 .scheduler-week-picker-bar {
@@ -828,10 +833,11 @@ h1, h2, h3, h4, .brand-font {
 }
 
 .scheduler-appt-bar__accent {
-  width: 2px;
+  width: 3px;
   align-self: stretch;
-  border-radius: 2px;
+  border-radius: 3px;
   flex-shrink: 0;
+  min-height: 100%;
 }
 
 .scheduler-appt-bar__name {
@@ -860,10 +866,13 @@ h1, h2, h3, h4, .brand-font {
   text-overflow: ellipsis;
 }
 
-/* Agenda (Scheduler) — contorno preto em cards e botões */
+/* Agenda (Scheduler) — cards brancos com borda suave */
 .scheduler-page .glass-card {
-  border: 1px solid #0a0a0a;
+  border: 1px solid var(--card-outline);
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
   box-sizing: border-box;
+  background: #ffffff;
 }
 
 /* Agenda (Scheduler) — apenas max-width 768px; desktop inalterado */
@@ -2609,14 +2618,43 @@ button {
 .layout {
   display: flex;
   min-height: 100vh;
+  background: var(--bg-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.layout::before,
+.layout::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.layout::before {
+  width: 420px;
+  height: 420px;
+  top: -120px;
+  left: 60px;
+  background: radial-gradient(circle, rgba(93, 95, 239, 0.08) 0%, transparent 70%);
+}
+
+.layout::after {
+  width: 380px;
+  height: 380px;
+  bottom: -80px;
+  right: -40px;
+  background: radial-gradient(circle, rgba(93, 95, 239, 0.06) 0%, transparent 70%);
 }
 
 .sidebar {
   width: 260px;
-  background: var(--surface-color);
-  backdrop-filter: var(--glass-blur);
+  background: #ffffff;
   border-right: 1px solid var(--border-color);
-  padding: 2rem 1.5rem;
+  padding: 1.5rem 1rem;
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.03);
+  z-index: 1001;
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -2631,8 +2669,8 @@ button {
 }
 
 .sidebar.collapsed {
-  width: 80px;
-  padding: 2rem 0.75rem;
+  width: 72px;
+  padding: 1.5rem 0.5rem;
 }
 
 .sidebar-overlay {
@@ -2648,14 +2686,17 @@ button {
 .main-content {
   flex: 1;
   margin-left: 260px;
-  padding: 2rem 3rem;
+  padding: 1.5rem 2.5rem 2.5rem;
   transition:
     margin-left 0.42s cubic-bezier(0.22, 1, 0.36, 1),
     padding 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  z-index: 1;
+  min-width: 0;
 }
 
 .main-content.expanded {
-  margin-left: 80px;
+  margin-left: 72px;
 }
 
 .sidebar-toggle-btn {
@@ -2824,10 +2865,10 @@ button {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border-radius: 10px;
-  color: var(--text-secondary);
+  border-radius: 12px;
+  color: #6c757d;
   text-decoration: none;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   transition: all 0.2s ease;
 }
 
@@ -2838,12 +2879,19 @@ button {
 
 .nav-item.active {
   background-color: var(--accent-color);
-  color: var(--accent-text);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(93, 95, 239, 0.35);
+}
+
+.nav-item.active svg {
+  color: #ffffff;
+  stroke: #ffffff;
 }
 
 .nav-item svg {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }
 
 .brand {
@@ -2935,6 +2983,16 @@ button {
    ============================================ */
 
 .dash-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.dash-page__inner {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -3067,19 +3125,25 @@ button {
 .dash-kpi-card {
   background: var(--dash-card-bg);
   border: 1px solid var(--card-outline);
-  border-radius: var(--card-radius);
-  padding: 1rem 1.125rem;
+  border-radius: 20px;
+  padding: 1.25rem 1.375rem;
   display: flex;
   flex-direction: column;
   gap: 10px;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--card-shadow);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dash-kpi-card::after,
+.dash-gauge-card::after {
+  display: none;
 }
 
 .dash-kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: none;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.07);
 }
 
 .dash-kpi-top {
@@ -3111,11 +3175,58 @@ button {
   background: var(--icon-hover);
 }
 
-.dash-kpi-bottom {
+.dash-kpi-main {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
+}
+
+.dash-kpi-data {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dash-kpi-illustration {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  width: 88px;
+  height: 72px;
+}
+
+.dash-kpi-illustration svg {
+  width: 100%;
+  height: 100%;
+}
+
+.dash-occ-layout .dash-kpi-illustration {
+  width: 64px;
+}
+
+.dash-empty-illustration {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 1.5rem 1rem 0.5rem;
+  text-align: center;
+}
+
+.dash-empty-illustration__art {
+  width: 220px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.dash-empty-illustration p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
 .dash-kpi-value {
@@ -3170,19 +3281,20 @@ button {
 .dash-gauge-card {
   background: var(--dash-card-bg);
   border: 1px solid var(--card-outline);
-  border-radius: var(--card-radius);
-  padding: 1rem 1.125rem;
+  border-radius: 20px;
+  padding: 1.25rem 1.375rem;
   display: flex;
   flex-direction: column;
   gap: 10px;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--card-shadow);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .dash-gauge-card:hover {
   transform: translateY(-2px);
-  box-shadow: none;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.07);
 }
 
 .dash-occ-body {
@@ -3220,7 +3332,7 @@ button {
   min-width: 0;
   max-width: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent-hover) 0%, var(--accent-color) 100%);
+  background: linear-gradient(90deg, #4b4de0 0%, var(--accent-color) 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
@@ -3236,7 +3348,8 @@ button {
 .dash-panel {
   background: var(--dash-panel-bg);
   border: 1px solid var(--card-outline);
-  border-radius: var(--card-radius);
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -3293,9 +3406,9 @@ button {
 }
 
 .dash-toggle-btn.active {
-  background: var(--bg-color);
-  color: var(--text-primary);
-  box-shadow: 0 1px 3px var(--icon-hover);
+  background: var(--accent-color);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(93, 95, 239, 0.35);
 }
 
 /* --- Barber Performance Bars --- */
@@ -3348,7 +3461,7 @@ button {
   height: 100%;
   border-radius: 10px;
   transition: width 0.8s ease;
-  background: linear-gradient(90deg, var(--accent-hover) 0%, var(--accent-color) 100%);
+  background: linear-gradient(90deg, #4b4de0 0%, var(--accent-color) 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
@@ -6649,5 +6762,287 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   .settings-desktop-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ============================================
+   STAFF SOFT UI — header, filtros, empty states
+   ============================================ */
+
+.staff-top-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+}
+
+.staff-top-header__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.staff-top-header__avatar {
+  width: 36px;
+  height: 36px;
+  background: var(--accent-color);
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.staff-top-header__name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.staff-top-header__theme {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  transition: background 0.2s;
+}
+
+.staff-top-header__theme:hover {
+  background: var(--icon-bg);
+}
+
+.staff-top-header__logout {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.staff-top-header__logout:hover {
+  background: var(--hover-bg);
+  border-color: #d1d5db;
+}
+
+.scheduler-barber-filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-bottom: 4px;
+}
+
+.scheduler-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.scheduler-filter-btn--active {
+  background: var(--accent-color);
+  color: #ffffff;
+  border-color: var(--accent-color);
+  box-shadow: 0 4px 12px rgba(93, 95, 239, 0.3);
+}
+
+.scheduler-filter-btn__avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--icon-bg);
+  color: var(--text-secondary);
+}
+
+.scheduler-filter-btn--active .scheduler-filter-btn__avatar {
+  background: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+}
+
+.scheduler-filter-btn__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scheduler-desktop-week-header__combined {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.scheduler-btn-agendar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  background: var(--accent-color);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(93, 95, 239, 0.35);
+  transition: background 0.2s, transform 0.15s;
+}
+
+.scheduler-btn-agendar:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.dash-empty-illustration {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.dash-empty-illustration svg {
+  margin-bottom: 1rem;
+  opacity: 0.85;
+}
+
+.dash-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.scheduler-calendar-panel {
+  border-radius: 20px !important;
+}
+
+.scheduler-time-col {
+  border-radius: 20px !important;
+  background: #fafbfc !important;
+}
+
+.scheduler-desktop-week-header {
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.scheduler-desktop-week-header__cell {
+  border-right: 1px solid var(--border-color) !important;
+}
+
+.main-content .btn-primary {
+  background: var(--accent-color);
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(93, 95, 239, 0.3);
+}
+
+.main-content .btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.main-content .btn-secondary {
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+}
+
+.dash-mini-cal-col.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.dash-mini-cal-col.active .dash-mini-cal-day-label,
+.dash-mini-cal-col.active .dash-mini-cal-day-num {
+  color: #ffffff !important;
+}
+
+.dash-action-btn.primary {
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(93, 95, 239, 0.35);
+}
+
+.dash-period-selector {
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: var(--card-shadow);
+}
+
+.dash-kpi-row {
+  gap: 1rem;
+}
+
+.dash-bottom-grid {
+  gap: 1rem;
+}
+
+.sidebar.collapsed .nav-item {
+  padding: 10px;
+  justify-content: center;
+}
+
+.sidebar.collapsed .nav-item.active {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 8px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-footer {
+  border-top: none;
+  padding-top: 0.5rem;
+}
+
+.sidebar-logout-btn {
+  color: #6c757d;
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-logout-btn {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto;
+  padding: 0;
 }
 

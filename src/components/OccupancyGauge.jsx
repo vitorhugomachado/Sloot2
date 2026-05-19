@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { OccupancyCalendarIllustration } from './dashboard/DashKpiIllustrations';
 
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
@@ -46,21 +47,25 @@ const OccupancyGauge = ({ value = 0, trend, trendLabel = 'vs último período', 
         <div className="dash-kpi-arrow"><ChevronRight size={14} /></div>
       </div>
 
-      <div className="dash-occ-body">
-        <div className="dash-kpi-value">{Math.round(displayValue)}%</div>
-        <div className="dash-occ-bar-track" role="progressbar" aria-valuenow={Math.round(displayValue)} aria-valuemin={0} aria-valuemax={100} aria-label="Taxa de ocupação">
-          <div
-            className="dash-occ-bar-fill"
-            style={{ width: `${animatedPct}%` }}
-          />
+      <div className="dash-kpi-main dash-occ-layout">
+        <div className="dash-kpi-data">
+          <div className="dash-kpi-value">{Math.round(displayValue)}%</div>
+          <div className="dash-occ-bar-track" role="progressbar" aria-valuenow={Math.round(displayValue)} aria-valuemin={0} aria-valuemax={100} aria-label="Taxa de ocupação">
+            <div
+              className="dash-occ-bar-fill"
+              style={{ width: `${animatedPct}%` }}
+            />
+          </div>
+          {trendNumber !== null && (
+            <span className={`dash-kpi-trend ${trendNumber >= 0 ? 'up' : 'down'}`}>
+              {trendNumber > 0 ? '+' : ''}{trendNumber}% {trendLabel}
+            </span>
+          )}
+        </div>
+        <div className="dash-kpi-illustration" aria-hidden>
+          <OccupancyCalendarIllustration />
         </div>
       </div>
-
-      {trendNumber !== null && (
-        <span className={`dash-kpi-trend ${trendNumber >= 0 ? 'up' : 'down'}`}>
-          {trendNumber > 0 ? '+' : ''}{trendNumber}% {trendLabel}
-        </span>
-      )}
     </div>
   );
 };
