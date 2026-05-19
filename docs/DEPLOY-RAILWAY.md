@@ -24,7 +24,7 @@ Um único serviço: Express serve `/api` + SPA React (`dist`) na mesma URL.
 
 1. [Railway](https://railway.com) → **New Project** → **Deploy from GitHub repo** (repositório Sloot).
 2. O Railway usa automaticamente:
-   - **Build:** `npm ci && npm run build`
+   - **Build:** `npm run build:railway` (evita erro `EBUSY` do `npm ci` no cache do Nixpacks)
    - **Start:** `npm run start:prod` (`prisma migrate deploy` + `node server/index.js`)
 
 ---
@@ -135,6 +135,7 @@ railway up
 
 | Problema | Solução |
 |----------|---------|
+| Build `EBUSY` em `node_modules/.cache` | Usar `npm run build:railway` (já em `railway.toml`); ou variável `NIXPACKS_NO_CACHE=1` + redeploy |
 | Build falha Prisma | `DATABASE_URL` / `DIRECT_URL` no serviço antes do deploy |
 | Migration falha Supabase | Confirma `DIRECT_URL` na porta **5432**, não 6543 |
 | 502 / healthcheck | Deploy Logs; `JWT_SECRET` definido |
