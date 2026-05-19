@@ -2987,6 +2987,11 @@ button {
   flex-direction: column;
   gap: 1.5rem;
   width: 100%;
+  --dash-card-border: #1a1a1a;
+}
+
+[data-theme='dark'] .dash-page {
+  --dash-card-border: rgba(255, 255, 255, 0.88);
 }
 
 .dash-page__inner {
@@ -3124,8 +3129,8 @@ button {
 
 .dash-kpi-card {
   background: var(--dash-card-bg);
-  border: 1px solid var(--card-outline);
-  border-radius: 20px;
+  border: 1px solid var(--dash-card-border);
+  border-radius: 12px;
   padding: 1.25rem 1.375rem;
   display: flex;
   flex-direction: column;
@@ -3280,8 +3285,8 @@ button {
 /* --- Occupancy Gauge Card --- */
 .dash-gauge-card {
   background: var(--dash-card-bg);
-  border: 1px solid var(--card-outline);
-  border-radius: 20px;
+  border: 1px solid var(--dash-card-border);
+  border-radius: 12px;
   padding: 1.25rem 1.375rem;
   display: flex;
   flex-direction: column;
@@ -3347,8 +3352,8 @@ button {
 
 .dash-panel {
   background: var(--dash-panel-bg);
-  border: 1px solid var(--card-outline);
-  border-radius: 20px;
+  border: 1px solid var(--dash-card-border);
+  border-radius: 12px;
   box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
