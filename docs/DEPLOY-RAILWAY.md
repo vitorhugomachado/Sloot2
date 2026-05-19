@@ -54,7 +54,7 @@ VITE_GOOGLE_CLIENT_ID=
 | `JWT_SECRET` | Para teste podes usar o de cima; para produção: `openssl rand -base64 48` |
 | `GOOGLE_CLIENT_ID` | Backend — vazio até criares credencial Web no Google Cloud |
 | `VITE_GOOGLE_CLIENT_ID` | **Mesmo** valor que `GOOGLE_CLIENT_ID`; obrigatório no **build** |
-| `PORT` | Deixa o Railway definir — não copies `3001` do local |
+| `PORT` | **Nunca definir** (ex.: `3001`) — o proxy do Railway falha o healthcheck |
 
 Depois de mudar `VITE_*`, faz **Redeploy** (variáveis Vite entram só no build).
 
@@ -138,6 +138,7 @@ railway up
 | Build `EBUSY` em `node_modules/.cache` | Usar `npm run build:railway` (já em `railway.toml`); ou variável `NIXPACKS_NO_CACHE=1` + redeploy |
 | Build falha Prisma | `DATABASE_URL` / `DIRECT_URL` no serviço antes do deploy |
 | Migration falha Supabase | Confirma `DIRECT_URL` na porta **5432**, não 6543 |
+| Healthcheck failure | Apaga `PORT=3001`; confirma `DATABASE_URL` + `JWT_SECRET`; migrations correm no **build** (`build:railway`) |
 | 502 / healthcheck | Deploy Logs; `JWT_SECRET` definido |
 | Login Google | Preenche `VITE_GOOGLE_CLIENT_ID` + origem no Google + redeploy |
 | EPERM `prisma generate` (Windows) | Para o servidor local antes de `prisma generate` |
