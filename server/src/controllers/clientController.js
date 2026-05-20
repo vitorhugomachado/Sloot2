@@ -1,6 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma.js');
+const { tenantIdFromReq } = require('../lib/tenantHelpers');
 
 const normalizePhone = (phone) => {
   if (!phone) return '';
@@ -78,8 +77,9 @@ const barberIdFilterForRequest = (req) => {
 // Combina Customers oficiais com agendamentos avulsos.
 // Chave de merge: telefone normalizado quando disponível, senão "name|phone".
 // `barberIdFilter`: quando definido, só agendamentos desse barbeiro entram no índice.
-const buildClientsIndex = async ({ barberIdFilter } = {}) => {
-  const apptWhere = barberIdFilter != null ? { barberId: Number(barberIdFilter) } : undefined;
+const buildClientsIndex = async ({ tenantId, barberIdFilter } = {}) => {
+  const apptWhere = { tenantId };
+  if (barberIdFilter != null) apptWhere.barberId = Number(barberIdFilter);
   const appointments = await prisma.appointment.findMany({ where: apptWhere });
 
   const linkedCustomerIds = [...new Set(appointments.map((a) => a.customer_id).filter((x) => x != null))];
@@ -88,10 +88,10 @@ const buildClientsIndex = async ({ barberIdFilter } = {}) => {
   if (barberIdFilter != null) {
     customers =
       linkedCustomerIds.length > 0
-        ? await prisma.customer.findMany({ where: { id: { in: linkedCustomerIds } } })
+        ? await prisma.customer.findMany({ where: { tenantId, id: { in: linkedCustomerIds } } })
         : [];
   } else {
-    customers = await prisma.customer.findMany();
+    customers = await prisma.customer.findMany({ where: { tenantId } });
   }
 
   const index = new Map();
@@ -172,7 +172,10 @@ const listClients = async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page || '1', 10) || 1);
     const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize || '10', 10) || 10));
 
-    const all = await buildClientsIndex({ barberIdFilter: barberIdFilterForRequest(req) });
+    const all = await buildClientsIndex({
+      tenantId: tenantIdFromReq(req),
+      barberIdFilter: barberIdFilterForRequest(req),
+    });
 
     const filtered = all.filter((c) => {
       if (status && status !== 'todos' && c.status !== status) return false;
@@ -210,7 +213,10 @@ const listClients = async (req, res) => {
 
 const getClientStats = async (req, res) => {
   try {
-    const all = await buildClientsIndex({ barberIdFilter: barberIdFilterForRequest(req) });
+    const all = await buildClientsIndex({
+      tenantId: tenantIdFromReq(req),
+      barberIdFilter: barberIdFilterForRequest(req),
+    });
     const now = new Date();
     const thisMonth = now.getMonth();
     const thisYear = now.getFullYear();
@@ -276,8 +282,8 @@ const getClientStats = async (req, res) => {
   }
 };
 
-const findClientByKey = async (id, guestKey, barberIdFilter) => {
-  const all = await buildClientsIndex({ barberIdFilter });
+const findClientByKey = async (tenantId, id, guestKey, barberIdFilter) => {
+  const all = await buildClientsIndex({ tenantId, barberIdFilter });
   if (id && id !== 'guest') {
     const numericId = Number(id);
     return all.find((c) => c.source === 'customer' && c.id === numericId) || null;
@@ -293,7 +299,7 @@ const getClientById = async (req, res) => {
     const { id } = req.params;
     const guestKey = req.query.guestKey ? String(req.query.guestKey) : null;
     const barberFilter = barberIdFilterForRequest(req);
-    const client = await findClientByKey(id, guestKey, barberFilter);
+    const client = await findClientByKey(tenantIdFromReq(req), id, guestKey, barberFilter);
 
     if (!client) {
       return res.status(404).json({ message: 'Cliente não encontrado' });
@@ -312,8 +318,11 @@ const getClientById = async (req, res) => {
       return res.json({ ...rest, history: [] });
     }
 
+    const tenantId = tenantIdFromReq(req);
     const where =
-      barberFilter != null ? { AND: [{ barberId: barberFilter }, { OR: orParts }] } : { OR: orParts };
+      barberFilter != null
+        ? { tenantId, AND: [{ barberId: barberFilter }, { OR: orParts }] }
+        : { tenantId, OR: orParts };
 
     const enriched = await prisma.appointment.findMany({
       where,
@@ -350,20 +359,22 @@ const createClient = async (req, res) => {
       return res.status(400).json({ message: 'Nome e telefone são obrigatórios' });
     }
 
+    const tenantId = tenantIdFromReq(req);
     if (email) {
-      const existing = await prisma.customer.findFirst({ where: { email } });
+      const existing = await prisma.customer.findFirst({ where: { tenantId, email } });
       if (existing) {
         return res.status(400).json({ message: 'Este e-mail já está em uso' });
       }
     }
 
     const data = {
+      tenantId,
       name: String(name),
       phone: String(phone),
       email: email ? String(email) : null,
       birthday: sanitizeBirthday(birthday),
       notes: notes ? String(notes) : null,
-      tags: Array.isArray(tags) ? tags : parseTags(tags)
+      tags: Array.isArray(tags) ? tags : parseTags(tags),
     };
 
     const customer = await prisma.customer.create({ data });
@@ -372,8 +383,9 @@ const createClient = async (req, res) => {
     if (normalized) {
       await prisma.appointment.updateMany({
         where: {
+          tenantId,
           customer_id: null,
-          phone: { contains: normalized.slice(-9) }
+          phone: { contains: normalized.slice(-9) },
         },
         data: { customer_id: customer.id }
       });
@@ -400,9 +412,13 @@ const updateClient = async (req, res) => {
 
     const { name, phone, email, birthday, notes, tags } = req.body || {};
 
+    const tenantId = tenantIdFromReq(req);
+    const owned = await prisma.customer.findFirst({ where: { id: numericId, tenantId } });
+    if (!owned) return res.status(404).json({ message: 'Cliente não encontrado' });
+
     if (email) {
       const conflict = await prisma.customer.findFirst({
-        where: { email, NOT: { id: numericId } }
+        where: { tenantId, email, NOT: { id: numericId } },
       });
       if (conflict) return res.status(400).json({ message: 'Este e-mail já está em uso' });
     }
@@ -437,9 +453,13 @@ const deleteClient = async (req, res) => {
     if (!Number.isFinite(numericId)) {
       return res.status(400).json({ message: 'ID inválido' });
     }
+    const tenantId = tenantIdFromReq(req);
+    const owned = await prisma.customer.findFirst({ where: { id: numericId, tenantId } });
+    if (!owned) return res.status(404).json({ message: 'Cliente não encontrado' });
+
     await prisma.appointment.updateMany({
-      where: { customer_id: numericId },
-      data: { customer_id: null }
+      where: { tenantId, customer_id: numericId },
+      data: { customer_id: null },
     });
     await prisma.customer.delete({ where: { id: numericId } });
     res.sendStatus(204);
@@ -467,25 +487,28 @@ const promoteFromAppointment = async (req, res) => {
       return res.status(400).json({ message: 'Telefone inválido' });
     }
 
-    const existing = await prisma.customer.findFirst({ where: { phone } });
+    const tenantId = tenantIdFromReq(req);
+    const existing = await prisma.customer.findFirst({ where: { tenantId, phone } });
     if (existing) {
       return res.status(409).json({ message: 'Cliente já cadastrado', customer: existing });
     }
 
     const customer = await prisma.customer.create({
       data: {
+        tenantId,
         name: String(name),
         phone: String(phone),
-        email: email ? String(email) : null
-      }
+        email: email ? String(email) : null,
+      },
     });
 
     await prisma.appointment.updateMany({
       where: {
+        tenantId,
         customer_id: null,
-        phone: { contains: normalized.slice(-9) }
+        phone: { contains: normalized.slice(-9) },
       },
-      data: { customer_id: customer.id }
+      data: { customer_id: customer.id },
     });
 
     const { password: _pw, ...publicCustomer } = customer;
@@ -498,7 +521,10 @@ const promoteFromAppointment = async (req, res) => {
 
 const exportCsv = async (req, res) => {
   try {
-    const all = await buildClientsIndex({ barberIdFilter: barberIdFilterForRequest(req) });
+    const all = await buildClientsIndex({
+      tenantId: tenantIdFromReq(req),
+      barberIdFilter: barberIdFilterForRequest(req),
+    });
     const escape = (value) => {
       if (value === null || value === undefined) return '';
       const str = String(value).replace(/"/g, '""');

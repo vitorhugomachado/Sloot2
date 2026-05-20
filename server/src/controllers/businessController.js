@@ -1,6 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma.js');
 const { invalidatePublicCache } = require('../middlewares/publicCache');
-const prisma = new PrismaClient();
+const { tenantIdFromReq, publicTenantShape } = require('../lib/tenantHelpers');
 
 function nullableString(v) {
   if (v === undefined || v === null) return undefined;
@@ -8,7 +8,6 @@ function nullableString(v) {
   return s === '' ? null : s;
 }
 
-/** Monta objeto só com campos do modelo; booleans coerced; strings opcionais → null se vazio. */
 function buildBusinessUpdatePayload(body) {
   const b = body && typeof body === 'object' ? body : {};
   const data = {};
@@ -36,8 +35,7 @@ function buildBusinessUpdatePayload(body) {
 
 const getBusinessInfo = async (req, res, next) => {
   try {
-    const info = await prisma.businessInfo.findUnique({ where: { id: 1 } });
-    res.json(info);
+    res.json(publicTenantShape(req.tenant));
   } catch (err) {
     next(err);
   }
@@ -50,36 +48,13 @@ const updateBusinessInfo = async (req, res, next) => {
     }
 
     const data = buildBusinessUpdatePayload(req.body);
+    const tenant = await prisma.tenant.update({
+      where: { id: tenantIdFromReq(req) },
+      data,
+    });
 
-    const existing = await prisma.businessInfo.findUnique({ where: { id: 1 } });
-
-    let info;
-    if (existing) {
-      info = await prisma.businessInfo.update({
-        where: { id: 1 },
-        data,
-      });
-    } else {
-      info = await prisma.businessInfo.create({
-        data: {
-          id: 1,
-          name: data.name || 'Meu negócio',
-          phone: data.phone ?? '',
-          email: data.email ?? '',
-          address: data.address ?? '',
-          logo_url: data.logo_url ?? null,
-          instagram_url: data.instagram_url ?? null,
-          facebook_url: data.facebook_url ?? null,
-          whatsapp_url: data.whatsapp_url ?? null,
-          show_instagram: data.show_instagram ?? false,
-          show_facebook: data.show_facebook ?? false,
-          show_whatsapp: data.show_whatsapp ?? false,
-        },
-      });
-    }
-
-    invalidatePublicCache();
-    res.json(info);
+    invalidatePublicCache(req.tenantSlug);
+    res.json(publicTenantShape(tenant));
   } catch (err) {
     next(err);
   }

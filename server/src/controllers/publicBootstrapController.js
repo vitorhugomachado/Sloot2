@@ -1,21 +1,22 @@
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma.js');
 const { fetchPublicBarbers } = require('./barberController');
 const { fetchPublicAppointments } = require('./appointmentController');
-
-const prisma = new PrismaClient();
+const { publicTenantShape, tenantIdFromReq } = require('../lib/tenantHelpers');
+const { parseDateRangeFromQuery } = require('../lib/bookingHorizon');
 
 const getPublicBootstrap = async (req, res) => {
   try {
-    const [services, business, barbers, appointments] = await Promise.all([
-      prisma.service.findMany(),
-      prisma.businessInfo.findUnique({ where: { id: 1 } }),
-      fetchPublicBarbers(),
-      fetchPublicAppointments(),
+    const tenantId = tenantIdFromReq(req);
+    const range = parseDateRangeFromQuery(req.query);
+    const [services, barbers, appointments] = await Promise.all([
+      prisma.service.findMany({ where: { tenantId } }),
+      fetchPublicBarbers(tenantId, range.from, range.to),
+      fetchPublicAppointments(tenantId, range),
     ]);
 
     res.json({
       services,
-      business,
+      business: publicTenantShape(req.tenant),
       barbers,
       appointments,
     });

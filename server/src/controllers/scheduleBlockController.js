@@ -1,16 +1,14 @@
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma.js');
+const { tenantIdFromReq } = require('../lib/tenantHelpers');
+const { invalidatePublicCache } = require('../middlewares/publicCache');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
+const { publicBookingDateRange } = require('../lib/bookingHorizon');
+
 function defaultDateRange() {
-  const from = new Date();
-  const to = new Date();
-  to.setDate(to.getDate() + 90);
-  const fmt = (d) => d.toISOString().slice(0, 10);
-  return { from: fmt(from), to: fmt(to) };
+  return publicBookingDateRange();
 }
 
 function normalizeBlockBody(body) {
@@ -74,8 +72,9 @@ const createScheduleBlock = async (req, res) => {
       return res.status(400).json({ message: 'ID do profissional inválido.' });
     }
 
+    const tenantId = tenantIdFromReq(req);
     const barber = await prisma.barber.findFirst({
-      where: { id: barberId, deletedAt: null },
+      where: { id: barberId, tenantId, deletedAt: null },
       select: { id: true },
     });
     if (!barber) return res.status(404).json({ message: 'Profissional não encontrado.' });
@@ -85,6 +84,7 @@ const createScheduleBlock = async (req, res) => {
 
     const block = await prisma.barberScheduleBlock.create({
       data: {
+        tenantId,
         barberId,
         date: normalized.date,
         startTime: normalized.startTime,
@@ -92,6 +92,7 @@ const createScheduleBlock = async (req, res) => {
         reason: normalized.reason,
       },
     });
+    invalidatePublicCache(req.tenantSlug);
     res.status(201).json(block);
   } catch (error) {
     console.error('createScheduleBlock:', error);
@@ -130,8 +131,9 @@ const getPublicScheduleBlocks = async (req, res) => {
     const from = String(req.query.from || defaults.from);
     const to = String(req.query.to || defaults.to);
 
+    const tenantId = tenantIdFromReq(req);
     const activeBarbers = await prisma.barber.findMany({
-      where: { deletedAt: null, status: 'Ativo', role: 'Barbeiro' },
+      where: { tenantId, deletedAt: null, status: 'Ativo', role: 'Barbeiro' },
       select: { id: true },
     });
     const ids = activeBarbers.map((b) => b.id);

@@ -1,7 +1,7 @@
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma.js');
 const { indexBarbersById, buildCommissionReport } = require('../utils/commission.cjs');
 
-const prisma = new PrismaClient();
+const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
 
 const YEAR_MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -19,22 +19,23 @@ function monthBounds(yearMonth) {
   return { startDate: getLocalDateStr(startD), endDate: getLocalDateStr(endD) };
 }
 
-async function buildSnapshotForMonth(yearMonth) {
+async function buildSnapshotForMonth(tenantId, yearMonth) {
   const { startDate, endDate } = monthBounds(yearMonth);
 
   const [barbers, appointments, sales, periodExpenses] = await Promise.all([
-    prisma.barber.findMany({ where: { deletedAt: null } }),
+    prisma.barber.findMany({ where: { tenantId, deletedAt: null } }),
     prisma.appointment.findMany({
       where: {
+        tenantId,
         status: 'Finalizado',
         date: { gte: startDate, lte: endDate },
       },
     }),
     prisma.productSale.findMany({
-      where: { date: { gte: startDate, lte: endDate } },
+      where: { tenantId, date: { gte: startDate, lte: endDate } },
     }),
     prisma.expense.findMany({
-      where: { date: { gte: startDate, lte: endDate } },
+      where: { tenantId, date: { gte: startDate, lte: endDate } },
     }),
   ]);
 
@@ -77,6 +78,7 @@ const getMonthClosings = async (req, res) => {
       return res.json([]);
     }
     const rows = await prisma.monthClosing.findMany({
+      where: tenantWhere(req),
       orderBy: { yearMonth: 'desc' },
     });
     res.json(rows);
@@ -106,9 +108,11 @@ const createMonthClosing = async (req, res) => {
   }
 
   try {
-    const snapshot = await buildSnapshotForMonth(ym);
+    const tenantId = tenantIdFromReq(req);
+    const snapshot = await buildSnapshotForMonth(tenantId, ym);
     const created = await prisma.monthClosing.create({
       data: {
+        tenantId,
         yearMonth: ym,
         closedById: req.user.id,
         closedByName,

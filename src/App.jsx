@@ -3,15 +3,18 @@ import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 're
 import Sidebar from './components/Sidebar';
 import LoginPage from './pages/LoginPage';
 import TabLoadingFallback from './components/TabLoadingFallback';
-
-import { useApp } from './context/AppContext';
+import PlatformAdminApp from './pages/admin/PlatformAdminApp';
+import BookingPreviewShell from './pages/preview/BookingPreviewShell';
+import LoginPreviewShell from './pages/preview/LoginPreviewShell';
+import { AppProvider, useApp } from './context/AppContext';
+import { TenantProvider, useTenant, DEFAULT_SLUG } from './context/TenantContext';
 import { isValidPhone } from './utils/phone';
 import { Menu, LogOut } from 'lucide-react';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Clients = lazy(() => import('./pages/Clients'));
 const Scheduler = lazy(() => import('./pages/Scheduler'));
-const PublicBooking = lazy(() => import('./pages/PublicBooking'));
+const PublicBookingPage = lazy(() => import('./pages/public-booking/PublicBookingPage'));
 const Finance = lazy(() => import('./pages/Finance'));
 const Users = lazy(() => import('./pages/Users'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -31,41 +34,45 @@ const STAFF_TAB_COMPONENTS = {
   settings: Settings,
 };
 
-const StaffRoute = ({ children }) => {
-  const { currentUser, loading } = useApp();
+function useTenantBase() {
+  const { slug } = useTenant();
+  return `/${slug}`;
+}
 
-  if (loading) return null;
-  if (!currentUser) return <Navigate to="/barbeiros/login" replace />;
+const StaffRoute = ({ children }) => {
+  const { currentUser, staffLoading } = useApp();
+  const base = useTenantBase();
+
+  if (staffLoading && !currentUser) return null;
+  if (!currentUser) return <Navigate to={`${base}/barbeiros/login`} replace />;
   return children;
 };
 
 const CustomerRoute = ({ children }) => {
-  const { currentCustomer, loading } = useApp();
+  const { currentCustomer, bootstrapLoading } = useApp();
+  const base = useTenantBase();
 
-  if (loading) return null;
-  if (!currentCustomer) return <Navigate to="/cliente" replace />;
+  if (bootstrapLoading && !currentCustomer) return null;
+  if (!currentCustomer) return <Navigate to={`${base}/cliente`} replace />;
   return children;
 };
 
 const StaffLoginPage = () => {
   const { login, currentUser } = useApp();
   const navigate = useNavigate();
+  const base = useTenantBase();
 
   if (currentUser) {
-    return <Navigate to="/barbeiros" replace />;
+    return <Navigate to={`${base}/barbeiros`} replace />;
   }
 
   const handleLogin = async (emailToLogin, pwd) => {
-    try {
-      const userData = await login(emailToLogin, pwd);
-      const perms = userData?.permissions;
-      const canDashboard = Array.isArray(perms) && perms.includes('dashboard');
-      const barberNoDashboard = userData?.role === 'Barbeiro' && !canDashboard;
-      if (barberNoDashboard) navigate('/barbeiros/scheduler', { replace: true });
-      else navigate('/barbeiros', { replace: true });
-    } catch (error) {
-      alert(error.message || 'Erro ao realizar login.');
-    }
+    const userData = await login(emailToLogin, pwd);
+    const perms = userData?.permissions;
+    const canDashboard = Array.isArray(perms) && perms.includes('dashboard');
+    const barberNoDashboard = userData?.role === 'Barbeiro' && !canDashboard;
+    if (barberNoDashboard) navigate(`${base}/barbeiros/scheduler`, { replace: true });
+    else navigate(`${base}/barbeiros`, { replace: true });
   };
 
   return <LoginPage onLogin={handleLogin} />;
@@ -73,6 +80,7 @@ const StaffLoginPage = () => {
 
 const CustomerArea = () => {
   const navigate = useNavigate();
+  const base = useTenantBase();
   const { currentCustomer } = useApp();
   const needsPhone = !!currentCustomer && !isValidPhone(currentCustomer.phone);
 
@@ -83,7 +91,7 @@ const CustomerArea = () => {
           path="/"
           element={(
             <Suspense fallback={<TabLoadingFallback />}>
-              <PublicBooking onOpenPortal={() => navigate('/cliente/portal')} />
+              <PublicBookingPage onOpenPortal={() => navigate(`${base}/cliente/portal`)} />
             </Suspense>
           )}
         />
@@ -92,12 +100,12 @@ const CustomerArea = () => {
           element={(
             <CustomerRoute>
               <Suspense fallback={<TabLoadingFallback />}>
-                <CustomerPortal onBack={() => navigate('/cliente')} />
+                <CustomerPortal onBack={() => navigate(`${base}/cliente`)} />
               </Suspense>
             </CustomerRoute>
           )}
         />
-        <Route path="*" element={<Navigate to="/cliente" replace />} />
+        <Route path="*" element={<Navigate to={`${base}/cliente`} replace />} />
       </Routes>
       {needsPhone && (
         <Suspense fallback={null}>
@@ -108,7 +116,6 @@ const CustomerArea = () => {
   );
 };
 
-/** Mantém abas visitadas montadas (evita refetch e remontar grade ao trocar de menu). */
 function StaffTabPanels({ activeTab }) {
   const [mountedTabs, setMountedTabs] = useState(() => new Set([activeTab]));
 
@@ -150,6 +157,8 @@ const StaffArea = () => {
   const { tab } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const base = useTenantBase();
+  const staffHome = `${base}/barbeiros`;
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
@@ -159,35 +168,35 @@ const StaffArea = () => {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
   const activeTab = tab && VALID_TABS.includes(tab) ? tab : 'dashboard';
 
   const handleLogout = () => {
     logout();
-    navigate('/barbeiros/login', { replace: true });
+    navigate(`${base}/barbeiros/login`, { replace: true });
   };
 
   const setActiveTab = (nextTab) => {
-    if (nextTab === 'dashboard') navigate('/barbeiros');
-    else navigate(`/barbeiros/${nextTab}`);
+    if (nextTab === 'dashboard') navigate(staffHome);
+    else navigate(`${staffHome}/${nextTab}`);
   };
 
   React.useEffect(() => {
-    if (location.pathname !== '/barbeiros') return;
+    if (location.pathname !== staffHome) return;
     if (currentUser?.role !== 'Barbeiro') return;
     const perms = currentUser?.permissions;
     const canDashboard = Array.isArray(perms) && perms.includes('dashboard');
     if (canDashboard) return;
-    navigate('/barbeiros/scheduler', { replace: true });
-  }, [location.pathname, currentUser, navigate]);
+    navigate(`${staffHome}/scheduler`, { replace: true });
+  }, [location.pathname, currentUser, navigate, staffHome]);
 
   React.useEffect(() => {
     if (tab && !VALID_TABS.includes(tab)) {
-      navigate('/barbeiros', { replace: true });
+      navigate(staffHome, { replace: true });
     }
-  }, [tab, navigate]);
+  }, [tab, navigate, staffHome]);
 
   return (
     <StaffRoute>
@@ -219,7 +228,7 @@ const StaffArea = () => {
         <div
           className={`sidebar-overlay ${!isSidebarCollapsed ? 'active' : ''}`}
           onClick={() => setIsSidebarCollapsed(true)}
-        ></div>
+        />
 
         <Sidebar
           activeTab={activeTab}
@@ -237,10 +246,10 @@ const StaffArea = () => {
               </div>
               <span style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'capitalize' }}>{currentUser?.name} ({currentUser?.role})</span>
             </div>
-            <button onClick={toggleTheme} className="dash-icon-btn" style={{ fontSize: '1.2rem' }} title="Alternar Tema">
+            <button type="button" onClick={toggleTheme} className="dash-icon-btn" style={{ fontSize: '1.2rem' }} title="Alternar Tema">
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
-            <button className="btn-secondary" onClick={handleLogout} style={{ fontSize: '0.8rem' }}>Sair</button>
+            <button type="button" className="btn-secondary" onClick={handleLogout} style={{ fontSize: '0.8rem' }}>Sair</button>
           </header>
           <StaffTabPanels activeTab={activeTab} />
         </main>
@@ -249,28 +258,73 @@ const StaffArea = () => {
   );
 };
 
-function App() {
-  const { loading } = useApp();
+function LoadingScreen({ message = 'Carregando Sloot...' }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px' }}>
+      <div className="spinner" style={{ width: '40px', height: '40px', border: '4px solid rgba(0,0,0,0.1)', borderTop: '4px solid var(--accent-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+      <p style={{ fontWeight: 500 }}>{message}</p>
+      <style>{`
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      `}</style>
+    </div>
+  );
+}
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px' }}>
-        <div className="spinner" style={{ width: '40px', height: '40px', border: '4px solid rgba(0,0,0,0.1)', borderTop: '4px solid var(--accent-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-        <p style={{ fontWeight: 500 }}>Carregando Sloot...</p>
-        <style>{`
-          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        `}</style>
-      </div>
-    );
+function TenantAppContent() {
+  const { slug: tenantSlug, loading: tenantLoading, error: tenantError } = useTenant();
+  const { bootstrapLoading } = useApp();
+  const location = useLocation();
+  const isStaffRoute = /\/barbeiros(\/|$)/.test(location.pathname);
+
+  if (tenantLoading) {
+    return <LoadingScreen />;
   }
+
+  if (bootstrapLoading && !isStaffRoute) {
+    return <LoadingScreen />;
+  }
+
+  if (tenantError) {
+    return <LoadingScreen message={tenantError} />;
+  }
+
+  const clienteHome = `/${tenantSlug}/cliente`;
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/cliente" replace />} />
-      <Route path="/cliente/*" element={<CustomerArea />} />
-      <Route path="/barbeiros/login" element={<StaffLoginPage />} />
-      <Route path="/barbeiros/:tab?" element={<StaffArea />} />
-      <Route path="*" element={<Navigate to="/cliente" replace />} />
+      <Route path="cliente/*" element={<CustomerArea />} />
+      <Route path="clientes/*" element={<Navigate to={clienteHome} replace />} />
+      <Route path="barbeiros/login" element={<StaffLoginPage />} />
+      <Route path="barbeiros/:tab?" element={<StaffArea />} />
+      <Route path="*" element={<Navigate to={clienteHome} replace />} />
+    </Routes>
+  );
+}
+
+function TenantShell() {
+  const { tenantSlug } = useParams();
+  return (
+    <TenantProvider key={tenantSlug}>
+      <AppProvider>
+        <TenantAppContent />
+      </AppProvider>
+    </TenantProvider>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/admin/*" element={<PlatformAdminApp />} />
+      <Route path="/platform" element={<Navigate to="/admin" replace />} />
+      <Route path="/cadastro" element={<Navigate to="/" replace />} />
+      <Route path="/telateste" element={<BookingPreviewShell />} />
+      <Route path="/telaloginteste" element={<LoginPreviewShell />} />
+      <Route path="/cliente/*" element={<Navigate to={`/${DEFAULT_SLUG}/cliente`} replace />} />
+      <Route path="/barbeiros/*" element={<Navigate to={`/${DEFAULT_SLUG}/barbeiros`} replace />} />
+      <Route path="/:tenantSlug/*" element={<TenantShell />} />
+      <Route path="/" element={<Navigate to={`/${DEFAULT_SLUG}/cliente`} replace />} />
+      <Route path="*" element={<Navigate to={`/${DEFAULT_SLUG}/cliente`} replace />} />
     </Routes>
   );
 }

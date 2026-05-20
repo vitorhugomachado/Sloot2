@@ -1,6 +1,8 @@
 const express = require('express');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { optionalAuthMiddleware } = require('../middlewares/authMiddleware');
+const { requireTenant, requireTenantAuthMatch } = require('../middlewares/tenantMiddleware');
+const platformAuthMiddleware = require('../middlewares/platformAuthMiddleware');
 
 const authRoutes = require('./authRoutes');
 const customerAuthRoutes = require('./customerAuthRoutes');
@@ -27,22 +29,44 @@ const { getExpenses, createExpense, updateExpense, deleteExpense } = require('..
 const { getMonthClosings, createMonthClosing } = require('../controllers/monthClosingController');
 const { cachePublic } = require('../middlewares/publicCache');
 const { getPublicBootstrap } = require('../controllers/publicBootstrapController');
+const { resolveTenant } = require('../controllers/tenantController');
+const {
+  platformLogin,
+  listTenants,
+  createTenant,
+  updateTenantStatus,
+} = require('../controllers/platformController');
+const { getPeriodClosings, createPeriodClosing } = require('../controllers/periodClosingController');
 
 const router = express.Router();
 
-// Public Routes
+// Platform (sem tenant) — sub-router isolado do requireTenant
+const platformRouter = express.Router();
+platformRouter.post('/login', platformLogin);
+platformRouter.get('/tenants', platformAuthMiddleware, listTenants);
+platformRouter.post('/tenants', platformAuthMiddleware, createTenant);
+platformRouter.patch('/tenants/:id/status', platformAuthMiddleware, updateTenantStatus);
+router.use('/platform', platformRouter);
+
+router.get('/tenant/resolve/:slug', resolveTenant);
+
+// Rotas com escopo de barbearia
+router.use(requireTenant);
+
 router.use('/auth', authRoutes);
 router.use('/customer-auth', customerAuthRoutes);
+
 router.get('/public/bootstrap', cachePublic(50), getPublicBootstrap);
 router.get('/services', cachePublic(120), getServices);
 router.get('/business', cachePublic(300), getBusinessInfo);
 router.get('/appointments/public', cachePublic(45), getPublicAppointments);
-router.post('/appointments', optionalAuthMiddleware, createAppointment); // Public booking (optional auth)
+router.post('/appointments', optionalAuthMiddleware, requireTenantAuthMatch, createAppointment);
 
 const { getPublicScheduleBlocks } = require('../controllers/scheduleBlockController');
 router.get('/schedule-blocks/public', cachePublic(60), getPublicScheduleBlocks);
 
-// Protected Routes (Require Login)
+router.use(requireTenantAuthMatch);
+
 router.use('/barbers', barberRoutes);
 router.use('/clients', authMiddleware, clientRoutes);
 router.get('/appointments', authMiddleware, getAppointments);
@@ -70,5 +94,7 @@ router.post('/month-closings', authMiddleware, createMonthClosing);
 
 router.put('/business', authMiddleware, updateBusinessInfo);
 
-module.exports = router;
+router.get('/period-closings', authMiddleware, getPeriodClosings);
+router.post('/period-closings', authMiddleware, createPeriodClosing);
 
+module.exports = router;

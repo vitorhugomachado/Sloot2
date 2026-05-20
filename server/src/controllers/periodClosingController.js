@@ -1,7 +1,7 @@
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma.js');
 const { indexBarbersById, buildCommissionReport } = require('../utils/commission.cjs');
 
-const prisma = new PrismaClient();
+const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_RANGE_DAYS = 366;
@@ -65,23 +65,24 @@ function periodClosingSchemaIssue(error, mode = 'create') {
  * @param {string} endDate YYYY-MM-DD
  * @param {{ shop: boolean, barberId?: number }} scopeOpts
  */
-async function buildSnapshotForPeriod(startDate, endDate, scopeOpts) {
+async function buildSnapshotForPeriod(tenantId, startDate, endDate, scopeOpts) {
   const { shop, barberId } = scopeOpts;
 
   const [barbers, appointmentsRaw, salesRaw, periodExpenses] = await Promise.all([
-    prisma.barber.findMany({ where: { deletedAt: null } }),
+    prisma.barber.findMany({ where: { tenantId, deletedAt: null } }),
     prisma.appointment.findMany({
       where: {
+        tenantId,
         status: 'Finalizado',
         date: { gte: startDate, lte: endDate },
       },
     }),
     prisma.productSale.findMany({
-      where: { date: { gte: startDate, lte: endDate } },
+      where: { tenantId, date: { gte: startDate, lte: endDate } },
     }),
     shop
       ? prisma.expense.findMany({
-          where: { date: { gte: startDate, lte: endDate } },
+          where: { tenantId, date: { gte: startDate, lte: endDate } },
         })
       : Promise.resolve([]),
   ]);
@@ -146,6 +147,7 @@ const getPeriodClosings = async (req, res) => {
     const role = req.user?.role;
     if (role === 'Gerente') {
       const rows = await prisma.financialPeriodClosing.findMany({
+        where: tenantWhere(req),
         orderBy: { closedAt: 'desc' },
       });
       return res.json(rows);
@@ -153,7 +155,7 @@ const getPeriodClosings = async (req, res) => {
     if (role === 'Barbeiro') {
       const uid = Number(req.user.id);
       const rows = await prisma.financialPeriodClosing.findMany({
-        where: { scope: 'BARBER', barberId: uid },
+        where: { ...tenantWhere(req), scope: 'BARBER', barberId: uid },
         orderBy: { closedAt: 'desc' },
       });
       return res.json(rows);
@@ -212,7 +214,7 @@ const createPeriodClosing = async (req, res) => {
         return res.status(400).json({ error: 'Para scope BARBER, informe barberId válido.' });
       }
       const b = await prisma.barber.findFirst({
-        where: { id: bid, deletedAt: null, role: 'Barbeiro' },
+        where: { id: bid, tenantId: tenantIdFromReq(req), deletedAt: null, role: 'Barbeiro' },
       });
       if (!b) {
         return res.status(400).json({ error: 'Barbeiro não encontrado ou inactivo.' });
@@ -234,7 +236,8 @@ const createPeriodClosing = async (req, res) => {
   }
 
   try {
-    const snapshot = await buildSnapshotForPeriod(startDate, endDate, {
+    const tenantId = tenantIdFromReq(req);
+    const snapshot = await buildSnapshotForPeriod(tenantId, startDate, endDate, {
       shop: scope === 'SHOP',
       barberId: scope === 'BARBER' ? targetBarberId : null,
     });
@@ -243,6 +246,7 @@ const createPeriodClosing = async (req, res) => {
 
     const created = await prisma.financialPeriodClosing.create({
       data: {
+        tenantId,
         startDate,
         endDate,
         scope,

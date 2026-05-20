@@ -1,0 +1,340 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.login-preview {
+  --cl-accent: #a08bf3;
+  --cl-accent-hover: #8f75e8;
+  --cl-text: #0a0a0a;
+  --cl-text-muted: #1a1a1a;
+  --cl-border: #e0e0e0;
+  --cl-card-shadow: 0 16px 48px rgba(17, 24, 39, 0.08), 0 2px 8px rgba(17, 24, 39, 0.04);
+  --cl-radius-card: 40px;
+  --cl-radius-input: 10px;
+
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--cl-text);
+  background-color: #f5f3ff;
+  overflow: hidden;
+}
+
+.login-preview__bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.login-preview__banner {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  background: rgba(234, 179, 8, 0.92) !important;
+  border-bottom: 1px solid rgba(202, 138, 4, 0.45);
+  color: #422006;
+}
+
+.login-preview__banner .booking-preview__badge {
+  color: #854d0e;
+}
+
+.login-preview__banner a {
+  color: #1f2937;
+}
+
+.login-preview__stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem 2.5rem;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+/* Card — alinhado ao protótipo Agent Login */
+.cl-login-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: var(--cl-radius-card);
+  padding: 2.25rem 2rem 2rem;
+  box-shadow: var(--cl-card-shadow);
+}
+
+.cl-login-card__header {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.cl-login-card__logo {
+  display: block;
+  max-height: 72px;
+  max-width: 100%;
+  margin: 0 auto 1rem;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.cl-login-card__title {
+  margin: 0 0 0.65rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--cl-text);
+  line-height: 1.15;
+}
+
+.cl-login-card__subtitle {
+  margin: 0 auto;
+  max-width: 300px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--cl-text-muted);
+}
+
+.cl-login-card__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.cl-field {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius-input);
+  background-color: #fff;
+  min-height: 48px;
+  padding: 0 0.85rem;
+  transition: border-color 0.15s;
+}
+
+.cl-field:focus-within {
+  border-color: #bdbdbd;
+}
+
+.login-preview .cl-field__input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  border: none !important;
+  border-radius: 0;
+  background: transparent !important;
+  padding: 0.75rem 0;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--cl-text);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.login-preview .cl-field__input::placeholder {
+  color: #9ca3af;
+  opacity: 1;
+}
+
+.login-preview .cl-field__input:focus {
+  outline: none !important;
+  background-color: transparent !important;
+  border-color: transparent !important;
+}
+
+.cl-field__circle {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 0.35rem;
+  line-height: 0;
+}
+
+.cl-field__toggle {
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: var(--cl-text);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.cl-field__toggle:hover {
+  opacity: 0.75;
+}
+
+.cl-login-card__forgot {
+  align-self: flex-start;
+  margin: -0.35rem 0 0.15rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--cl-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.cl-login-card__error {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #dc2626;
+  text-align: left;
+}
+
+.cl-login-card__error--hint {
+  color: #b45309;
+}
+
+.cl-login-card__submit {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.95rem 1rem;
+  border: none;
+  border-radius: var(--cl-radius-input);
+  background: var(--cl-accent);
+  color: var(--cl-text);
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  box-shadow: none;
+}
+
+.cl-login-card__submit:hover {
+  background: var(--cl-accent-hover);
+}
+
+.cl-login-card__submit:active {
+  transform: scale(0.99);
+}
+
+.cl-login-card__submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.cl-login-card__divider {
+  margin: 1.5rem 0 1rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #6b7280;
+}
+
+.cl-login-card__social {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cl-social-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  padding: 0.5rem 0.4rem;
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius-input);
+  background: #fff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--cl-text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.cl-social-btn .bp-btn-google__icon {
+  width: 16px;
+  height: 16px;
+}
+
+.cl-social-btn:hover:not(:disabled) {
+  border-color: #cfcfcf;
+  background: #fafafa;
+}
+
+.cl-login-card__footer {
+  margin: 1.35rem 0 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--cl-text-muted);
+}
+
+.cl-login-card__link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--cl-text);
+  font-size: inherit;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.cl-login-card__link:hover {
+  text-decoration: underline;
+}
+
+.login-preview--error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  gap: 0.75rem;
+  min-height: 100dvh;
+  background: #f0edfc;
+}
+
+.login-preview__hint {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+@media (min-width: 768px) {
+  .login-preview__stage {
+    padding: 2rem;
+  }
+
+  .cl-login-card {
+    padding: 2.25rem 2rem 2rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .cl-login-card {
+    padding: 1.75rem 1.35rem 1.5rem;
+    border-radius: 28px;
+  }
+
+  .cl-login-card__social {
+    flex-direction: column;
+  }
+
+  .cl-social-btn {
+    font-size: 0.8125rem;
+    min-height: 48px;
+  }
+}

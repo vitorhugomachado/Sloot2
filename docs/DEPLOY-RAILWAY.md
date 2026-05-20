@@ -54,6 +54,8 @@ VITE_GOOGLE_CLIENT_ID=
 | `JWT_SECRET` | Para teste podes usar o de cima; para produção: `openssl rand -base64 48` |
 | `GOOGLE_CLIENT_ID` | Backend — vazio até criares credencial Web no Google Cloud |
 | `VITE_GOOGLE_CLIENT_ID` | **Mesmo** valor que `GOOGLE_CLIENT_ID`; obrigatório no **build** |
+| `DEFAULT_TENANT_SLUG` | Slug do tenant principal (ex.: `two-brothers` ou `lanotic`) — redirects `/cliente` e `/barbeiros` |
+| `VITE_DEFAULT_TENANT_SLUG` | (Opcional) Mesmo slug no build do frontend; fallback `two-brothers` |
 | `PORT` | **Nunca definir** (ex.: `3001`) — o proxy do Railway falha o healthcheck |
 
 Depois de mudar `VITE_*`, faz **Redeploy** (variáveis Vite entram só no build).
@@ -88,8 +90,10 @@ Enquanto `GOOGLE_CLIENT_ID` estiver vazio, o agendamento público pode usar regi
 ## 4. Primeiro deploy
 
 1. Push para o GitHub ou **Deploy** manual.
-2. Logs devem mostrar: `Sloot — produção — porta …` e migrations OK.
+2. Logs devem mostrar: `Aplicando migrations Prisma`, depois `Sloot — produção — porta …`.
 3. Banco Supabase **já com dados** do dev: **não** corras `npm run db:seed` (apaga tudo).
+4. **Admin `/admin`:** após migrations, cria o utilizador (uma vez), local ou Railway shell:
+   `cd server && npm run create:platform-admin -- seu@email.com SuaSenha`
 
 Se o Supabase estiver vazio e quiseres dados de exemplo **uma vez**:
 
@@ -111,8 +115,9 @@ npm run db:seed
 Substitui `TEU-DOMINIO` pelo domínio gerado no Railway:
 
 - `https://TEU-DOMINIO/health` → `{ "status": "ok", ... }`
-- `https://TEU-DOMINIO/` → login staff
-- `https://TEU-DOMINIO/cliente` → agendamento público
+- `https://TEU-DOMINIO/SEU-SLUG/barbeiros/login` → login staff (visual unificado)
+- `https://TEU-DOMINIO/admin` → admin plataforma
+- `https://TEU-DOMINIO/SEU-SLUG/cliente` → agendamento público
 
 Link de divulgação (na app): `https://TEU-DOMINIO/cliente`
 
@@ -139,7 +144,9 @@ railway up
 | Build falha Prisma | `DATABASE_URL` / `DIRECT_URL` no serviço antes do deploy |
 | `P1001` / migrate no build | Migrations correm no **start**, não no build; corrige `DIRECT_URL` (URI Direct no Supabase) |
 | Migration falha Supabase | `DIRECT_URL` = Connection string **Direct** (não pooler `:5432`) |
-| Healthcheck failure | Apaga `PORT=3001`; confirma `DATABASE_URL` + `JWT_SECRET`; migrations correm no **build** (`build:railway`) |
+| Healthcheck failure | Apaga `PORT=3001`; confirma `DATABASE_URL` + `JWT_SECRET`; migrations correm no **start** (`server/index.js`) |
+| `/admin` erro 500 no login | Tabela `PlatformAdmin` — confirma migration `20260520130000_platform_admin` e corre `npm run create:platform-admin` |
+| `relation "Tenant" does not exist` | `DIRECT_URL` incorreto ou migrations não aplicadas — vê logs do start |
 | 502 / healthcheck | Deploy Logs; `JWT_SECRET` definido |
 | Login Google | Preenche `VITE_GOOGLE_CLIENT_ID` + origem no Google + redeploy |
 | EPERM `prisma generate` (Windows) | Para o servidor local antes de `prisma generate` |

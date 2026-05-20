@@ -1,13 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import { Copy, Check, ExternalLink } from 'lucide-react';
+import { useTenant } from '../context/TenantContext';
 import { getPublicCustomerBookingUrl } from '../utils/publicUrls';
 
 /**
  * Campo somente leitura com o link da página pública de clientes + copiar / abrir.
  */
 export default function PublicCustomerLinkField({ className = '', compact = false }) {
+  const { slug } = useTenant();
   const [copied, setCopied] = useState(false);
-  const bookingUrl = useMemo(() => getPublicCustomerBookingUrl(), []);
+  const bookingUrl = useMemo(() => getPublicCustomerBookingUrl(slug), [slug]);
 
   const handleCopy = async () => {
     try {

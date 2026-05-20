@@ -1,13 +1,13 @@
 /**
- * Cache em memória para GETs públicos (catálogo, negócio, agenda pública).
- * Reduz carga no Supabase e acelera respostas repetidas.
+ * Cache em memória para GETs públicos (por tenant + URL).
  */
 const store = new Map();
 
 const DEFAULT_TTL_SEC = 90;
 
 function cacheKey(req) {
-  return req.originalUrl || req.url;
+  const slug = req.tenantSlug || req.headers['x-tenant-slug'] || '';
+  return `${slug}::${req.originalUrl || req.url}`;
 }
 
 function cachePublic(ttlSec = DEFAULT_TTL_SEC) {
@@ -34,8 +34,15 @@ function cachePublic(ttlSec = DEFAULT_TTL_SEC) {
   };
 }
 
-function invalidatePublicCache() {
-  store.clear();
+function invalidatePublicCache(tenantSlug) {
+  if (!tenantSlug) {
+    store.clear();
+    return;
+  }
+  const prefix = `${tenantSlug}::`;
+  for (const key of store.keys()) {
+    if (key.startsWith(prefix)) store.delete(key);
+  }
 }
 
 module.exports = { cachePublic, invalidatePublicCache };

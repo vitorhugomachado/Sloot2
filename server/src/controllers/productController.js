@@ -1,8 +1,8 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma.js');
+const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
 
 const getProducts = async (req, res) => {
-  const products = await prisma.product.findMany();
+  const products = await prisma.product.findMany({ where: tenantWhere(req) });
   res.json(products);
 };
 
@@ -11,7 +11,9 @@ const createProduct = async (req, res) => {
     if (req.user?.role !== 'Gerente') {
       return res.status(403).json({ message: 'Apenas gestão pode alterar o catálogo de produtos.' });
     }
-    const product = await prisma.product.create({ data: req.body });
+    const product = await prisma.product.create({
+      data: { ...req.body, tenantId: tenantIdFromReq(req) },
+    });
     res.status(201).json(product);
   } catch (error) {
     res.status(500).json({ message: 'Erro ao criar produto' });
@@ -24,6 +26,10 @@ const deleteProduct = async (req, res) => {
       return res.status(403).json({ message: 'Apenas gestão pode alterar o catálogo de produtos.' });
     }
     const { id } = req.params;
+    const existing = await prisma.product.findFirst({
+      where: { id: Number(id), ...tenantWhere(req) },
+    });
+    if (!existing) return res.status(404).json({ message: 'Produto não encontrado.' });
     await prisma.product.delete({ where: { id: Number(id) } });
     res.sendStatus(204);
   } catch (error) {
@@ -36,13 +42,16 @@ const updateProduct = async (req, res) => {
     return res.status(403).json({ message: 'Apenas gestão pode alterar o catálogo de produtos.' });
   }
   const { id } = req.params;
+  const existing = await prisma.product.findFirst({
+    where: { id: Number(id), ...tenantWhere(req) },
+  });
+  if (!existing) return res.status(404).json({ message: 'Produto não encontrado.' });
   const product = await prisma.product.update({ where: { id: Number(id) }, data: req.body });
   res.json(product);
 };
 
 const MAX_STOCK_DELTA = 1_000_000;
 
-/** Entrada de estoque: soma `delta` unidades (apenas Gerente). */
 const adjustProductStock = async (req, res) => {
   if (req.user?.role !== 'Gerente') {
     return res.status(403).json({ message: 'Apenas gestão pode alterar o estoque.' });
@@ -61,15 +70,16 @@ const adjustProductStock = async (req, res) => {
     return res.status(400).json({ message: `A quantidade não pode exceder ${MAX_STOCK_DELTA}.` });
   }
   try {
+    const existing = await prisma.product.findFirst({
+      where: { id, ...tenantWhere(req) },
+    });
+    if (!existing) return res.status(404).json({ message: 'Produto não encontrado.' });
     const product = await prisma.product.update({
       where: { id },
       data: { stock: { increment: delta } },
     });
     return res.json(product);
   } catch (e) {
-    if (e.code === 'P2025') {
-      return res.status(404).json({ message: 'Produto não encontrado.' });
-    }
     console.error('adjustProductStock', e);
     return res.status(500).json({ message: 'Erro ao actualizar o estoque.' });
   }
@@ -78,26 +88,22 @@ const adjustProductStock = async (req, res) => {
 const getSales = async (req, res) => {
   try {
     const { barberId } = req.query;
-    const where = {};
+    const where = { ...tenantWhere(req) };
 
-    // Role-based filtering: Barbers only see their own sales
     if (req.user.role !== 'Gerente') {
       where.barberId = req.user.id;
-    } else {
-      // Manager can filter by barberId via query param
-      if (barberId === 'null' || barberId === 'barbershop') {
-        where.barberId = null;
-      } else if (barberId) {
-        where.barberId = Number(barberId);
-      }
+    } else if (barberId === 'null' || barberId === 'barbershop') {
+      where.barberId = null;
+    } else if (barberId) {
+      where.barberId = Number(barberId);
     }
 
     const sales = await prisma.productSale.findMany({
-      where: Object.keys(where).length > 0 ? where : undefined,
+      where,
       include: {
-        Barber: { select: { id: true, name: true } }
+        Barber: { select: { id: true, name: true } },
       },
-      orderBy: { date: 'desc' }
+      orderBy: { date: 'desc' },
     });
     res.json(sales);
   } catch (error) {
@@ -115,11 +121,12 @@ const createSale = async (req, res) => {
 
     const data = {
       ...rest,
+      tenantId: tenantIdFromReq(req),
       barberId: resolvedBarberId,
     };
     const sale = await prisma.productSale.create({
       data,
-      include: { Barber: { select: { id: true, name: true } } }
+      include: { Barber: { select: { id: true, name: true } } },
     });
     res.json(sale);
   } catch (error) {

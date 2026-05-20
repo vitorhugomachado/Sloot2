@@ -62,3 +62,48 @@ export function getPublicBookingSlotsForDay({ dateIso, barber, durationMinutes, 
 export function hasBarberShiftOnDate(barber, dateIso) {
   return hasBarberWorkingDay(barber, dateIso);
 }
+
+/** União de horários disponíveis entre vários barbeiros (modo "Qualquer um"). */
+export function getPublicBookingSlotsForDayAnyBarber({
+  dateIso,
+  barbers,
+  durationMinutes,
+  appointments,
+}) {
+  const available = new Set();
+  const display = new Set();
+
+  (barbers || []).forEach((barber) => {
+    const { slotsToDisplay, isWithinAnyShift, taken } = getPublicBookingSlotsForDay({
+      dateIso,
+      barber,
+      durationMinutes,
+      appointments,
+    });
+    slotsToDisplay.forEach((t) => display.add(t));
+    slotsToDisplay.forEach((t) => {
+      if (isWithinAnyShift(t) && !taken.has(t)) available.add(t);
+    });
+  });
+
+  const slotsToDisplay = [...display].sort();
+  return {
+    slotsToDisplay,
+    isWithinAnyShift: (time) => available.has(time),
+    taken: new Set(),
+  };
+}
+
+/** Primeiro barbeiro que pode atender no horário (modo "Qualquer um"). */
+export function resolveBarberForAnySlot({ dateIso, time, barbers, durationMinutes, appointments }) {
+  for (const barber of barbers || []) {
+    const { isWithinAnyShift, taken } = getPublicBookingSlotsForDay({
+      dateIso,
+      barber,
+      durationMinutes,
+      appointments,
+    });
+    if (isWithinAnyShift(time) && !taken.has(time)) return barber;
+  }
+  return null;
+}

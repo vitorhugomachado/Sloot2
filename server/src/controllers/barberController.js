@@ -1,8 +1,8 @@
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma.js');
 const { hashPassword } = require('../utils/auth');
 const { defaultDateRange } = require('./scheduleBlockController');
-
-const prisma = new PrismaClient();
+const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
+const { invalidatePublicCache } = require('../middlewares/publicCache');
 
 async function attachScheduleBlocks(barbers, from, to) {
   if (!Array.isArray(barbers) || barbers.length === 0) return barbers;
@@ -115,12 +115,12 @@ const barberPublicSelect = {
   shifts: true,
 };
 
-async function fetchPublicBarbers(from, to) {
+async function fetchPublicBarbers(tenantId, from, to) {
   const range = defaultDateRange();
   const fromDate = String(from || range.from);
   const toDate = String(to || range.to);
   const barbers = await prisma.barber.findMany({
-    where: { deletedAt: null, status: 'Ativo', role: 'Barbeiro' },
+    where: { tenantId, deletedAt: null, status: 'Ativo', role: 'Barbeiro' },
     select: barberPublicSelect,
   });
   return attachScheduleBlocks(barbers, fromDate, toDate);
@@ -132,18 +132,19 @@ const getBarbers = async (req, res) => {
     const from = String(req.query.from || range.from);
     const to = String(req.query.to || range.to);
 
+    const tenantId = tenantIdFromReq(req);
     if (!req.user) {
-      return res.json(await fetchPublicBarbers(from, to));
+      return res.json(await fetchPublicBarbers(tenantId, from, to));
     }
     if (req.user.role === 'Gerente') {
       const barbers = await prisma.barber.findMany({
-        where: { deletedAt: null },
+        where: { ...tenantWhere(req), deletedAt: null },
         select: barberSelect,
       });
       return res.json(await attachScheduleBlocks(barbers, from, to));
     }
     const self = await prisma.barber.findFirst({
-      where: { id: Number(req.user.id), deletedAt: null },
+      where: { id: Number(req.user.id), tenantId, deletedAt: null },
       select: barberSelect,
     });
     const list = self ? [self] : [];
@@ -168,7 +169,10 @@ const createBarber = async (req, res) => {
     }
 
     // Regra: Limpar e-mail antigo de barbeiro removido (Soft delete legacy fix)
-    const existingBarber = await prisma.barber.findUnique({ where: { email: data.email } });
+    const tenantId = tenantIdFromReq(req);
+    const existingBarber = await prisma.barber.findUnique({
+      where: { tenantId_email: { tenantId, email: data.email.toLowerCase() } },
+    });
     if (existingBarber) {
       if (existingBarber.deletedAt) {
         await prisma.barber.update({
@@ -190,6 +194,7 @@ const createBarber = async (req, res) => {
     const barber = await prisma.barber.create({
       data: {
         ...data,
+        tenantId,
         password: hashedPassword,
         shifts:
           shifts.length > 0
@@ -208,6 +213,7 @@ const createBarber = async (req, res) => {
       include: { shifts: true, scheduleBlocks: true },
     });
 
+    invalidatePublicCache(req.tenantSlug);
     const { password: _pw, ...barberData } = barber;
     res.status(201).json(barberData);
   } catch (error) {
@@ -267,8 +273,8 @@ const updateBarber = async (req, res) => {
     const hasBarberScalarUpdate = Object.keys(data).length > 0;
 
     if (!hasBarberScalarUpdate && !hasShiftUpdate) {
-      const existing = await prisma.barber.findUnique({
-        where: { id: Number(id) },
+      const existing = await prisma.barber.findFirst({
+        where: { id: Number(id), ...tenantWhere(req) },
         include: { shifts: true, scheduleBlocks: true },
       });
       if (!existing) return res.status(404).json({ message: 'Barbeiro não encontrado' });
@@ -309,6 +315,7 @@ const updateBarber = async (req, res) => {
       });
     });
     
+    invalidatePublicCache(req.tenantSlug);
     const { password: _, ...barberData } = barber;
     res.json(barberData);
   } catch (error) {
@@ -331,7 +338,9 @@ const deleteBarber = async (req, res) => {
     const { id } = req.params;
     
     // Buscar barbeiro antes de excluir para pegar o e-mail atual
-    const barber = await prisma.barber.findUnique({ where: { id: Number(id) } });
+    const barber = await prisma.barber.findFirst({
+      where: { id: Number(id), ...tenantWhere(req) },
+    });
     if (!barber) return res.status(404).json({ message: 'Barbeiro não encontrado' });
 
     await prisma.barber.update({
@@ -342,6 +351,7 @@ const deleteBarber = async (req, res) => {
         email: `${barber.email}_deleted_${Date.now()}` // Libera o e-mail
       }
     });
+    invalidatePublicCache(req.tenantSlug);
     res.sendStatus(204);
   } catch (error) {
     console.error('Delete error:', error);

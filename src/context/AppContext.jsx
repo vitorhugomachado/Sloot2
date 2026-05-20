@@ -1,16 +1,37 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { API_URL } from '../config/apiUrl';
+import { useTenant } from './TenantContext';
+import { getBootstrapQueryString } from '../utils/bookingHorizon';
+import { fetchBootstrapJson, clearBootstrapInFlight } from '../utils/bootstrapInFlight';
+import {
+  shouldLeadAppointmentsPoll,
+  releaseAppointmentsPollLeadership,
+} from '../utils/appointmentsPollLeader';
 import {
   readBootstrapFromCache,
   hasBootstrapCache,
   writeCache,
   clearClientDataCache,
 } from '../utils/clientDataCache';
+import {
+  getStaffToken,
+  setStaffToken as persistStaffToken,
+  getCustomerToken,
+  setCustomerToken as persistCustomerToken,
+} from '../utils/tenantAuthStorage';
 
 const AppContext = createContext();
 
-function getInitialBootstrapState() {
-  const cached = readBootstrapFromCache();
+const APPOINTMENTS_POLL_MS = Number(import.meta.env.VITE_APPOINTMENTS_POLL_MS) || 15000;
+const BOOTSTRAP_TIMEOUT_MS = 10000;
+
+function isStaffRoutePath(pathname) {
+  return /\/barbeiros(\/|$)/.test(pathname || '');
+}
+
+function getInitialBootstrapState(slug) {
+  const cached = readBootstrapFromCache(slug);
   return {
     barbers: Array.isArray(cached.barbers) ? cached.barbers : [],
     appointments: Array.isArray(cached.appointments) ? cached.appointments : [],
@@ -20,7 +41,9 @@ function getInitialBootstrapState() {
 }
 
 export const AppProvider = ({ children }) => {
-  const initialBootstrap = getInitialBootstrapState();
+  const { slug: tenantSlug, tenantHeaders, tenant, loading: tenantLoading } = useTenant();
+  const location = useLocation();
+  const initialBootstrap = getInitialBootstrapState(tenantSlug);
   const [barbers, setBarbers] = useState(initialBootstrap.barbers);
   const [appointments, setAppointments] = useState(initialBootstrap.appointments);
   const [services, setServices] = useState(initialBootstrap.services);
@@ -30,20 +53,26 @@ export const AppProvider = ({ children }) => {
   const [expenses, setExpenses] = useState([]);
   const [monthClosings, setMonthClosings] = useState([]);
   const [periodClosings, setPeriodClosings] = useState([]);
-  const [loading, setLoading] = useState(() => !hasBootstrapCache());
-  const [token, setToken] = useState(localStorage.getItem('barberpro_token'));
+  const [bootstrapLoading, setBootstrapLoading] = useState(
+    () => !hasBootstrapCache(tenantSlug) && !tenantLoading,
+  );
+  const [staffLoading, setStaffLoading] = useState(false);
+  /** Compat: bloqueio de shell público = bootstrapLoading */
+  const loading = bootstrapLoading;
+  const [token, setToken] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
-  
-  const [customerToken, setCustomerToken] = useState(localStorage.getItem('barberpro_customer_token'));
+
+  const [customerToken, setCustomerToken] = useState(null);
   const [currentCustomer, setCurrentCustomer] = useState(null);
 
   /** Evita que respostas PUT fora de ordem sobrescrevam permissões mais recentes. */
   const barberPermissionsRequestSeq = useRef(new Map());
 
   const apiFetch = async (url, options = {}) => {
-    const headers = { 
+    const headers = {
       'Content-Type': 'application/json',
-      ...options.headers 
+      ...tenantHeaders,
+      ...options.headers,
     };
 
     const authScope = options.authScope || 'auto';
@@ -57,150 +86,205 @@ export const AppProvider = ({ children }) => {
       headers['Authorization'] = `Bearer ${activeToken}`;
     }
 
-    const { authScope: _authScope, ...fetchOptions } = options;
-    const res = await fetch(url, { ...fetchOptions, headers });
+    const { authScope: _authScope, signal, ...fetchOptions } = options;
+    const res = await fetch(url, { ...fetchOptions, headers, signal });
     
-    if (res.status === 401 && !options.skipLogout) {
-      if (authScope === 'customer' && customerToken) customerLogout();
-      if (authScope === 'staff' && token) logout();
+    if (!options.skipLogout) {
+      if (res.status === 401) {
+        if (authScope === 'customer' && customerToken) customerLogout();
+        if (authScope === 'staff' && token) logout();
+      }
+      if (res.status === 403) {
+        if (authScope === 'customer' && customerToken) customerLogout();
+        if (authScope === 'staff' && token) logout();
+      }
     }
     return res;
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (!token) {
-          const bootstrapRes = await fetch(`${API_URL}/public/bootstrap`);
-          if (bootstrapRes.ok) {
-            const data = await bootstrapRes.json();
-            if (Array.isArray(data.barbers)) {
-              setBarbers(data.barbers);
-              writeCache('barbers', data.barbers);
-            }
-            if (Array.isArray(data.services)) {
-              setServices(data.services);
-              writeCache('services', data.services);
-            }
-            if (data.business != null) {
-              setBusinessInfo(data.business);
-              writeCache('business', data.business);
-            }
-            if (Array.isArray(data.appointments)) {
-              setAppointments(data.appointments);
-              writeCache('appointmentsPublic', data.appointments);
-            }
-          }
-        } else {
-          const [barbersRes, servicesRes, businessRes] = await Promise.all([
-            apiFetch(`${API_URL}/barbers`, { authScope: 'staff' }),
-            fetch(`${API_URL}/services`),
-            fetch(`${API_URL}/business`),
-          ]);
+  const applyBootstrapData = useCallback((data) => {
+    if (!data || typeof data !== 'object') return;
+    if (Array.isArray(data.barbers)) {
+      setBarbers(data.barbers);
+      writeCache('barbers', data.barbers, tenantSlug);
+    }
+    if (Array.isArray(data.services)) {
+      setServices(data.services);
+      writeCache('services', data.services, tenantSlug);
+    }
+    if (data.business != null) {
+      setBusinessInfo(data.business);
+      writeCache('business', data.business, tenantSlug);
+    }
+    if (Array.isArray(data.appointments)) {
+      setAppointments(data.appointments);
+      writeCache('appointmentsPublic', data.appointments, tenantSlug);
+    }
+  }, [tenantSlug]);
 
-          if (barbersRes.ok) {
-            setBarbers(await barbersRes.json());
-          }
-          if (servicesRes.ok) {
-            const servicesData = await servicesRes.json();
-            setServices(servicesData);
-            writeCache('services', servicesData);
-          }
-          if (businessRes.ok) {
-            const businessData = await businessRes.json();
-            setBusinessInfo(businessData);
-            writeCache('business', businessData);
+  const loadPublicBootstrap = useCallback(async (signal) => {
+    const qs = getBootstrapQueryString();
+    const url = `${API_URL}/public/bootstrap?${qs}`;
+    const timeout = new Promise((_, reject) => {
+      const id = setTimeout(() => reject(new Error('Bootstrap timeout')), BOOTSTRAP_TIMEOUT_MS);
+      signal?.addEventListener('abort', () => clearTimeout(id), { once: true });
+    });
+    const data = await Promise.race([
+      fetchBootstrapJson(url, tenantHeaders, tenantSlug),
+      timeout,
+    ]);
+    if (signal?.aborted) return;
+    applyBootstrapData(data);
+  }, [tenantHeaders, tenantSlug, applyBootstrapData]);
+
+  const hydrateFromCache = useCallback(() => {
+    const cached = readBootstrapFromCache(tenantSlug);
+    setBarbers(Array.isArray(cached.barbers) ? cached.barbers : []);
+    setServices(Array.isArray(cached.services) ? cached.services : []);
+    setAppointments(Array.isArray(cached.appointments) ? cached.appointments : []);
+    setBusinessInfo(
+      cached.businessInfo && typeof cached.businessInfo === 'object' ? cached.businessInfo : {},
+    );
+  }, [tenantSlug]);
+
+  useEffect(() => {
+    if (tenantLoading || !tenant) return undefined;
+
+    const ac = new AbortController();
+    const staffTok = getStaffToken(tenantSlug, tenant.id);
+    const custTok = getCustomerToken(tenantSlug, tenant.id);
+
+    setToken(staffTok);
+    setCustomerToken(custTok);
+    if (!staffTok) setCurrentUser(null);
+    if (!custTok) setCurrentCustomer(null);
+
+    hydrateFromCache();
+    setProducts([]);
+    setProductSales([]);
+    setExpenses([]);
+    setMonthClosings([]);
+    setPeriodClosings([]);
+
+    const hasCache = hasBootstrapCache(tenantSlug);
+    if (hasCache) setBootstrapLoading(false);
+
+    const runInit = async () => {
+      try {
+        await loadPublicBootstrap(ac.signal);
+        if (ac.signal.aborted) return;
+
+        if (staffTok) {
+          setStaffLoading(true);
+          try {
+            const userRes = await apiFetch(`${API_URL}/auth/me`, {
+              skipLogout: true,
+              authScope: 'staff',
+              signal: ac.signal,
+            });
+            if (ac.signal.aborted) return;
+            if (userRes.ok) {
+              const user = await userRes.json();
+              setCurrentUser(user);
+
+              const apptsRes = await apiFetch(`${API_URL}/appointments`, {
+                authScope: 'staff',
+                signal: ac.signal,
+              });
+              if (!ac.signal.aborted && apptsRes.ok) {
+                setAppointments(await apptsRes.json());
+              }
+
+              void Promise.all([
+                apiFetch(`${API_URL}/products`, { authScope: 'staff' }),
+                apiFetch(`${API_URL}/sales`, { authScope: 'staff' }),
+                apiFetch(`${API_URL}/expenses`, { authScope: 'staff' }),
+                apiFetch(`${API_URL}/month-closings`, { authScope: 'staff' }),
+                apiFetch(`${API_URL}/period-closings`, { authScope: 'staff' }),
+              ])
+                .then(async ([prodsRes, salesRes, expensesRes, closingsRes, periodCloseRes]) => {
+                  if (prodsRes.ok) setProducts(await prodsRes.json());
+                  if (salesRes.ok) setProductSales(await salesRes.json());
+                  if (expensesRes.ok) setExpenses(await expensesRes.json());
+                  if (closingsRes.ok) setMonthClosings(await closingsRes.json());
+                  if (periodCloseRes.ok) setPeriodClosings(await periodCloseRes.json());
+                })
+                .catch((err) => console.error('Erro ao carregar dados secundários:', err));
+            } else if (!ac.signal.aborted) {
+              persistStaffToken(tenantSlug, null);
+              setToken(null);
+              setCurrentUser(null);
+            }
+          } catch (e) {
+            if (!ac.signal.aborted) console.error('Auth error on reload:', e);
+          } finally {
+            if (!ac.signal.aborted) setStaffLoading(false);
           }
         }
 
-        if (token) {
-           try {
-             // Explicitly skip logout on this fetch if it's the first attempt
-             const userRes = await apiFetch(`${API_URL}/auth/me`, { skipLogout: true, authScope: 'staff' });
-             if (userRes.ok) {
-               const user = await userRes.json();
-               setCurrentUser(user);
-               
-               // Dados críticos primeiro (agenda/dashboard); resto em background
-               const apptsRes = await apiFetch(`${API_URL}/appointments`, { authScope: 'staff' });
-               if (apptsRes.ok) {
-                 setAppointments(await apptsRes.json());
-               }
-
-               void Promise.all([
-                 apiFetch(`${API_URL}/products`, { authScope: 'staff' }),
-                 apiFetch(`${API_URL}/sales`, { authScope: 'staff' }),
-                 apiFetch(`${API_URL}/expenses`, { authScope: 'staff' }),
-                 apiFetch(`${API_URL}/month-closings`, { authScope: 'staff' }),
-                 apiFetch(`${API_URL}/period-closings`, { authScope: 'staff' }),
-               ]).then(async ([prodsRes, salesRes, expensesRes, closingsRes, periodCloseRes]) => {
-                 if (prodsRes.ok) setProducts(await prodsRes.json());
-                 if (salesRes.ok) setProductSales(await salesRes.json());
-                 if (expensesRes.ok) setExpenses(await expensesRes.json());
-                 if (closingsRes.ok) setMonthClosings(await closingsRes.json());
-                 if (periodCloseRes.ok) setPeriodClosings(await periodCloseRes.json());
-               }).catch((err) => console.error('Erro ao carregar dados secundários:', err));
-             } else {
-               logout();
-             }
-           } catch(e) {
-             console.error("Auth error on reload:", e);
-           }
-         }
-
-        if (customerToken) {
+        if (custTok && !ac.signal.aborted) {
           try {
-            const custRes = await apiFetch(`${API_URL}/customer-auth/me`, { authScope: 'customer' });
-            if (custRes.ok) {
-              setCurrentCustomer(await custRes.json());
-            } else {
-              customerLogout();
+            const custRes = await apiFetch(`${API_URL}/customer-auth/me`, {
+              authScope: 'customer',
+              signal: ac.signal,
+            });
+            if (!ac.signal.aborted) {
+              if (custRes.ok) setCurrentCustomer(await custRes.json());
+              else customerLogout();
             }
-          } catch(e) {
-            console.error("Customer auth error:", e);
+          } catch (e) {
+            if (!ac.signal.aborted) console.error('Customer auth error:', e);
           }
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
+        if (!ac.signal.aborted) console.error('Error fetching data:', error);
       } finally {
-        setLoading(false);
+        if (!ac.signal.aborted) setBootstrapLoading(false);
       }
     };
-    fetchData();
-  }, [token, customerToken]);
+
+    runInit();
+
+    return () => {
+      ac.abort();
+      clearBootstrapInFlight(tenantSlug);
+    };
+  }, [tenantSlug, tenant?.id, tenantLoading, tenant, hydrateFromCache, loadPublicBootstrap]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !isStaffRoutePath(location.pathname)) return undefined;
+
+    const mergeAppointments = (data) => {
+      if (!Array.isArray(data)) return;
+      setAppointments((prev) => {
+        const prevMap = new Map(prev.map((app) => [Number(app.id), app]));
+        return data.map((app) => {
+          const oldApp = prevMap.get(Number(app.id));
+          if (!oldApp) return app;
+          if (oldApp.status !== app.status) {
+            return { ...app, _updatedAtLocal: Date.now() };
+          }
+          if (oldApp._updatedAtLocal) {
+            return { ...app, _updatedAtLocal: oldApp._updatedAtLocal };
+          }
+          return app;
+        });
+      });
+    };
 
     const syncAppointments = async () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      if (!shouldLeadAppointmentsPoll(tenantSlug)) return;
       try {
         const apptsRes = await apiFetch(`${API_URL}/appointments`, { authScope: 'staff' });
         if (!apptsRes.ok) return;
-        const data = await apptsRes.json();
-        if (Array.isArray(data)) {
-          setAppointments(prev => {
-            const prevMap = new Map(prev.map(app => [Number(app.id), app]));
-            return data.map(app => {
-              const oldApp = prevMap.get(Number(app.id));
-              if (!oldApp) return app;
-              const statusChanged = oldApp.status !== app.status;
-              if (statusChanged) {
-                return { ...app, _updatedAtLocal: Date.now() };
-              }
-              if (oldApp._updatedAtLocal) {
-                return { ...app, _updatedAtLocal: oldApp._updatedAtLocal };
-              }
-              return app;
-            });
-          });
-        }
+        mergeAppointments(await apptsRes.json());
       } catch (error) {
         console.error('Error syncing appointments:', error);
       }
     };
 
-    const intervalId = setInterval(syncAppointments, 15000);
+    const intervalId = setInterval(syncAppointments, APPOINTMENTS_POLL_MS);
     const onVisible = () => {
       if (document.visibilityState === 'visible') syncAppointments();
     };
@@ -208,14 +292,15 @@ export const AppProvider = ({ children }) => {
     return () => {
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', onVisible);
+      releaseAppointmentsPollLeadership(tenantSlug);
     };
-  }, [token]);
+  }, [token, tenantSlug, location.pathname]);
 
   const login = async (email, password) => {
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      headers: { 'Content-Type': 'application/json', ...tenantHeaders },
+      body: JSON.stringify({ email, password }),
     });
     
     if (!res.ok) {
@@ -226,14 +311,14 @@ export const AppProvider = ({ children }) => {
     const { token: newToken, user } = await res.json();
     setToken(newToken);
     setCurrentUser(user);
-    localStorage.setItem('barberpro_token', newToken);
+    persistStaffToken(tenantSlug, newToken);
     return user;
   };
 
   const customerLogin = async (email, password) => {
     const res = await fetch(`${API_URL}/customer-auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...tenantHeaders },
       body: JSON.stringify({
         email: email != null ? String(email).trim().toLowerCase() : email,
         password,
@@ -246,7 +331,7 @@ export const AppProvider = ({ children }) => {
     }
 
     const { token: newToken, user } = await res.json();
-    localStorage.setItem('barberpro_customer_token', newToken);
+    persistCustomerToken(tenantSlug, newToken);
     setCustomerToken(newToken);
     setCurrentCustomer(user);
     return user;
@@ -255,8 +340,8 @@ export const AppProvider = ({ children }) => {
   const customerGoogleLogin = async (credential) => {
     const res = await fetch(`${API_URL}/customer-auth/google`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ credential })
+      headers: { 'Content-Type': 'application/json', ...tenantHeaders },
+      body: JSON.stringify({ credential }),
     });
 
     if (!res.ok) {
@@ -265,7 +350,7 @@ export const AppProvider = ({ children }) => {
     }
 
     const { token: newToken, user } = await res.json();
-    localStorage.setItem('barberpro_customer_token', newToken);
+    persistCustomerToken(tenantSlug, newToken);
     setCustomerToken(newToken);
     setCurrentCustomer(user);
     return user;
@@ -278,8 +363,8 @@ export const AppProvider = ({ children }) => {
     };
     const res = await fetch(`${API_URL}/customer-auth/register`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      headers: { 'Content-Type': 'application/json', ...tenantHeaders },
+      body: JSON.stringify(payload),
     });
     
     if (!res.ok) {
@@ -294,7 +379,7 @@ export const AppProvider = ({ children }) => {
     }
 
     const { token: newToken, user } = await res.json();
-    localStorage.setItem('barberpro_customer_token', newToken);
+    persistCustomerToken(tenantSlug, newToken);
     setCustomerToken(newToken);
     setCurrentCustomer(user);
     return user;
@@ -322,15 +407,16 @@ export const AppProvider = ({ children }) => {
   };
 
   const customerLogout = () => {
-    localStorage.removeItem('barberpro_customer_token');
+    persistCustomerToken(tenantSlug, null);
     setCustomerToken(null);
     setCurrentCustomer(null);
   };
 
   const logout = () => {
+    persistStaffToken(tenantSlug, null);
     setToken(null);
     setCurrentUser(null);
-    localStorage.removeItem('barberpro_token');
+    void loadPublicBootstrap();
   };
 
   const updateBusinessInfo = async (newData) => {
@@ -343,8 +429,8 @@ export const AppProvider = ({ children }) => {
       if (res.ok) {
         const updated = await res.json();
         setBusinessInfo(updated);
-        clearClientDataCache();
-        writeCache('business', updated);
+        clearClientDataCache(tenantSlug);
+        writeCache('business', updated, tenantSlug);
         return updated;
       }
       const err = await res.json();
@@ -380,13 +466,13 @@ export const AppProvider = ({ children }) => {
             })
             .catch((err) => console.error('Erro ao sincronizar agendamentos:', err));
         } else {
-          fetch(`${API_URL}/appointments/public`)
+          fetch(`${API_URL}/appointments/public?${getBootstrapQueryString()}`, { headers: tenantHeaders })
             .then(async (r) => {
               if (r.ok) {
                 const data = await r.json();
                 if (Array.isArray(data)) {
                   setAppointments(data);
-                  writeCache('appointmentsPublic', data);
+                  writeCache('appointmentsPublic', data, tenantSlug);
                 }
               }
             })
@@ -602,8 +688,8 @@ export const AppProvider = ({ children }) => {
         const savedService = await res.json();
         setServices((prev) => {
           const next = [...prev, savedService];
-          clearClientDataCache();
-          writeCache('services', next);
+          clearClientDataCache(tenantSlug);
+          writeCache('services', next, tenantSlug);
           return next;
         });
     }
@@ -614,8 +700,8 @@ export const AppProvider = ({ children }) => {
     if (res.ok) {
       setServices((prev) => {
         const next = prev.filter(s => s.id !== id);
-        clearClientDataCache();
-        writeCache('services', next);
+        clearClientDataCache(tenantSlug);
+        writeCache('services', next, tenantSlug);
         return next;
       });
     }
@@ -630,8 +716,8 @@ export const AppProvider = ({ children }) => {
         const updated = await res.json();
         setServices((prev) => {
           const next = prev.map(s => s.id === id ? updated : s);
-          clearClientDataCache();
-          writeCache('services', next);
+          clearClientDataCache(tenantSlug);
+          writeCache('services', next, tenantSlug);
           return next;
         });
     }
@@ -882,7 +968,7 @@ export const AppProvider = ({ children }) => {
       sellProduct, updateBusinessInfo,
       getFinancialStats, getBarberRanking,
       addExpense, removeExpense, updateExpense, refreshMonthClosings, createMonthClosing, refreshPeriodClosings, createPeriodClosing,
-      login, logout, currentUser, token, loading,
+      login, logout, currentUser, token, loading, bootstrapLoading, staffLoading,
       currentCustomer, isCustomerAuthenticated: !!currentCustomer, customerLogin, customerGoogleLogin, customerRegister, customerLogout,
       getCustomerAppointments, updateCustomerProfile,
       customerUpdateAppointmentStatus, customerCancelAppointment,

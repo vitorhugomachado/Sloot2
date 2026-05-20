@@ -2,9 +2,8 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const compression = require('compression');
-const authMiddleware = require('./middlewares/authMiddleware');
-const { getPeriodClosings, createPeriodClosing } = require('./controllers/periodClosingController');
 const apiRoutes = require('./routes/api');
+const { getDefaultTenantSlug } = require('./lib/tenantHelpers');
 
 const app = express();
 
@@ -17,10 +16,6 @@ app.use(cors());
 // Fotos em base64 no cadastro de barbeiro podem passar de 10mb; limite maior evita 500 genérico do body-parser
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
-// Fechamento por período: registar antes do router `/api` para garantir match (evita 404 se o stack do router mudar).
-app.get('/api/period-closings', authMiddleware, getPeriodClosings);
-app.post('/api/period-closings', authMiddleware, createPeriodClosing);
 
 // API Routes
 app.use('/api', apiRoutes);
@@ -53,10 +48,19 @@ if (process.env.NODE_ENV === 'production') {
   const distDir = path.join(__dirname, '../../dist');
   const indexHtml = path.resolve(distDir, 'index.html');
 
-  // Links antigos multi-tenant (ex.: /barberone/cliente → /cliente)
+  const defaultSlug = getDefaultTenantSlug();
+
   app.use((req, res, next) => {
+    if (req.path === '/cliente' || req.path.startsWith('/cliente/')) {
+      const rest = req.path.slice('/cliente'.length) || '';
+      return res.redirect(301, `/${defaultSlug}/cliente${rest}`);
+    }
+    if (req.path === '/barbeiros' || req.path.startsWith('/barbeiros/')) {
+      const rest = req.path.slice('/barbeiros'.length) || '';
+      return res.redirect(301, `/${defaultSlug}/barbeiros${rest}`);
+    }
     if (req.path === '/barberone' || req.path.startsWith('/barberone/')) {
-      return res.redirect(301, '/cliente');
+      return res.redirect(301, `/${defaultSlug}/cliente`);
     }
     next();
   });

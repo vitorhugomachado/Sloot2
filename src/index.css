@@ -7051,3 +7051,298 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   padding: 0;
 }
 
+/* Platform admin (/admin) */
+.platform-admin-page {
+  min-height: 100vh;
+  background: var(--bg-color, #f8fafc);
+  padding: 1.25rem;
+}
+
+.platform-admin-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.platform-admin-header-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  background: var(--panel-bg, rgba(0, 0, 0, 0.04));
+}
+
+.platform-logout-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.platform-admin-main {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.platform-tenants-card {
+  padding: 1.5rem;
+}
+
+.platform-tenants-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.platform-page-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.platform-page-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.platform-form-error {
+  color: var(--danger, #c62828);
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}
+
+.platform-loading {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.platform-table-wrap {
+  overflow-x: auto;
+}
+
+.platform-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.platform-table th,
+.platform-table td {
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+}
+
+.platform-table-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 2rem !important;
+}
+
+.platform-slug {
+  font-size: 0.85rem;
+  background: var(--panel-bg, rgba(0, 0, 0, 0.04));
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.platform-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.platform-table-btn {
+  padding: 0.35rem 0.6rem !important;
+  font-size: 0.8rem !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.platform-status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.platform-status-badge--active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #15803d;
+}
+
+.platform-status-badge--suspended {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+
+.platform-success-banner {
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.platform-link-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+}
+
+.platform-link-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.platform-link-list a {
+  word-break: break-all;
+  color: var(--accent-color);
+}
+
+.platform-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.platform-modal {
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.25rem;
+}
+
+.platform-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.platform-modal-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.platform-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.platform-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.platform-field-hint {
+  font-weight: 400;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.platform-modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.platform-layout {
+  min-height: 100vh;
+  background: var(--bg-color, #f8fafc);
+}
+
+.platform-main-content {
+  padding: 1.25rem;
+  max-width: 1100px;
+}
+
+.platform-desktop-header {
+  margin-bottom: 1rem;
+}
+
+.platform-desktop-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.platform-desktop-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.platform-sidebar-subtitle {
+  margin: -0.75rem 0 1rem 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.platform-sidebar-subtitle--hidden {
+  opacity: 0;
+  height: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+button.nav-item {
+  width: 100%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.platform-mobile-header {
+  z-index: 1001;
+}
+
+@media (max-width: 768px) {
+  .platform-admin-header {
+    flex-wrap: wrap;
+  }
+
+  .platform-tenants-toolbar .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .platform-desktop-header {
+    display: none;
+  }
+}
+

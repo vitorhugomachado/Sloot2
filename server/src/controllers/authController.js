@@ -1,16 +1,18 @@
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma.js');
 const { comparePassword, generateToken } = require('../utils/auth');
-
-const prisma = new PrismaClient();
+const { tenantIdFromReq } = require('../lib/tenantHelpers');
 
 const login = async (req, res) => {
   const rawEmail = req.body?.email;
   const password = req.body?.password;
-  const email = typeof rawEmail === 'string' ? rawEmail.trim() : rawEmail;
+  const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : rawEmail;
+  const tenantId = tenantIdFromReq(req);
 
   try {
-    const barber = await prisma.barber.findUnique({ where: { email } });
-    
+    const barber = await prisma.barber.findUnique({
+      where: { tenantId_email: { tenantId, email } },
+    });
+
     if (!barber) {
       return res.status(401).json({ message: 'E-mail ou senha incorretos' });
     }
@@ -24,11 +26,14 @@ const login = async (req, res) => {
       return res.status(403).json({ message: 'Sua conta está suspensa pelo administrador' });
     }
 
-    const token = generateToken({ id: barber.id, role: barber.role });
-    
-    // Remove password from response
+    const token = generateToken({
+      id: barber.id,
+      role: barber.role,
+      tenantId: barber.tenantId,
+    });
+
     const { password: _, ...barberData } = barber;
-    
+
     res.json({ token, user: barberData });
   } catch (error) {
     console.error('Login error:', error);
@@ -38,7 +43,9 @@ const login = async (req, res) => {
 
 const getMe = async (req, res) => {
   try {
-    const barber = await prisma.barber.findUnique({ where: { id: req.user.id } });
+    const barber = await prisma.barber.findFirst({
+      where: { id: req.user.id, tenantId: req.user.tenantId },
+    });
     if (!barber) return res.status(404).json({ message: 'Usuário não encontrado' });
     const { password: _, ...barberData } = barber;
     res.json(barberData);

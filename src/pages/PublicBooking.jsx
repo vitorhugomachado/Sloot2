@@ -1,3 +1,4 @@
+/** @deprecated Substituído por PublicBookingPage + PublicBookingPreview. Mantido apenas como referência. */
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Scissors, Calendar, Clock, Check, ChevronLeft, ChevronRight, User, Phone, Bell, LogIn } from 'lucide-react';
 import { useApp } from '../context/AppContext';

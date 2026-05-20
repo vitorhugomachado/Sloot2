@@ -1,9 +1,9 @@
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 const { normalizeBookingTime } = require('../utils/appointmentTime');
 const { parseDurationMinutes, validateBarberAppointmentSlot } = require('../utils/barberAvailability');
 const { invalidatePublicCache } = require('../middlewares/publicCache');
-
-const prisma = new PrismaClient();
+const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
+const { parseDateRangeFromQuery, publicBookingDateRange } = require('../lib/bookingHorizon');
 
 const BLOCKING_STATUSES = ['Agendado', 'Confirmado', 'Em progresso'];
 const includeBarber = { Barber: { select: { name: true } } };
@@ -20,7 +20,7 @@ function appointmentStartDate(existing) {
 
 const getAppointments = async (req, res) => {
   try {
-    const where = {};
+    const where = { ...tenantWhere(req) };
     if (req.user.role !== 'Gerente') {
       where.barberId = req.user.id;
     }
@@ -37,9 +37,14 @@ const getAppointments = async (req, res) => {
 };
 
 /** Lista mínima para o agendamento público (horários ocupados, sem auth). */
-async function fetchPublicAppointments() {
+async function fetchPublicAppointments(tenantId, range) {
+  const { from, to } = range || publicBookingDateRange();
   const appointments = await prisma.appointment.findMany({
-    where: { status: { in: BLOCKING_STATUSES } },
+    where: {
+      tenantId,
+      status: { in: BLOCKING_STATUSES },
+      date: { gte: from, lte: to },
+    },
     select: { id: true, date: true, time: true, barberId: true, status: true },
   });
   return appointments.map((a) => ({
@@ -50,7 +55,8 @@ async function fetchPublicAppointments() {
 
 const getPublicAppointments = async (req, res) => {
   try {
-    res.json(await fetchPublicAppointments());
+    const range = parseDateRangeFromQuery(req.query);
+    res.json(await fetchPublicAppointments(tenantIdFromReq(req), range));
   } catch (error) {
     console.error('Error fetching public appointments:', error);
     res.status(500).json({ message: 'Erro ao buscar disponibilidade' });
@@ -88,8 +94,9 @@ const createAppointment = async (req, res) => {
       return res.status(403).json({ message: 'Não pode criar agendamento para outro profissional.' });
     }
 
+    const tenantId = tenantIdFromReq(req);
     const barber = await prisma.barber.findFirst({
-      where: { id: normalizedBarberId, deletedAt: null },
+      where: { id: normalizedBarberId, tenantId, deletedAt: null },
       include: { shifts: true },
     });
     if (!barber) {
@@ -97,7 +104,7 @@ const createAppointment = async (req, res) => {
     }
 
     const serviceRow = await prisma.service.findFirst({
-      where: { name: String(service) },
+      where: { tenantId, name: String(service) },
       select: { duration: true },
     });
     const durationMinutes = parseDurationMinutes(
@@ -125,6 +132,7 @@ const createAppointment = async (req, res) => {
     }
 
     const data = {
+      tenantId,
       customer: String(customer),
       phone: phone ? String(phone) : null,
       service: String(service),
@@ -140,7 +148,7 @@ const createAppointment = async (req, res) => {
       data,
       include: includeBarber,
     });
-    invalidatePublicCache();
+    invalidatePublicCache(req.tenantSlug);
     res.status(201).json(appointment);
   } catch (error) {
     console.error('Create appointment error:', error);
@@ -154,7 +162,9 @@ const createAppointment = async (req, res) => {
 const updateAppointment = async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const existing = await prisma.appointment.findUnique({ where: { id } });
+    const existing = await prisma.appointment.findFirst({
+      where: { id, ...tenantWhere(req) },
+    });
     if (!existing) {
       return res.status(404).json({ message: 'Agendamento não encontrado' });
     }
@@ -196,7 +206,7 @@ const updateAppointment = async (req, res) => {
         data: payload,
         include: includeBarber,
       });
-      invalidatePublicCache();
+      invalidatePublicCache(req.tenantSlug);
       return res.json(appointment);
     }
 
@@ -231,7 +241,7 @@ const updateAppointment = async (req, res) => {
       data,
       include: includeBarber,
     });
-    invalidatePublicCache();
+    invalidatePublicCache(req.tenantSlug);
     res.json(appointment);
   } catch (error) {
     res.status(500).json({ message: 'Erro ao atualizar agendamento' });

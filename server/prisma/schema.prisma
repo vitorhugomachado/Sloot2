@@ -8,10 +8,43 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model Tenant {
+  id             Int      @id @default(autoincrement())
+  slug           String   @unique
+  name           String
+  status         String   @default("active")
+  phone          String   @default("")
+  email          String   @default("")
+  address        String   @default("")
+  logo_url       String?
+  instagram_url  String?
+  facebook_url   String?
+  whatsapp_url   String?
+  show_instagram Boolean  @default(false)
+  show_facebook  Boolean  @default(false)
+  show_whatsapp  Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  barbers                 Barber[]
+  customers               Customer[]
+  services                Service[]
+  appointments            Appointment[]
+  products                Product[]
+  productSales            ProductSale[]
+  expenses                Expense[]
+  monthClosings           MonthClosing[]
+  financialPeriodClosings FinancialPeriodClosing[]
+  scheduleBlocks          BarberScheduleBlock[]
+  workingHours            WorkingHours[]
+  holidays                Holiday[]
+}
+
 model Barber {
   id            Int             @id @default(autoincrement())
+  tenantId      Int
   name          String
-  email         String          @unique
+  email         String
   password      String
   role          String
   status        String          @default("Ativo")
@@ -24,25 +57,33 @@ model Barber {
   commission    Float?          @default(50)
   chave_pix     String?
   data_admissao String?
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   Appointment      Appointment[]
   ProductSale      ProductSale[]
   shifts           WorkingShifts[]
   scheduleBlocks   BarberScheduleBlock[]
 
+  @@unique([tenantId, email], map: "Barber_tenantId_email_key")
+  @@index([tenantId], map: "idx_barber_tenant")
   @@index([deletedAt], map: "idx_barber_deleted")
 }
 
 model Service {
   id       Int    @id @default(autoincrement())
+  tenantId Int
   name     String
   price    Float
   duration String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId], map: "idx_service_tenant")
 }
 
 model Customer {
   id        Int       @id @default(autoincrement())
+  tenantId  Int
   name      String
-  email     String?   @unique
+  email     String?
   password  String?
   phone     String
   createdAt DateTime  @default(now())
@@ -50,12 +91,16 @@ model Customer {
   notes     String?
   tags      Json?
   updatedAt DateTime  @default(now()) @updatedAt
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@unique([tenantId, email], map: "Customer_tenantId_email_key")
+  @@index([tenantId], map: "idx_customer_tenant")
   @@index([phone], map: "idx_customer_phone")
 }
 
 model Appointment {
   id              Int     @id @default(autoincrement())
+  tenantId        Int
   customer        String
   phone           String?
   service         String
@@ -66,10 +111,11 @@ model Appointment {
   price           Float
   payments        Json?
   customer_id     Int?
-  /// Avaliação 1–5 dada pelo cliente após o atendimento (área do cliente).
   customer_rating Int?
+  tenant          Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   Barber          Barber  @relation(fields: [barberId], references: [id])
 
+  @@index([tenantId], map: "idx_appointment_tenant")
   @@index([barberId], map: "idx_appointment_barber")
   @@index([date], map: "idx_appointment_date")
   @@index([status], map: "idx_appointment_status")
@@ -77,15 +123,20 @@ model Appointment {
 
 model Product {
   id       Int    @id @default(autoincrement())
+  tenantId Int
   name     String
   price    Float
   cost     Float
   stock    Int
   category String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId], map: "idx_product_tenant")
 }
 
 model ProductSale {
   id          Int     @id @default(autoincrement())
+  tenantId    Int
   productId   Int
   productName String
   price       Float
@@ -93,50 +144,44 @@ model ProductSale {
   quantity    Int
   date        String
   barberId    Int?
+  tenant      Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   Barber      Barber? @relation(fields: [barberId], references: [id])
 
+  @@index([tenantId], map: "idx_productsale_tenant")
   @@index([date], map: "idx_productsale_date")
-}
-
-model BusinessInfo {
-  id             Int     @id @default(1)
-  name           String
-  phone          String
-  email          String
-  address        String
-  logo_url       String?
-  instagram_url  String?
-  facebook_url   String?
-  whatsapp_url   String?
-  show_instagram Boolean @default(false)
-  show_facebook  Boolean @default(false)
-  show_whatsapp  Boolean @default(false)
 }
 
 model Expense {
   id          Int     @id @default(autoincrement())
+  tenantId    Int
   description String
   amount      Float
   date        String
   category    String?
+  tenant      Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId], map: "idx_expense_tenant")
 }
 
-/// Fechamento financeiro mensal (um registo por YYYY-MM)
 model MonthClosing {
   id           Int      @id @default(autoincrement())
-  yearMonth    String   @unique
+  tenantId     Int
+  yearMonth    String
   closedAt     DateTime @default(now())
   closedById   Int?
   closedByName String?
   snapshot     Json
   notes        String?
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@unique([tenantId, yearMonth], map: "MonthClosing_tenantId_yearMonth_key")
+  @@index([tenantId], map: "idx_monthclosing_tenant")
   @@index([yearMonth], map: "idx_monthclosing_year_month")
 }
 
-/// Fechamento por intervalo — SHOP (barberId=0) ou BARBER (id do profissional)
 model FinancialPeriodClosing {
   id           Int      @id @default(autoincrement())
+  tenantId     Int
   startDate    String
   endDate      String
   scope        String
@@ -146,27 +191,35 @@ model FinancialPeriodClosing {
   closedByName String?
   snapshot     Json
   notes        String?
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  @@unique([startDate, endDate, scope, barberId], map: "uniq_period_closing_range_scope_barber")
+  @@unique([tenantId, startDate, endDate, scope, barberId], map: "uniq_period_closing_tenant_range_scope_barber")
+  @@index([tenantId], map: "idx_period_closing_tenant")
   @@index([closedAt], map: "idx_period_closing_closed")
 }
 
 model WorkingHours {
-  dia_semana      Int       @id
+  tenantId        Int
+  dia_semana      Int
   is_aberto       Boolean?  @default(true)
   hora_abertura   DateTime  @db.Time(6)
   hora_fechamento DateTime  @db.Time(6)
   almoco_inicio   DateTime? @db.Time(6)
   almoco_fim      DateTime? @db.Time(6)
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@id([tenantId, dia_semana])
   @@map("horarios_funcionamento")
 }
 
 model Holiday {
   id        BigInt   @id @default(autoincrement())
-  data      DateTime @unique @db.Date
+  tenantId  Int
+  data      DateTime @db.Date
   descricao String?
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@unique([tenantId, data], map: "Holiday_tenantId_data_key")
   @@map("feriados")
 }
 
@@ -184,17 +237,19 @@ model WorkingShifts {
   @@map("horarios_trabalho")
 }
 
-/// Fechamentos pontuais (folga, horário bloqueado em data específica)
 model BarberScheduleBlock {
   id        Int      @id @default(autoincrement())
+  tenantId  Int
   barberId  Int
   date      String
   startTime String?
   endTime   String?
   reason    String?
   createdAt DateTime @default(now())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   barber    Barber   @relation(fields: [barberId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId], map: "idx_schedule_block_tenant")
   @@index([barberId, date], map: "idx_barber_schedule_block_date")
   @@map("barber_schedule_blocks")
 }
