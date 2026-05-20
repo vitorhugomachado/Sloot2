@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import BookingPreviewFlowLayout from './BookingPreviewFlowLayout';
 
@@ -37,6 +37,12 @@ export default function BookingPreviewDateTimeStep({
     : { slotsToDisplay: [], isWithinAnyShift: () => false, taken: new Set() };
 
   const stepperCurrent = selectedTime ? 4 : 3;
+  const timeSectionRef = useRef(null);
+
+  useEffect(() => {
+    if (!selectedDate || selectedTime) return;
+    timeSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [selectedDate, selectedTime]);
 
   return (
     <BookingPreviewFlowLayout
@@ -45,6 +51,7 @@ export default function BookingPreviewDateTimeStep({
       onBack={onBack}
       onContinue={onContinue}
       continueDisabled={!selectedDate || !selectedTime}
+      selectionId={selectedTime ? `${selectedDate}|${selectedTime}` : selectedDate}
     >
       <h2 className="bp-section-title bp-section-title--inline">3. Escolha a data</h2>
 
@@ -91,7 +98,12 @@ export default function BookingPreviewDateTimeStep({
         </button>
       </div>
 
-      <h2 className="bp-section-title bp-section-title--inline bp-section-title--spaced">4. Escolha o horário</h2>
+      <h2
+        ref={timeSectionRef}
+        className="bp-section-title bp-section-title--inline bp-section-title--spaced"
+      >
+        4. Escolha o horário
+      </h2>
 
       {!selectedDate ? (
         <p className="bp-empty bp-empty--inline">Selecione uma data acima.</p>
@@ -121,6 +133,10 @@ export default function BookingPreviewDateTimeStep({
             );
           })}
         </div>
+      )}
+
+      {selectedDate && !selectedTime && (
+        <p className="bp-continue-hint">Selecione um horário para ativar o botão Continuar.</p>
       )}
     </BookingPreviewFlowLayout>
   );

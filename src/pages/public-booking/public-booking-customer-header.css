@@ -1,3 +1,45 @@
+/* Mobile: cabeçalho fixo + fluxo com rodapé Continuar sempre visível */
+.public-booking-page.public-booking-page--v2 {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  background: #fafbfc;
+}
+
+.public-booking-page--v2 > .booking-preview.booking-preview--v2 {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.public-booking-page--v2 .booking-preview--v2 {
+  min-height: 0;
+}
+
+.public-booking-page--v2 .bp-flow {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-width: 100%;
+  margin: 0;
+}
+
+@media (min-width: 1024px) {
+  .public-booking-page.public-booking-page--v2 {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .public-booking-page--v2 > .booking-preview.booking-preview--v2 {
+    flex: none;
+    overflow: visible;
+  }
+}
+
 .bp-customer-header {
   display: flex;
   align-items: center;
@@ -9,6 +51,7 @@
   position: sticky;
   top: 0;
   z-index: 40;
+  flex-shrink: 0;
 }
 
 .bp-customer-header__brand {

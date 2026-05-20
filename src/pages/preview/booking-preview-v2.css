@@ -608,9 +608,21 @@
 }
 
 .bp-btn-continuar:disabled {
-  opacity: 0.4;
+  opacity: 0.65;
   cursor: not-allowed;
   box-shadow: none;
+  background: #a5a9ef;
+}
+
+.bp-continue-hint {
+  margin: 0.75rem 0 0;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--bp-text-muted);
+  text-align: center;
+  background: var(--bp-primary-soft);
+  border-radius: var(--bp-radius-sm);
 }
 
 .bp-btn-outline {
