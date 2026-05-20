@@ -33,8 +33,12 @@ function buildBusinessUpdatePayload(body) {
   return data;
 }
 
+/** v2 — dados em Tenant (não usa tabela BusinessInfo) */
 const getBusinessInfo = async (req, res, next) => {
   try {
+    if (!req.tenant) {
+      return res.status(400).json({ message: 'Barbearia não resolvida.' });
+    }
     res.json(publicTenantShape(req.tenant));
   } catch (err) {
     next(err);

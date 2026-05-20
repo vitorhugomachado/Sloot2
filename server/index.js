@@ -31,4 +31,5 @@ function runMigrations() {
 }
 
 runMigrations();
+require('./scripts/verify_deploy_source');
 require('./src/server');
