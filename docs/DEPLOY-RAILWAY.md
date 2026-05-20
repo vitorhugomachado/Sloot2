@@ -14,7 +14,7 @@ Um único serviço: Express serve `/api` + SPA React (`dist`) na mesma URL.
 | `JWT_SECRET` (local) | `dev-jwt-secret-change-in-production` → **gera outro** antes de abrir ao público |
 | Google OAuth | **Vazio** no `server/.env` — login Google no `/cliente` só funciona depois de criar Client ID |
 | `VITE_API_URL` | Não usar — em produção o front chama `/api` na mesma origem |
-| Build / Start | `railway.toml`: `npm ci && npm run build` → `npm run start:prod` |
+| Build / Start | `Dockerfile` (Node 20 Alpine) → `node server/index.js` (`railway.toml`) |
 
 **Não precisas** de Postgres no Railway se continuares no Supabase (recomendado: já tens dados e migrations lá).
 
@@ -23,9 +23,9 @@ Um único serviço: Express serve `/api` + SPA React (`dist`) na mesma URL.
 ## 1. Criar o projeto
 
 1. [Railway](https://railway.com) → **New Project** → **Deploy from GitHub repo** (repositório Sloot).
-2. O Railway usa automaticamente:
-   - **Build:** `npm run build:railway` (evita erro `EBUSY` do `npm ci` no cache do Nixpacks)
-   - **Start:** `npm run start:prod` (`prisma migrate deploy` + `node server/index.js`)
+2. O Railway usa automaticamente (`railway.toml` + `Dockerfile`):
+   - **Build:** imagem Docker (Vite + Prisma), sem Nixpacks
+   - **Start:** `node server/index.js` (`prisma migrate deploy` no arranque)
 
 ---
 
@@ -140,7 +140,9 @@ railway up
 
 | Problema | Solução |
 |----------|---------|
-| Build `EBUSY` em `node_modules/.cache` | Usar `npm run build:railway` (já em `railway.toml`); ou variável `NIXPACKS_NO_CACHE=1` + redeploy |
+| Build Nix `No space left on device` / `nix-env` falha | O projeto usa **Dockerfile** (não Nixpacks). Faz push de `main`, **Clear build cache** no serviço Railway → **Redeploy** |
+| App em commit antigo após push | Deploy novo falhou — Railway mantém a última build **com sucesso**. Corrige o build e redeploy; confirma branch **main** nas Settings do serviço |
+| Build `EBUSY` em `node_modules/.cache` | Com Dockerfile isto deixa de aplicar; se voltares a Nixpacks: `npm run build:railway` ou `NIXPACKS_NO_CACHE=1` |
 | Build falha Prisma | `DATABASE_URL` / `DIRECT_URL` no serviço antes do deploy |
 | `P1001` / migrate no build | Migrations correm no **start**, não no build; corrige `DIRECT_URL` (URI Direct no Supabase) |
 | Migration falha Supabase | `DIRECT_URL` = Connection string **Direct** (não pooler `:5432`) |
@@ -154,7 +156,8 @@ railway up
 
 ## Ficheiros do projeto
 
-- `railway.toml` — build, start, healthcheck `/health`
-- `nixpacks.toml` — Node 20, `NODE_ENV=production`
+- `railway.toml` — Dockerfile build, start, healthcheck `/health`
+- `Dockerfile` — build Node 20 Alpine (sem Nix)
+- `nixpacks.toml` — legado; ignorado quando `builder = "DOCKERFILE"`
 - `docs/railway-variables.env` — bloco pronto para colar (local, ignorado pelo git)
 - `package.json` → `start:prod`, `db:seed`

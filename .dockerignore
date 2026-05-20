@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.env
+.env.*
+!server/.env.example
+!.env.example
+docs/railway-variables.env
+*.log
+.vscode
+.idea
+.DS_Store
+.kombai
+server/.agents
