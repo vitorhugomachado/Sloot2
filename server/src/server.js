@@ -7,7 +7,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 const server = app.listen(PORT, HOST, () => {
   const mode = process.env.NODE_ENV === 'production' ? 'produção' : 'desenvolvimento';
-  console.log(`Sloot — ${mode} — porta ${PORT} (HOST=${HOST})`);
+  console.log(`Sloot — ${mode} — porta ${PORT} (HOST=${HOST}) — API multi-tenant (Tenant, sem BusinessInfo)`);
   if (process.env.NODE_ENV === 'production') {
     console.log(`SPA + API na mesma origem; health: /health`);
   } else {

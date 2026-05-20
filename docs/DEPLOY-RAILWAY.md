@@ -147,6 +147,7 @@ railway up
 | Healthcheck failure | Apaga `PORT=3001`; confirma `DATABASE_URL` + `JWT_SECRET`; migrations correm no **start** (`server/index.js`) |
 | `/admin` erro 500 no login | Tabela `PlatformAdmin` — confirma migration `20260520130000_platform_admin` e corre `npm run create:platform-admin` |
 | `relation "Tenant" does not exist` | `DIRECT_URL` incorreto ou migrations não aplicadas — vê logs do start |
+| `BusinessInfo` does not exist (P2021) | Migration já removeu a tabela, mas o **container ainda corre código antigo** — faz **Redeploy** do commit `main` mais recente; nos logs do start deve aparecer `API multi-tenant (Tenant, sem BusinessInfo)` |
 | 502 / healthcheck | Deploy Logs; `JWT_SECRET` definido |
 | Login Google | Preenche `VITE_GOOGLE_CLIENT_ID` + origem no Google + redeploy |
 | EPERM `prisma generate` (Windows) | Para o servidor local antes de `prisma generate` |
