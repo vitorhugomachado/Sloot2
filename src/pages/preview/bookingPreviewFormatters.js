@@ -30,9 +30,9 @@ export function formatDuration(duration) {
   return /\d/.test(s) ? s : `${s}`;
 }
 
-export function getDesktopStepperStep({ selectedService, selectedBarber, anyBarber, selectedDate, selectedTime }) {
+export function getDesktopStepperStep({ selectedService, selectedBarber, selectedDate, selectedTime }) {
   if (!selectedService) return 1;
-  if (!selectedBarber && !anyBarber) return 2;
+  if (!selectedBarber) return 2;
   if (!selectedDate) return 3;
   if (!selectedTime) return 4;
   return 5;

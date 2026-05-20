@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import PublicCustomerLinkField from '../components/PublicCustomerLinkField';
+import BusinessBrandingForm from '../components/business/BusinessBrandingForm';
 import { SETTINGS_TABS, ICON_BLACK, ICON_STROKE } from './settingsConstants';
 
 export default function SettingsMobileView({
@@ -153,22 +154,7 @@ export default function SettingsMobileView({
           <div className="fade-in set-mobile-business">
             <h2 className="set-mobile-section-title">Perfil do Negócio</h2>
             <p className="set-mobile-section-sub set-mobile-section-sub--spaced">Dados exibidos na reserva online</p>
-            <div className="set-mobile-form-stack">
-              <input
-                type="text"
-                className="set-mobile-form-input"
-                value={bInfo.name || ''}
-                onChange={(e) => setBInfo({ ...bInfo, name: e.target.value })}
-                placeholder="Nome da barbearia"
-              />
-              <input
-                type="text"
-                className="set-mobile-form-input"
-                value={bInfo.phone || ''}
-                onChange={(e) => setBInfo({ ...bInfo, phone: e.target.value })}
-                placeholder="Telefone"
-              />
-            </div>
+            <BusinessBrandingForm bInfo={bInfo} setBInfo={setBInfo} compact />
             <PublicCustomerLinkField className="set-mobile-business-link" compact />
             <h3 className="set-mobile-business__heading">Redes sociais</h3>
             <div className="set-mobile-business-blocks">

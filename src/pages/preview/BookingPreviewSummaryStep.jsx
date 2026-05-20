@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Calendar, ChevronRight, Clock, Scissors, ShieldCheck, User } from 'lucide-react';
+import { Calendar, Clock, ShieldCheck, User } from 'lucide-react';
 import BookingPreviewStepper from './BookingPreviewStepper';
+import BookingPreviewSummaryRow, { getServiceSummaryVisual } from './BookingPreviewSummaryRow';
 
 function formatSummaryDate(iso) {
   if (!iso) return { line: '—', sub: '' };
@@ -130,23 +131,8 @@ function AuthLoginCard({
   );
 }
 
-function SummaryRow({ icon: Icon, iconVariant = 'purple', label, value, sub, onEdit }) {
-  return (
-    <button type="button" className="bp-summary-row" onClick={onEdit}>
-      <span className={`bp-summary-row__icon bp-summary-row__icon--${iconVariant}`}>
-        <Icon size={20} strokeWidth={1.85} aria-hidden />
-      </span>
-      <span className="bp-summary-row__text">
-        <span className="bp-summary-row__label">{label}</span>
-        <span className="bp-summary-row__value">{value}</span>
-        {sub ? <span className="bp-summary-row__sub">{sub}</span> : null}
-      </span>
-      <ChevronRight size={22} className="bp-summary-row__chev" strokeWidth={2} aria-hidden />
-    </button>
-  );
-}
-
 export default function BookingPreviewSummaryStep({
+  services = [],
   selectedService,
   selectedBarber,
   selectedDate,
@@ -167,6 +153,7 @@ export default function BookingPreviewSummaryStep({
   previewBanner,
 }) {
   const dateFmt = formatSummaryDate(selectedDate);
+  const serviceVisual = getServiceSummaryVisual(services, selectedService);
   const [showAuthCard, setShowAuthCard] = useState(false);
   const pendingConfirmRef = useRef(false);
 
@@ -212,22 +199,27 @@ export default function BookingPreviewSummaryStep({
 
       <div className="bp-flow__scroll bp-flow__scroll--summary">
         <div className="bp-summary-card">
-          <SummaryRow
-            icon={Scissors}
+          <BookingPreviewSummaryRow
+            icon={serviceVisual.icon}
+            imageSrc={serviceVisual.imageSrc}
+            imageAlt={selectedService?.name}
             iconVariant="purple"
             label="Serviço"
             value={selectedService?.name || '—'}
             sub={formatPrice(selectedService?.price)}
             onEdit={() => onEditStep(1)}
           />
-          <SummaryRow
+          <BookingPreviewSummaryRow
             icon={User}
+            imageSrc={selectedBarber?.foto_perfil}
+            imageAlt={selectedBarber?.name}
+            fallbackInitial={selectedBarber?.name?.charAt(0)}
             iconVariant="mint"
             label="Profissional"
             value={selectedBarber?.name || '—'}
             onEdit={() => onEditStep(2)}
           />
-          <SummaryRow
+          <BookingPreviewSummaryRow
             icon={Calendar}
             iconVariant="purple"
             label="Data"
@@ -235,7 +227,7 @@ export default function BookingPreviewSummaryStep({
             sub={dateFmt.sub}
             onEdit={() => onEditStep(3)}
           />
-          <SummaryRow
+          <BookingPreviewSummaryRow
             icon={Clock}
             iconVariant="mint"
             label="Horário"

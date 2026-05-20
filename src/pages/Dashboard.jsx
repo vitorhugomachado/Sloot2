@@ -376,7 +376,7 @@ const Dashboard = () => {
   };
 
   const periodLabel = `Últimos ${periodDays} dias`;
-  const barberColors = ['#5d5fef', '#14b8a6', '#f59e0b', '#ec4899', '#8b5cf6'];
+  const barberColors = ['#2563EB', '#10B981', '#f59e0b', '#ec4899', '#64748B'];
   const maxRevenue = ranking.length > 0 ? Math.max(...ranking.map(b => b.revenue), 1) : 1;
   const formatCurrency = (value) => `R$ ${Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
   const checkoutProductsTotal = useMemo(() => {

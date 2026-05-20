@@ -10,30 +10,36 @@
 @tailwind utilities;
 
 :root {
-  /* Grayscale Brand Palette */
-  --brand-50: #f5f5f5;
-  --brand-100: #e5e5e5;
-  --brand-200: #d4d4d4;
-  --brand-300: #a3a3a3;
-  --brand-400: #737373;
-  --brand-500: #525252;
-  --brand-600: #404040;
-  --brand-700: #262626;
-  --brand-800: #171717;
-  --brand-900: #0a0a0a;
-  --brand-950: #000000;
+  /* Slate brand palette */
+  --brand-50: #f8fafc;
+  --brand-100: #f1f5f9;
+  --brand-200: #e2e8f0;
+  --brand-300: #cbd5e1;
+  --brand-400: #94a3b8;
+  --brand-500: #64748b;
+  --brand-600: #475569;
+  --brand-700: #334155;
+  --brand-800: #1e293b;
+  --brand-900: #0f172a;
+  --brand-950: #020617;
 
-  --bg-color: #f8f9fa;
+  --bg-color: #f8fafc;
   --surface-color: #ffffff;
-  --border-color: #e5e7eb;
-  --text-primary: #1a1a1a;
-  --text-secondary: #6c757d;
-  /* Cor primária — periwinkle (mockup Soft UI) */
-  --accent-color: #5d5fef;
-  --accent-hover: #4b4de0;
+  --border-color: #cbd5e1;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+
+  /* Primária (botões, navegação ativa) */
+  --primary-color: #0f172a;
+  --primary-hover: #1e293b;
+  --primary-text: #ffffff;
+
+  /* Accent azul (destaques, links, gráficos) */
+  --accent-color: #2563eb;
+  --accent-hover: #1d4ed8;
   --accent-text: #ffffff;
-  --accent-soft: rgba(93, 95, 239, 0.12);
-  --success-color: #059669;
+  --accent-soft: rgba(37, 99, 235, 0.12);
+  --success-color: #10b981;
 
   /* KPI Accent Colors */
   --kpi-revenue: #D4AF37;
@@ -41,7 +47,7 @@
   --kpi-commission: #DB2777;
   --kpi-ticket: #7C3AED;
   --kpi-sales: #4F46E5;
-  --kpi-margin: #059669;
+  --kpi-margin: #10b981;
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -50,7 +56,7 @@
   --glass-border: rgba(0, 0, 0, 0.05);
   --glass-blur: blur(12px);
   /* Contorno de cards — borda cinza suave, cantos arredondados */
-  --card-outline: #e5e7eb;
+  --card-outline: #cbd5e1;
   --card-radius: 16px;
   --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
   --modal-backdrop-bg: rgba(0, 0, 0, 0.5);
@@ -66,22 +72,24 @@
   --dash-card-bg: #ffffff;
   --dash-panel-bg: #ffffff;
   /* Seleção de texto (padrão azul do sistema — não usa o verde da marca) */
-  --selection-bg: #b3d7ff;
-  --selection-color: #000000;
+  --selection-bg: rgba(37, 99, 235, 0.22);
+  --selection-color: #0f172a;
 }
 
 [data-theme='dark'] {
-  --bg-color: #0f0f12;
-  --surface-color: rgba(30, 30, 36, 0.88);
-  --border-color: rgba(255, 255, 255, 0.1);
-  --text-primary: #fcfcfc;
-  --text-secondary: #a1a1aa;
-  /* Primária roxa — alinhada ao modo claro (#5d5fef) */
-  --accent-color: #8b8df7;
-  --accent-hover: #a5a7fa;
+  --bg-color: #0f172a;
+  --surface-color: #1e293b;
+  --border-color: rgba(203, 213, 225, 0.2);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --primary-color: #1e293b;
+  --primary-hover: #334155;
+  --primary-text: #ffffff;
+  --accent-color: #2563eb;
+  --accent-hover: #3b82f6;
   --accent-text: #ffffff;
-  --accent-soft: rgba(139, 141, 247, 0.18);
-  --success-color: #34d399;
+  --accent-soft: rgba(37, 99, 235, 0.2);
+  --success-color: #10b981;
   --shadow-sm: 0 2px 4px rgba(0,0,0,0.4);
   --shadow-md: 0 4px 6px rgba(0,0,0,0.5);
   --shadow-lg: 0 10px 15px rgba(0,0,0,0.6);
@@ -90,15 +98,16 @@
   --card-outline: rgba(255, 255, 255, 0.14);
   --card-radius: 12px;
   --modal-backdrop-bg: rgba(0, 0, 0, 0.55);
-  --panel-bg: #18181b;
-  --selection-bg: #4a4cc8;
-  --selection-color: #ffffff;
+  --panel-bg: #1e293b;
+  --card-outline: rgba(203, 213, 225, 0.25);
+  --selection-bg: rgba(37, 99, 235, 0.35);
+  --selection-color: #f8fafc;
   --hover-bg: rgba(255,255,255,0.05);
   --icon-bg: rgba(255,255,255,0.04);
   --icon-hover: rgba(255,255,255,0.08);
   --line-color: rgba(255,255,255,0.08);
-  --dash-card-bg: #1f1f24;
-  --dash-panel-bg: #1a1a1f;
+  --dash-card-bg: #1e293b;
+  --dash-panel-bg: #0f172a;
 }
 
 * {
@@ -1700,7 +1709,7 @@ button.action-modal-cta-btn--danger:hover {
 [data-theme='dark'] .action-modal-panel__chip-btn {
   background: var(--panel-bg);
   color: var(--text-primary);
-  border-color: #0a0a0a;
+  border-color: var(--primary-color);
 }
 
 [data-theme='dark'] .action-modal-panel__chip-btn:hover {
@@ -2076,7 +2085,7 @@ input.action-modal-field--qty {
   border-radius: 999px;
   font-size: 0.8rem;
   font-weight: 600;
-  border: 1px solid #0a0a0a;
+  border: 1px solid var(--primary-color);
   background: var(--surface-color, #fff);
   color: var(--text-secondary);
   cursor: pointer;
@@ -2086,7 +2095,7 @@ input.action-modal-field--qty {
 .crm-mobile-status-chip--active {
   background: var(--accent-color);
   color: var(--accent-text);
-  border-color: #0a0a0a;
+  border-color: var(--primary-color);
 }
 
 .crm-mobile-tag-row {
@@ -2447,13 +2456,13 @@ button {
 }
 
 .btn-primary {
-  background-color: var(--accent-color);
-  color: var(--accent-text);
+  background-color: var(--primary-color);
+  color: var(--primary-text);
   border-radius: 9999px;
 }
 
 .btn-primary:hover {
-  background-color: var(--accent-hover);
+  background-color: var(--primary-hover);
 }
 
 .btn-secondary {
@@ -2467,26 +2476,26 @@ button {
   background-color: var(--border-color);
 }
 
-/* Painel staff — contorno preto em botões (CRM, estoque, configurações, etc.) */
+/* Painel staff — contorno na cor primária */
 .main-content .btn-primary,
 .main-content .btn-secondary {
-  border: 1px solid #0a0a0a;
+  border: 1px solid var(--primary-color);
   box-sizing: border-box;
 }
 
 .main-content .btn-secondary {
   background-color: #ffffff;
-  color: #0a0a0a;
+  color: var(--text-primary);
 }
 
 .main-content .btn-secondary:hover {
-  background-color: #f3f3f3;
-  border-color: #0a0a0a;
-  color: #0a0a0a;
+  background-color: var(--brand-50);
+  border-color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .main-content .btn-primary:hover {
-  border-color: #0a0a0a;
+  border-color: var(--primary-hover);
 }
 
 [data-theme='dark'] .main-content .btn-secondary {
@@ -2496,33 +2505,33 @@ button {
 
 [data-theme='dark'] .main-content .btn-secondary:hover {
   background-color: var(--hover-bg);
-  border-color: #0a0a0a;
+  border-color: var(--border-color);
 }
 
 .main-content .glass-card.hover-trigger button {
-  border: 1px solid #0a0a0a !important;
+  border: 1px solid var(--primary-color) !important;
   box-sizing: border-box;
 }
 
 /* Modais: Voltar com fundo branco; CTAs com contorno forte (cards + rodapé) */
 .modal-backdrop .btn-secondary {
   background-color: #ffffff;
-  border: 1px solid #0a0a0a;
-  color: #0a0a0a;
+  border: 1px solid var(--primary-color);
+  color: var(--text-primary);
 }
 
 .modal-backdrop .btn-secondary:hover {
-  background-color: #f3f3f3;
-  border-color: #0a0a0a;
-  color: #0a0a0a;
+  background-color: var(--brand-50);
+  border-color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .modal-backdrop .btn-primary {
-  border: 1px solid #0a0a0a;
+  border: 1px solid var(--primary-color);
 }
 
 .modal-backdrop .btn-primary:hover {
-  border-color: #0a0a0a;
+  border-color: var(--primary-hover);
 }
 
 /* Ações rápidas em círculo — confirmar verde (sucesso); cancelar com contorno */
@@ -2582,13 +2591,13 @@ button {
 
 [data-theme='dark'] .sloot-circle-action--confirm {
   color: #c4c5fc;
-  background: rgba(93, 95, 239, 0.16);
-  border: 1px solid rgba(139, 141, 247, 0.4);
+  background: rgba(37, 99, 235, 0.16);
+  border: 1px solid rgba(37, 99, 235, 0.4);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 [data-theme='dark'] .sloot-circle-action--confirm:hover {
-  background: rgba(93, 95, 239, 0.26);
+  background: rgba(37, 99, 235, 0.26);
   border-color: rgba(165, 167, 250, 0.55);
   color: #e0e1fe;
   filter: none;
@@ -2640,7 +2649,7 @@ button {
   height: 420px;
   top: -120px;
   left: 60px;
-  background: radial-gradient(circle, rgba(93, 95, 239, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
 }
 
 .layout::after {
@@ -2648,7 +2657,7 @@ button {
   height: 380px;
   bottom: -80px;
   right: -40px;
-  background: radial-gradient(circle, rgba(93, 95, 239, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.06) 0%, transparent 70%);
 }
 
 .sidebar {
@@ -2730,7 +2739,7 @@ button {
 
 /* Três barras horizontais pretas (ícone menu); claro no tema escuro */
 .sidebar-toggle-btn--bars {
-  color: #0a0a0a;
+  color: var(--primary-color);
 }
 
 .sidebar-toggle-btn--bars svg,
@@ -2869,7 +2878,7 @@ button {
   gap: 12px;
   padding: 12px;
   border-radius: 12px;
-  color: #6c757d;
+  color: var(--text-secondary);
   text-decoration: none;
   margin-bottom: 6px;
   transition: all 0.2s ease;
@@ -2881,13 +2890,13 @@ button {
 }
 
 .nav-item.active {
-  background-color: var(--accent-color);
-  color: var(--accent-text);
-  box-shadow: 0 4px 12px rgba(93, 95, 239, 0.35);
+  background-color: var(--primary-color);
+  color: var(--primary-text);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
 }
 
 [data-theme='dark'] .nav-item.active {
-  box-shadow: 0 4px 14px rgba(139, 141, 247, 0.35);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.45);
 }
 
 .nav-item.active svg {
@@ -2994,7 +3003,7 @@ button {
   flex-direction: column;
   gap: 1.5rem;
   width: 100%;
-  --dash-card-border: #1a1a1a;
+  --dash-card-border: #cbd5e1;
 }
 
 [data-theme='dark'] .dash-page {
@@ -3349,7 +3358,7 @@ button {
   min-width: 0;
   max-width: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #4b4de0 0%, var(--accent-color) 100%);
+  background: linear-gradient(90deg, var(--primary-hover) 0%, var(--accent-color) 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
@@ -3425,7 +3434,7 @@ button {
 .dash-toggle-btn.active {
   background: var(--accent-color);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(93, 95, 239, 0.35);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
 }
 
 /* --- Barber Performance Bars --- */
@@ -3478,7 +3487,7 @@ button {
   height: 100%;
   border-radius: 10px;
   transition: width 0.8s ease;
-  background: linear-gradient(90deg, #4b4de0 0%, var(--accent-color) 100%);
+  background: linear-gradient(90deg, var(--primary-hover) 0%, var(--accent-color) 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
@@ -4310,7 +4319,7 @@ input[type='date'].booking-reserve-form__field:focus {
 /* Blob button (login) — baseado no efeito gooey */
 .staff-login-panel .blob-btn {
   --blob-brand: var(--accent-color);
-  --blob-outline: #0a0a0a;
+  --blob-outline: var(--primary-color);
   --blob-border: 2px;
   z-index: 1;
   position: relative;
@@ -4319,7 +4328,7 @@ input[type='date'].booking-reserve-form__field:focus {
   margin-top: 0.5rem;
   text-align: center;
   text-transform: uppercase;
-  color: #0a0a0a;
+  color: var(--primary-color);
   font-size: 1rem;
   font-weight: 700;
   background-color: transparent;
@@ -4452,7 +4461,7 @@ input[type='date'].booking-reserve-form__field:focus {
 .staff-login-side-art {
   position: relative;
   overflow: hidden;
-  background: #0a0a0a;
+  background: var(--primary-color);
 }
 
 .staff-login-stripes {
@@ -4571,7 +4580,7 @@ input[type='date'].booking-reserve-form__field:focus {
 /* Agendamento público — cartões e botões com contorno preto */
 .public-booking-page .glass-card,
 .public-booking-page button.glass-card {
-  border: 1px solid #0a0a0a;
+  border: 1px solid var(--primary-color);
   box-sizing: border-box;
 }
 
@@ -4579,28 +4588,28 @@ input[type='date'].booking-reserve-form__field:focus {
 .public-booking-page .btn-secondary,
 .public-booking-page .booking-load-more-btn,
 .public-booking-page .booking-success-actions .btn-primary {
-  border: 1px solid #0a0a0a;
+  border: 1px solid var(--primary-color);
   box-sizing: border-box;
 }
 
 .public-booking-page .btn-secondary {
   background-color: #ffffff;
-  color: #0a0a0a;
+  color: var(--primary-color);
 }
 
 .public-booking-page .btn-primary:hover,
 .public-booking-page .btn-secondary:hover,
 .public-booking-page .booking-load-more-btn:hover {
-  border-color: #0a0a0a;
+  border-color: var(--primary-color);
 }
 
 .public-booking-page .booking-auth-summary-card {
-  border: 1px solid #0a0a0a;
+  border: 1px solid var(--primary-color);
   box-sizing: border-box;
 }
 
 .public-booking-page .booking-date-trigger {
-  border-color: #0a0a0a;
+  border-color: var(--primary-color);
 }
 
 .business-social-links {
@@ -4618,7 +4627,7 @@ input[type='date'].booking-reserve-form__field:focus {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  border: 1px solid #0a0a0a;
+  border: 1px solid var(--primary-color);
   box-sizing: border-box;
   color: var(--text-primary);
   background: var(--panel-bg);
@@ -4864,7 +4873,7 @@ input[type='date'].booking-reserve-form__field:focus {
   align-items: center;
   justify-content: center;
   background-color: transparent;
-  border: 1px solid #0a0a0a;
+  border: 1px solid var(--primary-color);
   border-radius: 9999px;
   padding: 0.65rem 1.35rem;
   font-size: 0.82rem;
@@ -5031,7 +5040,7 @@ input[type='date'].booking-reserve-form__field:focus {
 .customer-portal-root .customer-portal-upcoming-card,
 .customer-portal-root .customer-portal-stat-tile,
 .customer-portal-root .customer-portal-stat-grid > div {
-  border: 1px solid #0a0a0a;
+  border: 1px solid var(--primary-color);
   box-sizing: border-box;
 }
 
@@ -5039,22 +5048,22 @@ input[type='date'].booking-reserve-form__field:focus {
 .customer-portal-root .btn-secondary,
 .customer-portal-root .customer-portal-header-btn,
 .customer-portal-root .customer-portal-tab {
-  border: 1px solid #0a0a0a;
+  border: 1px solid var(--primary-color);
   box-sizing: border-box;
 }
 
 .customer-portal-root .customer-portal-header-btn--danger {
-  border-color: #0a0a0a;
+  border-color: var(--primary-color);
 }
 
 .customer-portal-root .customer-portal-tab--active {
-  border-color: #0a0a0a;
+  border-color: var(--primary-color);
 }
 
 .customer-portal-root .btn-primary:hover,
 .customer-portal-root .customer-portal-header-btn:hover,
 .customer-portal-root .customer-portal-tab:hover {
-  border-color: #0a0a0a;
+  border-color: var(--primary-color);
 }
 
 .customer-portal-inner {
@@ -5218,11 +5227,11 @@ input[type='date'].booking-reserve-form__field:focus {
 }
 
 .customer-portal-root .customer-portal-upcoming-card {
-  border-color: #0a0a0a;
+  border-color: var(--primary-color);
 }
 
 [data-theme='dark'] .customer-portal-root .customer-portal-upcoming-card {
-  border-color: #0a0a0a;
+  border-color: var(--primary-color);
 }
 
 .customer-portal-history-header {
@@ -5688,7 +5697,7 @@ button.inventory-action-icon-btn {
   line-height: 0;
   font-size: 0;
   border-radius: 10px !important;
-  border: 1px solid #0a0a0a;
+  border: 1px solid var(--primary-color);
 }
 
 button.inventory-action-icon-btn svg {
@@ -6654,11 +6663,11 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 
 /* Modal barbeiro — contorno preto em painel, campos e botões */
 .settings-barber-modal.modal-glass-panel {
-  border: 1px solid #0a0a0a !important;
+  border: 1px solid var(--primary-color) !important;
 }
 
 .settings-barber-modal > div:first-child {
-  border-bottom: 1px solid #0a0a0a !important;
+  border-bottom: 1px solid var(--primary-color) !important;
 }
 
 .settings-barber-modal > div:first-child button.settings-barber-modal-close-btn {
@@ -6671,15 +6680,15 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   box-sizing: border-box;
   line-height: 0;
   flex-shrink: 0;
-  color: #0a0a0a;
+  color: var(--primary-color);
 }
 
 .settings-barber-modal > div:first-child button.settings-barber-modal-close-btn svg {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  stroke: #0a0a0a;
-  color: #0a0a0a;
+  stroke: var(--primary-color);
+  color: var(--primary-color);
 }
 
 [data-theme='dark'] .settings-barber-modal > div:first-child button.settings-barber-modal-close-btn,
@@ -6694,7 +6703,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 }
 
 .settings-barber-modal .settings-barber-photo-grid > div:first-child {
-  border: 2px solid #0a0a0a !important;
+  border: 2px solid var(--primary-color) !important;
   background-color: #ffffff !important;
   color: var(--text-primary);
 }
@@ -6709,7 +6718,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 .settings-barber-modal input[type='number'],
 .settings-barber-modal input[type='date'],
 .settings-barber-modal input[type='time'] {
-  border: 1px solid #0a0a0a !important;
+  border: 1px solid var(--primary-color) !important;
   box-sizing: border-box;
 }
 
@@ -6719,24 +6728,24 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 .settings-barber-modal input[type='number']:focus,
 .settings-barber-modal input[type='date']:focus,
 .settings-barber-modal input[type='time']:focus {
-  border-color: #0a0a0a !important;
+  border-color: var(--primary-color) !important;
   outline: none;
 }
 
 .settings-barber-modal button.settings-weekday-btn {
-  border: 1px solid #0a0a0a !important;
+  border: 1px solid var(--primary-color) !important;
 }
 
 .settings-barber-modal .settings-barber-times-grid {
-  border: 1px solid #0a0a0a !important;
+  border: 1px solid var(--primary-color) !important;
 }
 
 .settings-barber-modal .settings-barber-status-card {
-  border: 1px solid #0a0a0a !important;
+  border: 1px solid var(--primary-color) !important;
 }
 
 .settings-barber-modal .settings-barber-modal-footer button {
-  border: 1px solid #0a0a0a !important;
+  border: 1px solid var(--primary-color) !important;
   box-sizing: border-box;
 }
 
@@ -6886,7 +6895,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   background: var(--accent-color);
   color: #ffffff;
   border-color: var(--accent-color);
-  box-shadow: 0 4px 12px rgba(93, 95, 239, 0.3);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .scheduler-filter-btn__avatar {
@@ -6936,7 +6945,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   color: #ffffff;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(93, 95, 239, 0.35);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
   transition: background 0.2s, transform 0.15s;
 }
 
@@ -6990,7 +6999,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   color: #ffffff;
   border: none;
   border-radius: 14px;
-  box-shadow: 0 4px 14px rgba(93, 95, 239, 0.3);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
 }
 
 .main-content .btn-primary:hover {
@@ -7015,7 +7024,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 
 .dash-action-btn.primary {
   border-radius: 14px;
-  box-shadow: 0 4px 14px rgba(93, 95, 239, 0.35);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
 }
 
 .dash-period-selector {
@@ -7196,8 +7205,8 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 }
 
 .platform-status-badge--active {
-  background: rgba(34, 197, 94, 0.15);
-  color: #15803d;
+  background: rgba(16, 185, 129, 0.15);
+  color: #047857;
 }
 
 .platform-status-badge--suspended {
@@ -7206,8 +7215,8 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 }
 
 .platform-success-banner {
-  background: rgba(34, 197, 94, 0.08);
-  border: 1px solid rgba(34, 197, 94, 0.25);
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
   border-radius: 10px;
   padding: 1rem;
   margin-bottom: 1rem;

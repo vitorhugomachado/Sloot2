@@ -18,6 +18,9 @@ function buildBusinessUpdatePayload(body) {
   if (b.address !== undefined) data.address = String(b.address ?? '').trim();
 
   if (b.logo_url !== undefined) data.logo_url = nullableString(b.logo_url);
+  if (b.banner_url !== undefined) data.banner_url = nullableString(b.banner_url);
+  if (b.tagline !== undefined) data.tagline = String(b.tagline ?? '').trim();
+  if (b.slogan !== undefined) data.slogan = String(b.slogan ?? '').trim();
   if (b.instagram_url !== undefined) data.instagram_url = nullableString(b.instagram_url);
   if (b.facebook_url !== undefined) data.facebook_url = nullableString(b.facebook_url);
   if (b.whatsapp_url !== undefined) data.whatsapp_url = nullableString(b.whatsapp_url);

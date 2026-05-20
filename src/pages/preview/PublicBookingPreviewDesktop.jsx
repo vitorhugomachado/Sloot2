@@ -9,7 +9,6 @@ import {
   Sparkles,
   Star,
   User,
-  Users,
 } from 'lucide-react';
 import BookingPreviewStepper from './BookingPreviewStepper';
 import { AuthLoginCard } from './BookingPreviewAuth';
@@ -20,9 +19,9 @@ import {
   formatSummaryDate,
   getDesktopStepperStep,
 } from './bookingPreviewFormatters';
+import BookingPreviewSummaryRow, { getServiceSummaryVisual } from './BookingPreviewSummaryRow';
 
 const SERVICE_ICONS = [Scissors, Sparkles, User];
-const SERVICE_BG = ['#ede9fe', '#ccfbf1', '#dbeafe', '#fce7f3', '#fef3c7'];
 
 function CarouselNav({ trackRef }) {
   const scroll = (dir) => {
@@ -43,27 +42,10 @@ function CarouselNav({ trackRef }) {
   );
 }
 
-function SummaryRow({ icon: Icon, iconVariant, label, value, sub, onEdit }) {
-  return (
-    <button type="button" className="bp-summary-row" onClick={onEdit}>
-      <span className={`bp-summary-row__icon bp-summary-row__icon--${iconVariant}`}>
-        <Icon size={20} strokeWidth={1.85} aria-hidden />
-      </span>
-      <span className="bp-summary-row__text">
-        <span className="bp-summary-row__label">{label}</span>
-        <span className="bp-summary-row__value">{value}</span>
-        {sub ? <span className="bp-summary-row__sub">{sub}</span> : null}
-      </span>
-      <ChevronRight size={22} className="bp-summary-row__chev" strokeWidth={2} aria-hidden />
-    </button>
-  );
-}
-
 export default function PublicBookingPreviewDesktop({ flow, previewBanner, loginRequestBump = 0 }) {
   const {
     selectedService,
     selectedBarber,
-    anyBarber,
     selectedDate,
     selectedTime,
     services,
@@ -71,7 +53,6 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
     allWorkingDayIsosInHorizon,
     pickService,
     pickBarber,
-    pickAnyBarber,
     pickDate,
     pickTime,
     getSlotsForDay,
@@ -98,7 +79,6 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
   const stepperStep = getDesktopStepperStep({
     selectedService,
     selectedBarber,
-    anyBarber,
     selectedDate,
     selectedTime,
   });
@@ -108,10 +88,11 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
     ? getSlotsForDay(selectedDate)
     : { slotsToDisplay: [], isWithinAnyShift: () => false, taken: new Set() };
 
-  const barberLabel = anyBarber ? 'Qualquer um' : selectedBarber?.name || '—';
+  const barberLabel = selectedBarber?.name || '—';
   const serviceSub = selectedService
     ? `${formatDuration(selectedService.duration)} • ${formatPrice(selectedService.price)}`
     : '';
+  const serviceVisual = getServiceSummaryVisual(services, selectedService);
 
   const scrollToSection = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -124,7 +105,7 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
 
   const handleConfirmClick = () => {
     if (isSubmitting) return;
-    if (!selectedService || (!selectedBarber && !anyBarber) || !selectedDate || !selectedTime) {
+    if (!selectedService || !selectedBarber || !selectedDate || !selectedTime) {
       return;
     }
     if (currentCustomer) {
@@ -158,16 +139,16 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
   }, [showAuthCard]);
 
   useEffect(() => {
-    if (!anyBarber && !selectedBarber) return;
+    if (!selectedBarber) return;
     if (allWorkingDayIsosInHorizon.length === 0) return;
     if (!allWorkingDayIsosInHorizon.includes(selectedDate)) {
       pickDate(allWorkingDayIsosInHorizon[0]);
     }
-  }, [anyBarber, selectedBarber, allWorkingDayIsosInHorizon, selectedDate, pickDate]);
+  }, [selectedBarber, allWorkingDayIsosInHorizon, selectedDate, pickDate]);
 
   const canConfirm =
     selectedService &&
-    (selectedBarber || anyBarber) &&
+    selectedBarber &&
     selectedDate &&
     selectedTime &&
     !isSubmitting;
@@ -193,7 +174,6 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
                   ) : (
                     services.map((s, index) => {
                       const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
-                      const bg = SERVICE_BG[index % SERVICE_BG.length];
                       const selected = selectedService?.id === s.id;
                       return (
                         <button
@@ -203,8 +183,8 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
                           className={`bp-desk-pick-card${selected ? ' bp-desk-pick-card--selected' : ''}`}
                           onClick={() => pickService(s)}
                         >
-                          <span className="bp-desk-pick-card__icon" style={{ backgroundColor: bg }}>
-                            <Icon size={22} color="#5A5FE1" strokeWidth={1.75} />
+                          <span className="bp-desk-pick-card__icon">
+                            <Icon size={22} strokeWidth={1.75} aria-hidden />
                           </span>
                           <span className="bp-desk-pick-card__name">{s.name}</span>
                           <span className="bp-desk-pick-card__meta">{formatDuration(s.duration)}</span>
@@ -223,7 +203,7 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
                 <CarouselNav trackRef={barberTrackRef} />
                 <div ref={barberTrackRef} className="bp-desk-carousel__track" role="list">
                   {activeBarbers.map((b) => {
-                    const selected = !anyBarber && selectedBarber?.id === b.id;
+                    const selected = selectedBarber?.id === b.id;
                     return (
                       <button
                         key={b.id}
@@ -248,18 +228,6 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
                       </button>
                     );
                   })}
-                  <button
-                    type="button"
-                    role="listitem"
-                    className={`bp-desk-pro-card bp-desk-pro-card--any${anyBarber ? ' bp-desk-pick-card--selected' : ''}`}
-                    onClick={pickAnyBarber}
-                  >
-                    <span className="bp-desk-pro-card__avatar bp-desk-pro-card__avatar--any">
-                      <Users size={26} color="#5A5FE1" strokeWidth={1.75} />
-                    </span>
-                    <span className="bp-desk-pro-card__name">Qualquer um</span>
-                    <span className="bp-desk-pro-card__role">Sem preferência</span>
-                  </button>
                 </div>
               </div>
             </section>
@@ -333,22 +301,27 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
             <h2 className="bp-desk-aside__title">5. Resumo do agendamento</h2>
             <div className="bp-desk-aside__sticky">
               <div className="bp-summary-card">
-                <SummaryRow
-                  icon={Scissors}
+                <BookingPreviewSummaryRow
+                  icon={serviceVisual.icon}
+                  imageSrc={serviceVisual.imageSrc}
+                  imageAlt={selectedService?.name}
                   iconVariant="purple"
                   label="Serviço"
                   value={selectedService?.name || '—'}
                   sub={serviceSub || undefined}
                   onEdit={() => scrollToSection('bp-desktop-section-1')}
                 />
-                <SummaryRow
+                <BookingPreviewSummaryRow
                   icon={User}
+                  imageSrc={selectedBarber?.foto_perfil}
+                  imageAlt={selectedBarber?.name}
+                  fallbackInitial={selectedBarber?.name?.charAt(0)}
                   iconVariant="mint"
                   label="Profissional"
                   value={barberLabel}
                   onEdit={() => scrollToSection('bp-desktop-section-2')}
                 />
-                <SummaryRow
+                <BookingPreviewSummaryRow
                   icon={Calendar}
                   iconVariant="purple"
                   label="Data"
@@ -356,7 +329,7 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
                   sub={dateFmt.sub}
                   onEdit={() => scrollToSection('bp-desktop-datetime')}
                 />
-                <SummaryRow
+                <BookingPreviewSummaryRow
                   icon={Clock}
                   iconVariant="mint"
                   label="Horário"

@@ -44,7 +44,7 @@ function IconWhatsApp({ size = 22 }) {
 /**
  * @param {{ businessInfo?: Record<string, unknown> | null }} props
  */
-export default function BusinessSocialLinks({ businessInfo }) {
+export default function BusinessSocialLinks({ businessInfo, variant }) {
   if (!businessInfo) return null;
 
   const entries = [];
@@ -87,15 +87,20 @@ export default function BusinessSocialLinks({ businessInfo }) {
 
   if (entries.length === 0) return null;
 
+  const rootClass =
+    variant === 'hero'
+      ? 'business-social-links business-social-links--hero'
+      : 'business-social-links';
+
   return (
-    <div className="business-social-links" role="navigation" aria-label="Redes sociais do negócio">
+    <div className={rootClass} role="navigation" aria-label="Redes sociais do negócio">
       {entries.map(({ key, href, label, Icon }) => (
         <a
           key={key}
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="business-social-links__item"
+          className={`business-social-links__item${key === 'whatsapp' && variant === 'hero' ? ' business-social-links__item--whatsapp' : ''}`}
           aria-label={label}
         >
           <Icon size={22} />

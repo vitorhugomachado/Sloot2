@@ -36,7 +36,6 @@ export default function PublicBookingPreview({
     step,
     selectedService,
     selectedBarber,
-    anyBarber,
     selectedDate,
     selectedTime,
     isSubmitting,
@@ -97,7 +96,7 @@ export default function PublicBookingPreview({
           </div>
           <h2 className="bp-section-title">Agendamento confirmado!</h2>
           <p className="bp-empty">
-            {selectedService?.name} com {anyBarber ? 'Qualquer um' : selectedBarber?.name}
+            {selectedService?.name} com {selectedBarber?.name}
             <br />
             {selectedDate?.split('-').reverse().join('/')} às {selectedTime}
           </p>
@@ -174,6 +173,7 @@ export default function PublicBookingPreview({
   if (step === 4) {
     return wrap(
       <BookingPreviewSummaryStep
+        services={services}
         selectedService={selectedService}
         selectedBarber={selectedBarber}
         selectedDate={selectedDate}

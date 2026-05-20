@@ -9,6 +9,8 @@ const WEEKDAY_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const WEEKDAY_FULL = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 import SettingsMobileView from './SettingsMobileView';
 import PublicCustomerLinkField from '../components/PublicCustomerLinkField';
+import BusinessBrandingForm from '../components/business/BusinessBrandingForm';
+import { compressImageFileToDataUrl } from '../utils/compressImageFile';
 import { getStaffStatusColors } from '../utils/staffStatus';
 import { SETTINGS_TABS, MOBILE_MQ, ICON_BLACK, ICON_STROKE } from './settingsConstants';
 
@@ -59,45 +61,6 @@ function buildBarberUpdateBody(state) {
     body.foto_perfil = state.foto_perfil;
   }
   return body;
-}
-
-/** Reduz data URL gigante (muitos browsers não mostram <img> com data: muito longo). */
-async function compressImageFileToDataUrl(file, maxEdge = 1400, quality = 0.86) {
-  const rawDataUrl = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error('Falha ao ler o ficheiro'));
-    reader.readAsDataURL(file);
-  });
-  if (typeof rawDataUrl !== 'string' || !rawDataUrl.startsWith('data:image')) {
-    return rawDataUrl;
-  }
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      try {
-        const w = img.naturalWidth || img.width;
-        const h = img.naturalHeight || img.height;
-        const scale = Math.min(1, maxEdge / Math.max(w, h, 1));
-        const tw = Math.max(1, Math.round(w * scale));
-        const th = Math.max(1, Math.round(h * scale));
-        const canvas = document.createElement('canvas');
-        canvas.width = tw;
-        canvas.height = th;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          resolve(rawDataUrl);
-          return;
-        }
-        ctx.drawImage(img, 0, 0, tw, th);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      } catch {
-        resolve(rawDataUrl);
-      }
-    };
-    img.onerror = () => resolve(rawDataUrl);
-    img.src = rawDataUrl;
-  });
 }
 
 const Settings = () => {
@@ -337,6 +300,9 @@ const Settings = () => {
         email: bInfo.email,
         address: bInfo.address,
         logo_url: bInfo.logo_url,
+        banner_url: bInfo.banner_url,
+        tagline: String(bInfo.tagline ?? '').trim(),
+        slogan: String(bInfo.slogan ?? '').trim(),
         instagram_url: String(bInfo.instagram_url ?? '').trim(),
         facebook_url: String(bInfo.facebook_url ?? '').trim(),
         whatsapp_url: String(bInfo.whatsapp_url ?? '').trim(),
@@ -972,9 +938,8 @@ const Settings = () => {
           {activeTab === 'business' && (
             <div className="fade-in">
               <h2 style={{ fontSize: '1.3rem', marginBottom: '2rem' }}>Perfil do Negócio</h2>
-              <div style={{ maxWidth: '520px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <input type="text" value={bInfo.name || ''} onChange={(e) => setBInfo({ ...bInfo, name: e.target.value })} placeholder="Nome da Barbearia" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
-                <input type="text" value={bInfo.phone || ''} onChange={(e) => setBInfo({ ...bInfo, phone: e.target.value })} placeholder="Telefone" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+              <div style={{ maxWidth: '640px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <BusinessBrandingForm bInfo={bInfo} setBInfo={setBInfo} />
 
                 <PublicCustomerLinkField />
 

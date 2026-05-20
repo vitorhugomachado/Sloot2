@@ -1,8 +1,8 @@
 /** Ilustrações line-art dos cards KPI (mockup Soft UI). */
-const stroke = '#1a1a1a';
-const strokeMuted = '#9ca3af';
-const blue = '#5d5fef';
-const green = '#22c55e';
+const stroke = '#0F172A';
+const strokeMuted = '#64748B';
+const blue = '#2563EB';
+const green = '#10B981';
 
 export function RevenueIllustration({ className = '' }) {
   const teal = '#14b8a6';
@@ -68,11 +68,11 @@ export function OccupancyCalendarIllustration({ className = '' }) {
       <rect x="14" y="8" width="8" height="10" rx="2" stroke={stroke} strokeWidth="1.4" fill="#f9fafb" />
       <rect x="42" y="8" width="8" height="10" rx="2" stroke={stroke} strokeWidth="1.4" fill="#f9fafb" />
       <circle cx="22" cy="36" r="3" fill={blue} opacity="0.9" />
-      <circle cx="32" cy="36" r="3" fill="#e5e7eb" />
-      <circle cx="42" cy="36" r="3" fill="#e5e7eb" />
-      <circle cx="22" cy="48" r="3" fill="#e5e7eb" />
+      <circle cx="32" cy="36" r="3" fill="#CBD5E1" />
+      <circle cx="42" cy="36" r="3" fill="#CBD5E1" />
+      <circle cx="22" cy="48" r="3" fill="#CBD5E1" />
       <circle cx="32" cy="48" r="3" fill={blue} opacity="0.7" />
-      <circle cx="42" cy="48" r="3" fill="#e5e7eb" />
+      <circle cx="42" cy="48" r="3" fill="#CBD5E1" />
     </svg>
   );
 }
@@ -159,12 +159,12 @@ export function UpcomingEmptyIllustration({ className = '' }) {
 
       {/* Página com grelha 4×4 */}
       <rect x="98" y="68" width="60" height="52" rx="3" stroke={stroke} strokeWidth="1.8" fill="#fff" />
-      <line x1="104" y1="84" x2="152" y2="84" stroke="#e5e7eb" strokeWidth="1" />
-      <line x1="104" y1="94" x2="152" y2="94" stroke="#e5e7eb" strokeWidth="1" />
-      <line x1="104" y1="104" x2="152" y2="104" stroke="#e5e7eb" strokeWidth="1" />
-      <line x1="116" y1="74" x2="116" y2="114" stroke="#e5e7eb" strokeWidth="1" />
-      <line x1="128" y1="74" x2="128" y2="114" stroke="#e5e7eb" strokeWidth="1" />
-      <line x1="140" y1="74" x2="140" y2="114" stroke="#e5e7eb" strokeWidth="1" />
+      <line x1="104" y1="84" x2="152" y2="84" stroke="#CBD5E1" strokeWidth="1" />
+      <line x1="104" y1="94" x2="152" y2="94" stroke="#CBD5E1" strokeWidth="1" />
+      <line x1="104" y1="104" x2="152" y2="104" stroke="#CBD5E1" strokeWidth="1" />
+      <line x1="116" y1="74" x2="116" y2="114" stroke="#CBD5E1" strokeWidth="1" />
+      <line x1="128" y1="74" x2="128" y2="114" stroke="#CBD5E1" strokeWidth="1" />
+      <line x1="140" y1="74" x2="140" y2="114" stroke="#CBD5E1" strokeWidth="1" />
 
       {/* Base triangular */}
       <path d="M118 120 L128 132 L138 120 Z" stroke={stroke} strokeWidth="1.6" fill="#f9fafb" strokeLinejoin="round" />

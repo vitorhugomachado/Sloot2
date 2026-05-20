@@ -1,10 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { ChevronRight, Clock, MoreHorizontal, Scissors, Sparkles, User } from 'lucide-react';
+import { ChevronRight, Clock, Scissors, Sparkles, User } from 'lucide-react';
 import { scrollToContinueButton } from '../../hooks/usePublicBookingFlow';
 import BookingPreviewStepper from './BookingPreviewStepper';
 
 const ICONS = [Scissors, Sparkles, User];
-const ICON_BG = ['#ede9fe', '#ccfbf1', '#dbeafe', '#fce7f3', '#fef3c7'];
 
 function ServiceIllustration() {
   return (
@@ -49,11 +48,6 @@ export default function BookingPreviewServiceStep({
     scrollToContinueButton();
   }, [selectedService?.id]);
 
-  const scrollListToEnd = () => {
-    const el = listRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  };
-
   return (
     <div className="bp-flow">
       {previewBanner}
@@ -78,7 +72,6 @@ export default function BookingPreviewServiceStep({
         ) : (
           services.map((s, index) => {
             const Icon = ICONS[index % ICONS.length];
-            const bg = ICON_BG[index % ICON_BG.length];
             const selected = selectedService?.id === s.id;
             const description =
               s.description?.trim() ||
@@ -92,8 +85,8 @@ export default function BookingPreviewServiceStep({
                 className={`bp-service-card${selected ? ' bp-service-card--selected' : ''}`}
                 onClick={() => onPickService(s)}
               >
-                <span className="bp-service-card__icon" style={{ backgroundColor: bg }}>
-                  <Icon size={22} strokeWidth={1.75} color="#5D5FEF" />
+                <span className="bp-service-card__icon">
+                  <Icon size={22} strokeWidth={1.75} aria-hidden />
                 </span>
                 <span className="bp-service-card__body">
                   <span className="bp-service-card__name">{s.name}</span>
@@ -107,19 +100,6 @@ export default function BookingPreviewServiceStep({
               </button>
             );
           })
-        )}
-
-        {services.length > 3 && (
-          <button type="button" className="bp-service-card bp-service-card--more" onClick={scrollListToEnd}>
-            <span className="bp-service-card__icon" style={{ backgroundColor: '#f3f4f6' }}>
-              <MoreHorizontal size={22} strokeWidth={2} color="#6b7280" />
-            </span>
-            <span className="bp-service-card__body">
-              <span className="bp-service-card__name">Outros serviços</span>
-              <span className="bp-service-card__desc">Ver todos na lista</span>
-            </span>
-            <ChevronRight className="bp-service-card__chevron" size={22} aria-hidden />
-          </button>
         )}
       </div>
 

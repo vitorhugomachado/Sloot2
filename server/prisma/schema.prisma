@@ -17,6 +17,9 @@ model Tenant {
   email          String   @default("")
   address        String   @default("")
   logo_url       String?
+  banner_url     String?
+  tagline        String?
+  slogan         String?
   instagram_url  String?
   facebook_url   String?
   whatsapp_url   String?

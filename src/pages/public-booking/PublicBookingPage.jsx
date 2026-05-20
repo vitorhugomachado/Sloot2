@@ -6,6 +6,7 @@ import { loadGoogleIdentityScript } from '../../utils/loadGoogleIdentity';
 import PublicBookingCustomerHeader from './PublicBookingCustomerHeader';
 import PublicBookingPreview from '../preview/PublicBookingPreview';
 import CustomerPortalLoginModal from './CustomerPortalLoginModal';
+import '../../components/business/business-hero-header.css';
 import './public-booking-customer-header.css';
 
 export default function PublicBookingPage({ onOpenPortal }) {

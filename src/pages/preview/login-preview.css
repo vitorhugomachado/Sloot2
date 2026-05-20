@@ -1,11 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .login-preview {
-  --cl-accent: #a08bf3;
-  --cl-accent-hover: #8f75e8;
-  --cl-text: #0a0a0a;
-  --cl-text-muted: #1a1a1a;
-  --cl-border: #e0e0e0;
+  --cl-accent: #2563eb;
+  --cl-accent-hover: #1d4ed8;
+  --cl-text: #0f172a;
+  --cl-text-muted: #64748b;
+  --cl-border: #cbd5e1;
   --cl-card-shadow: 0 16px 48px rgba(17, 24, 39, 0.08), 0 2px 8px rgba(17, 24, 39, 0.04);
   --cl-radius-card: 40px;
   --cl-radius-input: 10px;
@@ -16,7 +16,7 @@
   flex-direction: column;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--cl-text);
-  background-color: #f5f3ff;
+  background-color: #f8fafc;
   overflow: hidden;
 }
 

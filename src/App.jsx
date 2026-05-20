@@ -285,7 +285,14 @@ function TenantAppContent() {
   }
 
   if (tenantError) {
-    return <LoadingScreen message={tenantError} />;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '12px', padding: '24px', textAlign: 'center' }}>
+        <p style={{ fontWeight: 600, margin: 0 }}>{tenantError}</p>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>
+          Confirma o slug na URL (ex.: /two-brothers/cliente) e que o backend está a correr.
+        </p>
+      </div>
+    );
   }
 
   const clienteHome = `/${tenantSlug}/cliente`;

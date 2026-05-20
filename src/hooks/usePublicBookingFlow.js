@@ -1,12 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { isValidPhone, normalizePhone, PHONE_ERROR } from '../utils/phone';
-import {
-  getPublicBookingSlotsForDay,
-  getPublicBookingSlotsForDayAnyBarber,
-  hasBarberShiftOnDate,
-  resolveBarberForAnySlot,
-} from '../utils/publicBookingSlots';
+import { getPublicBookingSlotsForDay, hasBarberShiftOnDate } from '../utils/publicBookingSlots';
 import { normalizeBookingTime } from '../utils/bookingAvailability';
 
 export const INITIAL_VISIBLE_BOOKING_DAYS = 5;
@@ -72,7 +67,6 @@ export function usePublicBookingFlow() {
   const [selectedDate, setSelectedDate] = useState(() => toIsoLocal(new Date()));
   const [selectedService, setSelectedService] = useState(null);
   const [selectedBarber, setSelectedBarber] = useState(null);
-  const [anyBarber, setAnyBarber] = useState(false);
   const [selectedTime, setSelectedTime] = useState(null);
   const [clientInfo, setClientInfo] = useState({ name: '', phone: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -101,14 +95,10 @@ export function usePublicBookingFlow() {
 
   useEffect(() => {
     setVisibleDaysCount(INITIAL_VISIBLE_BOOKING_DAYS);
-  }, [selectedBarber?.id, anyBarber, selectedService?.id]);
+  }, [selectedBarber?.id, selectedService?.id]);
 
   const { allWorkingDayIsosInHorizon, visibleBookingDateIsos } = useMemo(() => {
-    const barbersForDays = anyBarber
-      ? activeBarbers
-      : selectedBarber
-        ? [selectedBarber]
-        : [];
+    const barbersForDays = selectedBarber ? [selectedBarber] : [];
 
     if (barbersForDays.length === 0) {
       return { allWorkingDayIsosInHorizon: [], visibleBookingDateIsos: [] };
@@ -128,7 +118,7 @@ export function usePublicBookingFlow() {
       allWorkingDayIsosInHorizon: workingIsos,
       visibleBookingDateIsos: workingIsos.slice(0, take),
     };
-  }, [anyBarber, selectedBarber, activeBarbers, visibleDaysCount]);
+  }, [selectedBarber, activeBarbers, visibleDaysCount]);
 
   const canLoadMore = visibleDaysCount < allWorkingDayIsosInHorizon.length;
 
@@ -191,20 +181,12 @@ export function usePublicBookingFlow() {
   };
 
   const pickBarber = (barber) => {
-    setAnyBarber(false);
     setSelectedBarber(barber);
-    setSelectedTime(null);
-  };
-
-  const pickAnyBarber = () => {
-    setAnyBarber(true);
-    setSelectedBarber(null);
     setSelectedTime(null);
   };
 
   const selectBarberAndContinue = useCallback(
     (barber) => {
-      setAnyBarber(false);
       setSelectedBarber(barber);
       setSelectedTime(null);
       goToStep(3);
@@ -219,13 +201,13 @@ export function usePublicBookingFlow() {
   };
 
   useEffect(() => {
-    if (step !== 3 || (!selectedBarber && !anyBarber)) return;
+    if (step !== 3 || !selectedBarber) return;
     if (allWorkingDayIsosInHorizon.length === 0) return;
     if (!allWorkingDayIsosInHorizon.includes(selectedDate)) {
       setSelectedDate(allWorkingDayIsosInHorizon[0]);
       setSelectedTime(null);
     }
-  }, [step, selectedBarber, anyBarber, allWorkingDayIsosInHorizon, selectedDate]);
+  }, [step, selectedBarber, allWorkingDayIsosInHorizon, selectedDate]);
 
   const pickDate = (iso) => {
     setSelectedDate(iso);
@@ -246,22 +228,11 @@ export function usePublicBookingFlow() {
     setClientInfo({ name: '', phone: '' });
     setSelectedService(null);
     setSelectedBarber(null);
-    setAnyBarber(false);
     setSelectedTime(null);
     setBookingError('');
   };
 
-  const resolveBookingBarber = () => {
-    if (selectedBarber) return selectedBarber;
-    if (!anyBarber) return null;
-    return resolveBarberForAnySlot({
-      dateIso: selectedDate,
-      time: selectedTime,
-      barbers: activeBarbers,
-      durationMinutes,
-      appointments,
-    });
-  };
+  const resolveBookingBarber = () => selectedBarber ?? null;
 
   const handleFinishBooking = async () => {
     const finalName = currentCustomer ? currentCustomer.name : clientInfo.name;
@@ -369,22 +340,13 @@ export function usePublicBookingFlow() {
     }
   };
 
-  const getSlotsForDay = (dateIso) => {
-    if (anyBarber) {
-      return getPublicBookingSlotsForDayAnyBarber({
-        dateIso,
-        barbers: activeBarbers,
-        durationMinutes,
-        appointments,
-      });
-    }
-    return getPublicBookingSlotsForDay({
+  const getSlotsForDay = (dateIso) =>
+    getPublicBookingSlotsForDay({
       dateIso,
       barber: selectedBarber,
       durationMinutes,
       appointments,
     });
-  };
 
   const monthLabel = calendarMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
@@ -394,7 +356,6 @@ export function usePublicBookingFlow() {
     selectedDate,
     selectedService,
     selectedBarber,
-    anyBarber,
     selectedTime,
     clientInfo,
     setClientInfo,
@@ -430,7 +391,6 @@ export function usePublicBookingFlow() {
     selectServiceAndContinue,
     confirmServiceStep,
     pickBarber,
-    pickAnyBarber,
     selectBarberAndContinue,
     resolveBookingBarber,
     confirmBarberStep,
