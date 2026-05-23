@@ -40,7 +40,11 @@ app.use((err, req, res, next) => {
 
 // Health Check for diagnostics
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    gitSha: process.env.APP_GIT_SHA || process.env.RAILWAY_GIT_COMMIT_SHA || null,
+  });
 });
 
 // Serve static files from the React app in production
