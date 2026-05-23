@@ -1,43 +1,33 @@
-﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Users, Calendar, Clock, X, ShoppingBag, Plus, ChevronLeft, ChevronRight, ChevronDown, LayoutGrid, Play, CheckCircle, XCircle } from 'lucide-react';
+﻿import React, { useState, useMemo, useEffect } from 'react';
+import { Users, Calendar, Clock, X, ShoppingBag, Plus, ChevronLeft, ChevronRight, LayoutGrid, Play, CheckCircle, XCircle } from 'lucide-react';
 import WhatsAppIcon from '../components/icons/WhatsAppIcon';
 import { useApp } from '../context/AppContext';
+import { API_URL } from '../config/apiUrl';
+
+const EMPTY_DIRECT_SALE = {
+  customerId: '',
+  customerName: '',
+  barberId: '',
+  items: [{ productId: '', quantity: 1 }],
+};
 import { filterAvailableBookingTimes, isBookingSlotTaken } from '../utils/bookingAvailability';
 import OccupancyGauge from '../components/OccupancyGauge';
 import DashUpcomingEmpty from '../components/dashboard/DashUpcomingEmpty';
-import {
-  RevenueIllustration,
-  CancellationIllustration,
-  TicketAverageIllustration,
-} from '../components/dashboard/DashKpiIllustrations';
 
 /* ─────────── KPI Card ─────────── */
-const KpiCard = ({ label, value, trend, trendLabel, illustration, stagger, invertTrend }) => {
-  const isPositive = invertTrend ? trend <= 0 : trend >= 0;
-  return (
-    <div className={`dash-kpi-card stagger-${stagger}`}>
-      <div className="dash-kpi-top">
-        <span className="dash-kpi-label">{label}</span>
-        <div className="dash-kpi-arrow"><ChevronRight size={14} /></div>
-      </div>
-      <div className="dash-kpi-main">
-        <div className="dash-kpi-data">
-          <div className="dash-kpi-value">{value}</div>
-          {trend !== undefined && (
-            <span className={`dash-kpi-trend ${isPositive ? 'up' : 'down'}`}>
-              {trend > 0 ? '+' : ''}{trend}% {trendLabel || 'vs último período'}
-            </span>
-          )}
-        </div>
-        {illustration && (
-          <div className="dash-kpi-illustration" aria-hidden>
-            {illustration}
-          </div>
-        )}
+const KpiCard = ({ label, value, stagger }) => (
+  <div className={`dash-kpi-card stagger-${stagger}`}>
+    <div className="dash-kpi-top">
+      <span className="dash-kpi-label">{label}</span>
+      <div className="dash-kpi-arrow"><ChevronRight size={14} /></div>
+    </div>
+    <div className="dash-kpi-main">
+      <div className="dash-kpi-data">
+        <div className="dash-kpi-value">{value}</div>
       </div>
     </div>
-  );
-};
+  </div>
+);
 
 /* ─────────── Mini Calendar ─────────── */
 const MiniCalendar = ({ focusDate, onDateSelect }) => {
@@ -81,32 +71,30 @@ const MiniCalendar = ({ focusDate, onDateSelect }) => {
 };
 
 const DASHBOARD_TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+const KPI_PERIOD_DAYS = 7;
 
 /* ─────────── Main Dashboard ─────────── */
 const Dashboard = () => {
   const {
     barbers, appointments, services, products,
     addAppointment, sellProduct, getFinancialStats, getBarberRanking,
-    updateAppointmentStatus, cancelAppointment, currentUser
+    updateAppointmentStatus, cancelAppointment, currentUser, token
   } = useApp();
   
   const todayStr = new Date().toISOString().split('T')[0];
   const [focusDate, setFocusDate] = useState(todayStr);
-  const [periodDays, setPeriodDays] = useState(7);
   const [performancePeriodDays, setPerformancePeriodDays] = useState(7);
-  const [showPeriodMenu, setShowPeriodMenu] = useState(false);
-  const periodMenuRef = useRef(null);
   const isBarber = currentUser?.role === 'Barbeiro';
 
   const kpiPeriodDates = useMemo(() => {
     const end = new Date(todayStr);
     const start = new Date(todayStr);
-    start.setDate(start.getDate() - Math.max(periodDays - 1, 0));
+    start.setDate(start.getDate() - Math.max(KPI_PERIOD_DAYS - 1, 0));
     return {
       start: start.toISOString().split('T')[0],
       end: end.toISOString().split('T')[0]
     };
-  }, [todayStr, periodDays]);
+  }, [todayStr]);
 
   const performancePeriodDates = useMemo(() => {
     if (performancePeriodDays === 0) {
@@ -133,7 +121,9 @@ const Dashboard = () => {
   const [formData, setFormData] = useState({
     customer: '', phone: '', serviceId: '', barberId: '', time: '09:00', date: focusDate
   });
-  const [saleData, setSaleData] = useState({ productId: '', quantity: 1, barberId: '' });
+  const [saleForm, setSaleForm] = useState(EMPTY_DIRECT_SALE);
+  const [saleClients, setSaleClients] = useState([]);
+  const [saleClientsLoading, setSaleClientsLoading] = useState(false);
 
   const activeBarbers = useMemo(
     () => barbers.filter(b => b.role === 'Barbeiro' && b.status === 'Ativo'),
@@ -171,46 +161,121 @@ const Dashboard = () => {
   // Stats
   const totalAppointments = appointments.filter(a => a.date >= kpiPeriodDates.start && a.date <= kpiPeriodDates.end).length;
   const barberCount = isBarber ? 1 : activeBarbers.length;
-  const capacity = barberCount * 9 * periodDays || 1;
+  const capacity = barberCount * 9 * KPI_PERIOD_DAYS || 1;
   const occupancyRate = Math.min(100, Math.round((totalAppointments / capacity) * 100));
 
-  // Taxa de Cancelamento (atual + intervalo anterior de mesma duração)
-  const cancelRateKpi = useMemo(() => {
+  const cancelRate = useMemo(() => {
     const periodApps = appointments.filter(
       a => a.date >= kpiPeriodDates.start && a.date <= kpiPeriodDates.end
     );
     const cancelledCount = periodApps.filter(a => a.status === 'Cancelado').length;
-    const cancelRate = periodApps.length > 0
+    return periodApps.length > 0
       ? Math.round((cancelledCount / periodApps.length) * 100)
       : 0;
+  }, [appointments, kpiPeriodDates.start, kpiPeriodDates.end]);
 
-    const prevEnd = new Date(kpiPeriodDates.start + 'T12:00:00');
-    prevEnd.setDate(prevEnd.getDate() - 1);
-    const prevStart = new Date(prevEnd);
-    prevStart.setDate(prevStart.getDate() - Math.max(periodDays - 1, 0));
-    const prevStartStr = prevStart.toISOString().split('T')[0];
-    const prevEndStr = prevEnd.toISOString().split('T')[0];
+  useEffect(() => {
+    if (!isSaleModalOpen || !token) return;
+    let cancelled = false;
+    setSaleClientsLoading(true);
+    fetch(`${API_URL}/clients?pageSize=100`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : { items: [] }))
+      .then((body) => {
+        if (!cancelled) setSaleClients(Array.isArray(body.items) ? body.items : []);
+      })
+      .catch(() => {
+        if (!cancelled) setSaleClients([]);
+      })
+      .finally(() => {
+        if (!cancelled) setSaleClientsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isSaleModalOpen, token]);
 
-    const prevApps = appointments.filter(
-      a => a.date >= prevStartStr && a.date <= prevEndStr
-    );
-    const prevCancelled = prevApps.filter(a => a.status === 'Cancelado').length;
-    const cancelRatePrev = prevApps.length > 0
-      ? Math.round((prevCancelled / prevApps.length) * 100)
-      : 0;
+  const saleLineItems = useMemo(
+    () =>
+      saleForm.items
+        .filter((item) => item.productId)
+        .map((item) => ({
+          productId: Number(item.productId),
+          quantity: Math.max(1, Number(item.quantity || 1)),
+        })),
+    [saleForm.items]
+  );
 
-    return { cancelRate, cancelTrend: cancelRate - cancelRatePrev };
-  }, [appointments, kpiPeriodDates.start, kpiPeriodDates.end, periodDays]);
+  const saleTotal = useMemo(() => {
+    return saleLineItems.reduce((sum, item) => {
+      const product = products.find((p) => Number(p.id) === item.productId);
+      if (!product) return sum;
+      return sum + Number(product.price || 0) * item.quantity;
+    }, 0);
+  }, [saleLineItems, products]);
+
+  const handleSaleItemChange = (index, field, value) => {
+    setSaleForm((prev) => {
+      const items = [...prev.items];
+      items[index] = { ...items[index], [field]: value };
+      return { ...prev, items };
+    });
+  };
+
+  const handleAddSaleItem = () => {
+    setSaleForm((prev) => ({
+      ...prev,
+      items: [...prev.items, { productId: '', quantity: 1 }],
+    }));
+  };
+
+  const handleRemoveSaleItem = (index) => {
+    setSaleForm((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }));
+  };
+
+  const closeSaleModal = () => {
+    setIsSaleModalOpen(false);
+    setSaleForm(EMPTY_DIRECT_SALE);
+  };
 
   /* ─── Handlers ─── */
-  const handleSaleProduct = async () => {
-    if (!saleData.productId) return;
-    const barberId = saleData.barberId ? parseInt(saleData.barberId) : null;
-    const success = await sellProduct(parseInt(saleData.productId), parseInt(saleData.quantity), barberId);
-    if (success) {
-      setIsSaleModalOpen(false);
-      setSaleData({ productId: '', quantity: 1, barberId: '' });
-    } else { alert("Estoque insuficiente!"); }
+  const handleConfirmDirectSale = async () => {
+    if (saleLineItems.length === 0) return;
+
+    for (const item of saleLineItems) {
+      const product = products.find((p) => Number(p.id) === item.productId);
+      if (!product) {
+        alert('Um produto selecionado não está cadastrado.');
+        return;
+      }
+      if (Number(product.stock || 0) < item.quantity) {
+        alert(`Estoque insuficiente para ${product.name}. Disponível: ${product.stock}.`);
+        return;
+      }
+    }
+
+    const barberId = saleForm.barberId ? parseInt(saleForm.barberId, 10) : null;
+    const saleMeta = {
+      customerId: saleForm.customerId ? Number(saleForm.customerId) : null,
+      customerName:
+        !saleForm.customerId && saleForm.customerName.trim()
+          ? saleForm.customerName.trim()
+          : null,
+    };
+
+    for (const item of saleLineItems) {
+      const ok = await sellProduct(item.productId, item.quantity, barberId, saleMeta);
+      if (!ok) {
+        alert('Não foi possível concluir a venda. Verifique o estoque.');
+        return;
+      }
+    }
+
+    closeSaleModal();
   };
 
   // ─── Action Modal handlers ───
@@ -375,7 +440,6 @@ const Dashboard = () => {
     setFormData({ customer: '', phone: '', serviceId: '', barberId: '', time: '09:00', date: focusDate });
   };
 
-  const periodLabel = `Últimos ${periodDays} dias`;
   const barberColors = ['#2563EB', '#10B981', '#f59e0b', '#ec4899', '#64748B'];
   const maxRevenue = ranking.length > 0 ? Math.max(...ranking.map(b => b.revenue), 1) : 1;
   const formatCurrency = (value) => `R$ ${Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
@@ -480,21 +544,10 @@ const Dashboard = () => {
     setCheckoutProducts([{ productId: '', quantity: 1 }]);
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!periodMenuRef.current) return;
-      if (!periodMenuRef.current.contains(event.target)) {
-        setShowPeriodMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const getStatusConfig = (status) => {
     switch (status) {
       case 'Finalizado': return { color: '#059669', label: 'Pago' };
-      case 'Em progresso': return { color: '#2563eb', label: 'Em atendimento' };
+      case 'Em progresso': return { color: '#252f3d', label: 'Em atendimento' };
       case 'Agendado': return { color: 'var(--brand-400)', label: 'Agendado' };
       case 'Confirmado': return { color: '#10b981', label: 'Confirmado' };
       case 'Cancelado': return { color: '#ef4444', label: 'Cancelado' };
@@ -510,34 +563,6 @@ const Dashboard = () => {
       <div className="dash-header">
         <h1>{isBarber ? `Meu Dashboard` : 'Dashboard'}</h1>
         <div className="dash-header-actions">
-          <div className="dash-period-wrap" ref={periodMenuRef}>
-            <button
-              className="dash-period-selector"
-              type="button"
-              onClick={() => setShowPeriodMenu((prev) => !prev)}
-            >
-              <Calendar size={16} />
-              {periodLabel}
-              <ChevronDown size={14} />
-            </button>
-            {showPeriodMenu && (
-              <div className="dash-period-menu">
-                {[7, 15, 30].map((days) => (
-                  <button
-                    key={days}
-                    type="button"
-                    className={`dash-period-menu-item ${periodDays === days ? 'active' : ''}`}
-                    onClick={() => {
-                      setPeriodDays(days);
-                      setShowPeriodMenu(false);
-                    }}
-                  >
-                    Últimos {days} dias
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
           {!isBarber && (
             <button className="dash-action-btn secondary" onClick={() => setIsSaleModalOpen(true)}>
               <ShoppingBag size={16} /> Venda Rápida
@@ -551,10 +576,10 @@ const Dashboard = () => {
 
       {/* ═══════ KPI ROW ═══════ */}
       <div className="dash-kpi-row">
-        <KpiCard label="Receita Total" value={`R$${stats.revenue.toLocaleString('pt-BR')}`} trend={8} trendLabel="vs último período" illustration={<RevenueIllustration />} stagger={1} />
-        <OccupancyGauge value={occupancyRate} trend={-3} trendLabel="vs último período" stagger={2} />
-        <KpiCard label="Taxa de Cancelamento" value={`${cancelRateKpi.cancelRate}%`} trend={cancelRateKpi.cancelTrend} trendLabel="vs último período" illustration={<CancellationIllustration />} stagger={3} invertTrend />
-        <KpiCard label="Ticket Médio" value={`R$${stats.averageTicket.toFixed(0)}`} trend={2} trendLabel="vs último período" illustration={<TicketAverageIllustration />} stagger={4} />
+        <KpiCard label="Receita Total" value={`R$${stats.revenue.toLocaleString('pt-BR')}`} stagger={1} />
+        <OccupancyGauge value={occupancyRate} stagger={2} />
+        <KpiCard label="Taxa de Cancelamento" value={`${cancelRate}%`} stagger={3} />
+        <KpiCard label="Ticket Médio" value={`R$${stats.averageTicket.toFixed(0)}`} stagger={4} />
       </div>
 
       {/* ═══════ BOTTOM 3-COLUMN GRID ═══════ */}
@@ -1094,27 +1119,129 @@ const Dashboard = () => {
 
       {/* ═══════ VENDA MODAL ═══════ */}
       {isSaleModalOpen && (
-        <div className="modal-backdrop">
-          <div className="modal-glass-panel fade-in" style={{ width: '95%', maxWidth: '420px', padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.2rem', marginBottom: 0 }}>Venda Direta (PDV)</h2>
-              <button style={{ background: 'none' }} onClick={() => setIsSaleModalOpen(false)}><X size={20} /></button>
+        <div className="modal-backdrop" onClick={closeSaleModal}>
+          <div
+            className="modal-glass-panel fade-in scheduler-modal-panel"
+            style={{ width: '95%', maxWidth: '480px', padding: '1.75rem', maxHeight: '90vh', overflowY: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="booking-reserve-form__title-row">
+              <h2 className="booking-reserve-form__title">Venda direta</h2>
+              <button type="button" className="booking-reserve-form__close" onClick={closeSaleModal} aria-label="Fechar">
+                <X size={20} />
+              </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <select value={saleData.productId} onChange={e => setSaleData({...saleData, productId: e.target.value})} style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }}>
-                <option value="">Selecione o Produto</option>
-                {products.map(p => (<option key={p.id} value={p.id} disabled={p.stock <= 0}>{p.name} - R$ {p.price} ({p.stock} un.)</option>))}
+
+            <div className="booking-reserve-form" style={{ marginTop: '1rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                Cliente (opcional)
+              </label>
+              <select
+                className="booking-reserve-form__field"
+                value={saleForm.customerId}
+                onChange={(e) =>
+                  setSaleForm((prev) => ({
+                    ...prev,
+                    customerId: e.target.value,
+                    customerName: e.target.value ? '' : prev.customerName,
+                  }))
+                }
+                disabled={saleClientsLoading}
+              >
+                <option value="">Sem cliente / avulso</option>
+                {saleClients
+                  .filter((c) => c.id)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                      {c.phone ? ` — ${c.phone}` : ''}
+                    </option>
+                  ))}
               </select>
-              <select value={saleData.barberId} onChange={e => setSaleData({...saleData, barberId: e.target.value})} style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }}>
-                <option value="">Profissional Destino (Opcional)</option>
-                {activeBarbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+
+              {!saleForm.customerId && (
+                <input
+                  type="text"
+                  className="booking-reserve-form__field"
+                  placeholder="Nome do cliente (opcional)"
+                  autoComplete="name"
+                  value={saleForm.customerName}
+                  onChange={(e) => setSaleForm((prev) => ({ ...prev, customerName: e.target.value }))}
+                />
+              )}
+
+              <select
+                className="booking-reserve-form__field"
+                value={saleForm.barberId}
+                onChange={(e) => setSaleForm((prev) => ({ ...prev, barberId: e.target.value }))}
+              >
+                <option value="">Profissional (opcional)</option>
+                {activeBarbers.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
               </select>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <label style={{ fontSize: '0.9rem', fontWeight: 600 }}>Qtd:</label>
-                <input type="number" min="1" value={saleData.quantity} onChange={e => setSaleData({...saleData, quantity: e.target.value})} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} />
+
+              <div className="action-modal-panel">
+                <div className="action-modal-panel__head">
+                  <span className="action-modal-panel__title">Itens da venda</span>
+                  <button type="button" className="action-modal-panel__chip-btn" onClick={handleAddSaleItem}>
+                    <Plus size={14} aria-hidden /> Adicionar
+                  </button>
+                </div>
+                <div className="action-modal-panel__stack">
+                  {saleForm.items.map((item, index) => (
+                    <div key={index} className="action-modal-panel__product-row">
+                      <select
+                        className="action-modal-field"
+                        value={item.productId}
+                        onChange={(e) => handleSaleItemChange(index, 'productId', e.target.value)}
+                      >
+                        <option value="">Selecione o produto</option>
+                        {products.map((p) => (
+                          <option key={p.id} value={p.id} disabled={p.stock <= 0}>
+                            {p.name} — R$ {Number(p.price || 0).toFixed(2)} ({p.stock} un.)
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        className="action-modal-field action-modal-field--qty"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => handleSaleItemChange(index, 'quantity', e.target.value)}
+                      />
+                      {saleForm.items.length > 1 && (
+                        <button
+                          type="button"
+                          className="action-modal-remove-row"
+                          onClick={() => handleRemoveSaleItem(index)}
+                          aria-label="Remover item"
+                        >
+                          <X size={18} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <button className="btn-primary" style={{ marginTop: '0.5rem', padding: '14px', display: 'flex', gap: '10px', justifyContent: 'center' }} onClick={handleSaleProduct} disabled={!saleData.productId || saleData.quantity <= 0}>
-                <ShoppingBag size={18} /> Confirmar Venda
+
+              {saleLineItems.length > 0 && (
+                <div className="booking-reserve-form__static" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Total</span>
+                  <strong style={{ color: 'var(--text-primary)' }}>{formatCurrency(saleTotal)}</strong>
+                </div>
+              )}
+
+              <button
+                type="button"
+                className="btn-primary booking-reserve-form__submit"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                onClick={handleConfirmDirectSale}
+                disabled={saleLineItems.length === 0}
+              >
+                <ShoppingBag size={18} /> Confirmar venda
               </button>
             </div>
           </div>

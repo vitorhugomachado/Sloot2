@@ -92,9 +92,10 @@ model Customer {
   createdAt DateTime  @default(now())
   birthday  DateTime? @db.Date
   notes     String?
-  tags      Json?
-  updatedAt DateTime  @default(now()) @updatedAt
-  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tags          Json?
+  updatedAt     DateTime      @default(now()) @updatedAt
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  productSales  ProductSale[]
 
   @@unique([tenantId, email], map: "Customer_tenantId_email_key")
   @@index([tenantId], map: "idx_customer_tenant")
@@ -138,20 +139,24 @@ model Product {
 }
 
 model ProductSale {
-  id          Int     @id @default(autoincrement())
-  tenantId    Int
-  productId   Int
-  productName String
-  price       Float
-  cost        Float
-  quantity    Int
-  date        String
-  barberId    Int?
-  tenant      Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  Barber      Barber? @relation(fields: [barberId], references: [id])
+  id           Int       @id @default(autoincrement())
+  tenantId     Int
+  productId    Int
+  productName  String
+  price        Float
+  cost         Float
+  quantity     Int
+  date         String
+  barberId     Int?
+  customerId   Int?
+  customerName String?
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Barber       Barber?   @relation(fields: [barberId], references: [id])
+  Customer     Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   @@index([tenantId], map: "idx_productsale_tenant")
   @@index([date], map: "idx_productsale_date")
+  @@index([customerId], map: "idx_productsale_customer")
 }
 
 model Expense {

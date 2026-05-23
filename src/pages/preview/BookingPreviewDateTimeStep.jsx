@@ -14,6 +14,7 @@ function formatDateChip(iso) {
 
 export default function BookingPreviewDateTimeStep({
   workingDayIsos,
+  selectedBarber,
   selectedDate,
   selectedTime,
   onPickDate,
@@ -23,6 +24,7 @@ export default function BookingPreviewDateTimeStep({
   getSlotsForDay,
   previewBanner,
 }) {
+  const needsBarber = !selectedBarber;
   const carouselRef = useRef(null);
 
   const scrollCarousel = (dir) => {
@@ -66,7 +68,9 @@ export default function BookingPreviewDateTimeStep({
         </button>
         <div className="bp-date-carousel-track">
         <div ref={carouselRef} className="bp-date-carousel">
-          {workingDayIsos.length === 0 ? (
+          {needsBarber ? (
+            <p className="bp-empty bp-empty--inline">Selecione seu profissional</p>
+          ) : workingDayIsos.length === 0 ? (
             <p className="bp-empty bp-empty--inline">Sem dias com expediente.</p>
           ) : (
             workingDayIsos.map((iso) => {
@@ -105,7 +109,9 @@ export default function BookingPreviewDateTimeStep({
         4. Escolha o horário
       </h2>
 
-      {!selectedDate ? (
+      {needsBarber ? (
+        <p className="bp-empty bp-empty--inline">Selecione seu profissional</p>
+      ) : !selectedDate ? (
         <p className="bp-empty bp-empty--inline">Selecione uma data acima.</p>
       ) : slotsToDisplay.length === 0 ? (
         <p className="bp-empty bp-empty--inline">Nenhum horario neste dia.</p>

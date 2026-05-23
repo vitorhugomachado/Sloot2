@@ -97,7 +97,7 @@ const ClientFormModal = ({ open, mode = 'create', initialData, onClose, onSubmit
     <div className="modal-backdrop" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="modal-glass-panel fade-in"
+        className="modal-glass-panel client-form-modal fade-in"
         style={{ width: '100%', maxWidth: '520px', padding: '1.75rem', maxHeight: '90vh', overflowY: 'auto' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>

@@ -30,20 +30,20 @@
   --text-secondary: #64748b;
 
   /* Primária (botões, navegação ativa) */
-  --primary-color: #0f172a;
-  --primary-hover: #1e293b;
+  --primary-color: #252f3d;
+  --primary-hover: #323f50;
   --primary-text: #ffffff;
 
-  /* Accent azul (destaques, links, gráficos) */
-  --accent-color: #2563eb;
-  --accent-hover: #1d4ed8;
+  /* Accent — mesma cor da marca */
+  --accent-color: #252f3d;
+  --accent-hover: #323f50;
   --accent-text: #ffffff;
-  --accent-soft: rgba(37, 99, 235, 0.12);
+  --accent-soft: rgba(37, 47, 61, 0.12);
   --success-color: #10b981;
 
   /* KPI Accent Colors */
   --kpi-revenue: #D4AF37;
-  --kpi-profit: #2563EB;
+  --kpi-profit: #252f3d;
   --kpi-commission: #DB2777;
   --kpi-ticket: #7C3AED;
   --kpi-sales: #4F46E5;
@@ -72,7 +72,7 @@
   --dash-card-bg: #ffffff;
   --dash-panel-bg: #ffffff;
   /* Seleção de texto (padrão azul do sistema — não usa o verde da marca) */
-  --selection-bg: rgba(37, 99, 235, 0.22);
+  --selection-bg: rgba(37, 47, 61, 0.22);
   --selection-color: #0f172a;
 }
 
@@ -82,13 +82,13 @@
   --border-color: rgba(203, 213, 225, 0.2);
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --primary-color: #1e293b;
-  --primary-hover: #334155;
+  --primary-color: #323f50;
+  --primary-hover: #3d4d61;
   --primary-text: #ffffff;
-  --accent-color: #2563eb;
-  --accent-hover: #3b82f6;
+  --accent-color: #323f50;
+  --accent-hover: #3d4d61;
   --accent-text: #ffffff;
-  --accent-soft: rgba(37, 99, 235, 0.2);
+  --accent-soft: rgba(37, 47, 61, 0.22);
   --success-color: #10b981;
   --shadow-sm: 0 2px 4px rgba(0,0,0,0.4);
   --shadow-md: 0 4px 6px rgba(0,0,0,0.5);
@@ -100,7 +100,7 @@
   --modal-backdrop-bg: rgba(0, 0, 0, 0.55);
   --panel-bg: #1e293b;
   --card-outline: rgba(203, 213, 225, 0.25);
-  --selection-bg: rgba(37, 99, 235, 0.35);
+  --selection-bg: rgba(37, 47, 61, 0.35);
   --selection-color: #f8fafc;
   --hover-bg: rgba(255,255,255,0.05);
   --icon-bg: rgba(255,255,255,0.04);
@@ -592,8 +592,9 @@ h1, h2, h3, h4, .brand-font {
 .scheduler-desktop-week-header__cell--selected {
   background: var(--accent-color);
   color: #ffffff;
-  border-radius: 12px 12px 0 0;
-  margin: 4px 4px 0;
+  border-radius: 0;
+  margin: 0;
+  border-right-color: var(--accent-color);
 }
 
 .scheduler-desktop-week-header__wd {
@@ -746,32 +747,32 @@ h1, h2, h3, h4, .brand-font {
 
 .scheduler-cell-appts {
   position: absolute;
-  inset: 2px;
+  inset: 3px;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-height: 0;
   box-sizing: border-box;
 }
 
 .scheduler-cell-appts .scheduler-appt-bar {
   flex: 1 1 0;
-  min-height: 11px;
+  min-height: 14px;
 }
 
 .scheduler-cell-appts--count-1 .scheduler-appt-bar {
   flex: 1 1 auto;
-  min-height: 16px;
+  min-height: 21px;
 }
 
 .scheduler-cell-appts--count-2 .scheduler-appt-bar {
-  min-height: 12px;
+  min-height: 16px;
 }
 
 .scheduler-cell-appts--count-3 .scheduler-appt-bar {
-  min-height: 11px;
-  padding: 1px 4px 1px 3px;
+  min-height: 14px;
+  padding: 0 5px 0 0;
 }
 
 .scheduler-cell-appts--count-4 .scheduler-appt-bar,
@@ -780,9 +781,9 @@ h1, h2, h3, h4, .brand-font {
 .scheduler-cell-appts--count-7 .scheduler-appt-bar,
 .scheduler-cell-appts--count-8 .scheduler-appt-bar,
 .scheduler-cell-appts--count-9 .scheduler-appt-bar {
-  min-height: 10px;
-  padding: 1px 3px 1px 2px;
-  gap: 3px;
+  min-height: 13px;
+  padding: 0 4px 0 0;
+  gap: 4px;
 }
 
 .scheduler-cell-appts--count-3 .scheduler-appt-bar__name,
@@ -792,7 +793,7 @@ h1, h2, h3, h4, .brand-font {
 .scheduler-cell-appts--count-7 .scheduler-appt-bar__name,
 .scheduler-cell-appts--count-8 .scheduler-appt-bar__name,
 .scheduler-cell-appts--count-9 .scheduler-appt-bar__name {
-  font-size: 0.56rem;
+  font-size: 0.73rem;
 }
 
 .scheduler-cell-appts--count-2 .scheduler-appt-bar__meta,
@@ -814,21 +815,21 @@ h1, h2, h3, h4, .brand-font {
 
 .scheduler-cell-appts--count-2 .scheduler-cell-appts__single,
 .scheduler-cell-appts--count-3 .scheduler-cell-appts__single {
-  padding: 5px 6px;
-  font-size: 0.65rem;
-  border-radius: 8px;
+  padding: 7px 8px;
+  font-size: 0.85rem;
+  border-radius: 10px;
 }
 
 .scheduler-appt-bar {
   pointer-events: auto;
   width: 100%;
-  min-height: 16px;
+  min-height: 21px;
   flex-shrink: 1;
-  border-radius: 4px;
-  padding: 2px 5px 2px 3px;
+  border-radius: 5px;
+  padding: 0 7px 0 0;
   display: flex;
-  align-items: center;
-  gap: 4px;
+  align-items: stretch;
+  gap: 5px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   border: 1px solid transparent;
   box-sizing: border-box;
@@ -845,21 +846,22 @@ h1, h2, h3, h4, .brand-font {
 }
 
 .scheduler-appt-bar__accent {
-  width: 3px;
+  width: 4px;
   align-self: stretch;
-  border-radius: 3px;
   flex-shrink: 0;
-  min-height: 100%;
+  margin: 3px 0 3px 3px;
+  border-radius: 3px;
 }
 
 .scheduler-appt-bar__name {
-  font-size: 0.6rem;
+  font-size: 0.78rem;
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
   min-width: 0;
+  align-self: center;
   color: var(--text-primary);
 }
 
@@ -868,10 +870,11 @@ h1, h2, h3, h4, .brand-font {
 }
 
 .scheduler-appt-bar__meta {
-  font-size: 0.52rem;
+  font-size: 0.68rem;
   font-weight: 600;
   color: var(--text-secondary);
   flex-shrink: 0;
+  align-self: center;
   max-width: 38%;
   white-space: nowrap;
   overflow: hidden;
@@ -1102,10 +1105,11 @@ h1, h2, h3, h4, .brand-font {
   }
 
   .scheduler-page .scheduler-mobile-macro-card.scheduler-appt-bar {
+    align-items: stretch;
     gap: 0.5rem;
-    padding: 6px 10px;
+    padding: 0 13px 0 0;
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: 10px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   }
 
@@ -1272,6 +1276,14 @@ h1, h2, h3, h4, .brand-font {
   padding: 1.5rem;
 }
 
+.modal-glass-panel.client-form-modal {
+  background: rgba(255, 255, 255, 1);
+}
+
+[data-theme='dark'] .modal-glass-panel.client-form-modal {
+  background: var(--panel-bg);
+}
+
 /* If composed with .glass-card, keep modal panels from lifting on hover */
 .glass-card.modal-glass-panel:hover {
   transform: none;
@@ -1280,7 +1292,7 @@ h1, h2, h3, h4, .brand-font {
 
 /* Reservar Horário — card vidro (painel translúcido + blur, referência UI) */
 .modal-glass-panel:has(.booking-reserve-form) {
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 1);
   backdrop-filter: blur(22px) saturate(1.12);
   -webkit-backdrop-filter: blur(22px) saturate(1.12);
   border: 1px solid var(--card-outline);
@@ -1295,6 +1307,17 @@ h1, h2, h3, h4, .brand-font {
   box-shadow:
     0 18px 50px rgba(0, 0, 0, 0.5),
     0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* Agenda — todos os modais (detalhes, ações, reservar) */
+.modal-glass-panel.scheduler-modal-panel {
+  background: rgba(255, 255, 255, 1);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+[data-theme='dark'] .modal-glass-panel.scheduler-modal-panel {
+  background: var(--panel-bg);
 }
 
 .modal-glass-panel:has(.booking-reserve-form) input.booking-reserve-form__field:not([type='date']),
@@ -1502,7 +1525,7 @@ button.action-modal-choice-btn:active {
 button.action-modal-choice-btn--start {
   background: #eff6ff;
   border-color: #bfdbfe;
-  color: #1d4ed8;
+  color: #252f3d;
 }
 
 button.action-modal-choice-btn--start:hover {
@@ -1511,7 +1534,7 @@ button.action-modal-choice-btn--start:hover {
 }
 
 button.action-modal-choice-btn--start svg {
-  color: #2563eb;
+  color: #252f3d;
   opacity: 1;
 }
 
@@ -1548,7 +1571,7 @@ button.action-modal-choice-btn--cancel svg {
 }
 
 [data-theme='dark'] button.action-modal-choice-btn--start {
-  background: rgba(37, 99, 235, 0.15);
+  background: rgba(37, 47, 61, 0.15);
   border-color: rgba(147, 197, 253, 0.35);
   color: #93c5fd;
 }
@@ -1596,7 +1619,7 @@ button.action-modal-cta-btn--start {
 button.action-modal-cta-btn--start-blue {
   background: #eff6ff;
   border-color: #bfdbfe;
-  color: #1d4ed8;
+  color: #252f3d;
 }
 
 button.action-modal-cta-btn--start-blue:hover {
@@ -2006,7 +2029,7 @@ input.action-modal-field--qty {
 }
 
 .crm-mobile-kpi-chip--info {
-  background: rgba(59, 130, 246, 0.08);
+  background: rgba(37, 47, 61, 0.08);
 }
 
 .crm-mobile-kpi-chip__label {
@@ -2508,8 +2531,27 @@ button {
   border-color: var(--border-color);
 }
 
-.main-content .glass-card.hover-trigger button {
+.main-content .glass-card.hover-trigger button:not(.settings-card-action-btn--plain):not(.settings-card-action-btn--delete) {
   border: 1px solid var(--primary-color) !important;
+  box-sizing: border-box;
+}
+
+/* Configurações — catálogo: todas as bordas #CBD5E1 */
+.settings-page .glass-card.settings-catalog-card,
+.settings-page .set-mobile-card {
+  border: 1px solid #cbd5e1 !important;
+}
+
+.settings-page .glass-card.settings-catalog-card .settings-card-actions,
+.settings-page .set-mobile-card__actions {
+  border-top: 1px solid #cbd5e1;
+}
+
+.settings-page .glass-card.settings-catalog-card button.settings-card-action-btn--plain,
+.settings-page .glass-card.settings-catalog-card button.settings-card-action-btn--delete,
+.settings-page button.set-mobile-action-btn,
+.settings-page button.settings-action-icon-btn {
+  border: 1px solid #cbd5e1 !important;
   box-sizing: border-box;
 }
 
@@ -2591,13 +2633,13 @@ button {
 
 [data-theme='dark'] .sloot-circle-action--confirm {
   color: #c4c5fc;
-  background: rgba(37, 99, 235, 0.16);
-  border: 1px solid rgba(37, 99, 235, 0.4);
+  background: rgba(37, 47, 61, 0.16);
+  border: 1px solid rgba(37, 47, 61, 0.4);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 [data-theme='dark'] .sloot-circle-action--confirm:hover {
-  background: rgba(37, 99, 235, 0.26);
+  background: rgba(37, 47, 61, 0.26);
   border-color: rgba(165, 167, 250, 0.55);
   color: #e0e1fe;
   filter: none;
@@ -2649,7 +2691,7 @@ button {
   height: 420px;
   top: -120px;
   left: 60px;
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(37, 47, 61, 0.08) 0%, transparent 70%);
 }
 
 .layout::after {
@@ -2657,7 +2699,7 @@ button {
   height: 380px;
   bottom: -80px;
   right: -40px;
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(37, 47, 61, 0.06) 0%, transparent 70%);
 }
 
 .sidebar {
@@ -2892,11 +2934,11 @@ button {
 .nav-item.active {
   background-color: var(--primary-color);
   color: var(--primary-text);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+  box-shadow: 0 4px 12px rgba(37, 47, 61, 0.28);
 }
 
 [data-theme='dark'] .nav-item.active {
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.45);
+  box-shadow: 0 4px 14px rgba(37, 47, 61, 0.45);
 }
 
 .nav-item.active svg {
@@ -3434,7 +3476,7 @@ button {
 .dash-toggle-btn.active {
   background: var(--accent-color);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 2px 8px rgba(37, 47, 61, 0.35);
 }
 
 /* --- Barber Performance Bars --- */
@@ -3538,7 +3580,7 @@ button {
 }
 
 .dash-timeline-dot.green { background: var(--success-color); }
-.dash-timeline-dot.blue { background: #3b82f6; }
+.dash-timeline-dot.blue { background: #252f3d; }
 .dash-timeline-dot.amber { background: #f59e0b; }
 .dash-timeline-dot.red { background: #ef4444; }
 
@@ -3639,7 +3681,7 @@ button {
 }
 
 .dash-upcoming-icon.scissors { background: rgba(16, 185, 129, 0.12); color: var(--success-color); }
-.dash-upcoming-icon.chart { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
+.dash-upcoming-icon.chart { background: rgba(37, 47, 61, 0.12); color: #252f3d; }
 .dash-upcoming-icon.star { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
 .dash-upcoming-icon.sparkle { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; }
 
@@ -3726,9 +3768,9 @@ button {
 }
 
 .dash-upcoming-action-btn--start {
-  color: #1d4ed8;
-  background: rgba(59, 130, 246, 0.16);
-  border-color: rgba(37, 99, 235, 0.4);
+  color: #252f3d;
+  background: rgba(37, 47, 61, 0.12);
+  border-color: rgba(37, 47, 61, 0.35);
 }
 
 .dash-upcoming-wa-btn {
@@ -3793,9 +3835,9 @@ button {
 }
 
 [data-theme='dark'] .dash-upcoming-action-btn--start {
-  color: #93c5fd;
-  background: rgba(59, 130, 246, 0.22);
-  border-color: rgba(96, 165, 250, 0.45);
+  color: #c5cad3;
+  background: rgba(37, 47, 61, 0.35);
+  border-color: rgba(50, 63, 80, 0.55);
 }
 
 /* --- Quick action buttons in header --- */
@@ -6047,7 +6089,7 @@ button.inventory-action-icon-btn--danger svg {
 }
 
 .inv-mobile-kpi-chip--info {
-  background: rgba(59, 130, 246, 0.08);
+  background: rgba(37, 47, 61, 0.08);
 }
 
 .inv-mobile-kpi-chip--warn {
@@ -6509,7 +6551,7 @@ button.set-mobile-tab--active {
   display: flex;
   gap: 8px;
   padding-top: 10px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid #cbd5e1;
 }
 
 button.set-mobile-action-btn {
@@ -6522,7 +6564,7 @@ button.set-mobile-action-btn {
   padding: 0 12px;
   margin: 0;
   border-radius: 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid #cbd5e1;
   background: var(--bg-color);
   color: var(--text-primary);
   font-size: 0.85rem;
@@ -6895,7 +6937,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   background: var(--accent-color);
   color: #ffffff;
   border-color: var(--accent-color);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px rgba(37, 47, 61, 0.3);
 }
 
 .scheduler-filter-btn__avatar {
@@ -6945,7 +6987,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   color: #ffffff;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 14px rgba(37, 47, 61, 0.35);
   transition: background 0.2s, transform 0.15s;
 }
 
@@ -6999,7 +7041,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   color: #ffffff;
   border: none;
   border-radius: 14px;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 14px rgba(37, 47, 61, 0.3);
 }
 
 .main-content .btn-primary:hover {
@@ -7024,7 +7066,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 
 .dash-action-btn.primary {
   border-radius: 14px;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 14px rgba(37, 47, 61, 0.35);
 }
 
 .dash-period-selector {

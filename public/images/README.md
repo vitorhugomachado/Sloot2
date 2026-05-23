@@ -1,7 +1,9 @@
 # Imagem de fundo do login
 
-O fundo oficial está em `src/assets/customer-login-bg.png` (importado pelo Vite).
+O fundo do login staff/admin usa `public/fundo.webp` (servido em `/fundo.webp`).
 
-Cópia estática opcional: `customer-login-bg.png` nesta pasta.
+Fonte editável: `src/assets/customer-login-bg.png` — após trocar, regenere o WebP:
 
-Para trocar o fundo, substitua o arquivo em `src/assets/customer-login-bg.png` e recarregue o dev server.
+```bash
+npx sharp-cli -i src/assets/customer-login-bg.png -o public/fundo.webp -f webp
+```

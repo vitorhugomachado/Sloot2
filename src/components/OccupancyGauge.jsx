@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { OccupancyCalendarIllustration } from './dashboard/DashKpiIllustrations';
 
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
-const OccupancyGauge = ({ value = 0, trend, trendLabel = 'vs último período', stagger = 2 }) => {
+const OccupancyGauge = ({ value = 0, stagger = 2 }) => {
   const safeValue = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
 
   const [animatedPct, setAnimatedPct] = useState(0);
@@ -38,8 +37,6 @@ const OccupancyGauge = ({ value = 0, trend, trendLabel = 'vs último período', 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [safeValue]);
 
-  const trendNumber = typeof trend === 'number' ? trend : null;
-
   return (
     <div className={`dash-gauge-card stagger-${stagger}`}>
       <div className="dash-kpi-top">
@@ -56,14 +53,6 @@ const OccupancyGauge = ({ value = 0, trend, trendLabel = 'vs último período', 
               style={{ width: `${animatedPct}%` }}
             />
           </div>
-          {trendNumber !== null && (
-            <span className={`dash-kpi-trend ${trendNumber >= 0 ? 'up' : 'down'}`}>
-              {trendNumber > 0 ? '+' : ''}{trendNumber}% {trendLabel}
-            </span>
-          )}
-        </div>
-        <div className="dash-kpi-illustration" aria-hidden>
-          <OccupancyCalendarIllustration />
         </div>
       </div>
     </div>

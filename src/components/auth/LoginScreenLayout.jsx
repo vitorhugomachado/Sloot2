@@ -1,14 +1,17 @@
 import React from 'react';
-import loginBackground from '../../assets/customer-login-bg.png';
 import '../../pages/preview/login-preview.css';
 
 export default function LoginScreenLayout({ banner, children }) {
   return (
     <div className="login-preview">
-      <img
-        className="login-preview__bg"
-        src={loginBackground}
-        alt=""
+      <div
+        className="login-preview__bg w-full h-screen bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/fundo.webp')",
+          imageRendering: '-webkit-optimize-contrast',
+          transform: 'translateZ(0)',
+          backfaceVisibility: 'hidden',
+        }}
         aria-hidden
       />
       {banner}

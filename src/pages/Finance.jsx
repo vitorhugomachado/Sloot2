@@ -605,11 +605,12 @@ const ExtratoTab = ({ stats, barbers }) => {
         ...s,
         type: 'Produto',
         desc: s.productName,
+        customer: s.customerName || s.Customer?.name || null,
         total: s.price * s.quantity,
         repasseProf: 0,
         retencaoCasa: s.price * s.quantity,
         shopPct: null,
-        barberLabel: 'Caixa Central',
+        barberLabel: s.Barber?.name || 'Caixa Central',
       })),
     ];
     return trans

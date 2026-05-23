@@ -88,6 +88,7 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
     ? getSlotsForDay(selectedDate)
     : { slotsToDisplay: [], isWithinAnyShift: () => false, taken: new Set() };
 
+  const needsBarber = !selectedBarber;
   const barberLabel = selectedBarber?.name || '—';
   const serviceSub = selectedService
     ? `${formatDuration(selectedService.duration)} • ${formatPrice(selectedService.price)}`
@@ -238,7 +239,9 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
               <div className="bp-desk-carousel bp-desk-carousel--dates">
                 <CarouselNav trackRef={dateTrackRef} />
                 <div ref={dateTrackRef} className="bp-desk-carousel__track bp-desk-carousel__track--dates">
-                  {allWorkingDayIsosInHorizon.length === 0 ? (
+                  {needsBarber ? (
+                    <p className="bp-empty bp-empty--inline">Selecione seu profissional</p>
+                  ) : allWorkingDayIsosInHorizon.length === 0 ? (
                     <p className="bp-empty bp-empty--inline">Sem dias com expediente.</p>
                   ) : (
                     allWorkingDayIsosInHorizon.map((iso) => {
@@ -264,7 +267,9 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
 
             <section id="bp-desktop-section-4" className="bp-desk-section bp-desk-section--datetime">
               <h2 className="bp-desk-section__title">4. Escolha o horário</h2>
-              {!selectedDate ? (
+              {needsBarber ? (
+                <p className="bp-empty bp-empty--inline">Selecione seu profissional</p>
+              ) : !selectedDate ? (
                 <p className="bp-empty bp-empty--inline">Selecione uma data ao lado.</p>
               ) : slotsToDisplay.length === 0 ? (
                 <p className="bp-empty bp-empty--inline">Nenhum horário neste dia.</p>

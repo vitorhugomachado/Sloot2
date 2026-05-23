@@ -11,13 +11,14 @@ const SCHEDULER_TIME_SLOTS = [
 ];
 
 /** Altura dinâmica das linhas da grade conforme agendamentos no horário (semana visível). */
-const SCHEDULER_CELL_PAD = 6;
-const SCHEDULER_APPT_GAP = 2;
-const SCHEDULER_APPT_MIN_H = 14;
-const SCHEDULER_ROW_BASE_ALL = 38;
-const SCHEDULER_ROW_BASE_SINGLE = 72;
-const SCHEDULER_ROW_MAX_ALL = 88;
-const SCHEDULER_ROW_MAX_SINGLE = 140;
+const SCHEDULER_CELL_PAD = 8;
+const SCHEDULER_APPT_GAP = 3;
+const SCHEDULER_APPT_MIN_H = 18;
+const SCHEDULER_ROW_BASE_ALL = 49;
+const SCHEDULER_ROW_BASE_SINGLE = 94;
+const SCHEDULER_ROW_MAX_ALL = 114;
+const SCHEDULER_ROW_MAX_SINGLE = 182;
+const SCHEDULER_SINGLE_CARD_H = 52;
 
 // Custom SVG "Arts" for maximum visibility and intuition
 const QPlay = ({ size = 18, color = "#000000" }) => (
@@ -435,7 +436,7 @@ const Scheduler = () => {
 
       if (selectedBarberId !== 'all') {
         if (maxCount <= 1) return SCHEDULER_ROW_BASE_SINGLE;
-        const inner = maxCount * 40 + (maxCount - 1) * 3;
+        const inner = maxCount * SCHEDULER_SINGLE_CARD_H + (maxCount - 1) * 3;
         return Math.min(SCHEDULER_ROW_MAX_SINGLE, SCHEDULER_CELL_PAD + inner);
       }
 
@@ -458,9 +459,9 @@ const Scheduler = () => {
         label: 'Pago' 
       };
       case 'Em progresso': return { 
-        bg: 'rgba(37, 99, 235, 0.1)', 
-        border: 'rgba(37, 99, 235, 0.3)', 
-        badge: '#2563eb', 
+        bg: '#DBEAFE',
+        border: '#93C5FD',
+        badge: '#3B82F6',
         label: 'Atd.' 
       };
       case 'Cancelado': return { 
@@ -708,7 +709,7 @@ const Scheduler = () => {
                                 borderColor: ss.border,
                                 opacity: app.status === 'Cancelado' ? 0.5 : 1,
                                 cursor: app.status === 'Finalizado' || app.status === 'Cancelado' ? 'default' : 'pointer',
-                                minHeight: '36px',
+                                minHeight: '47px',
                                 width: '100%',
                               }}
                             >
@@ -943,8 +944,8 @@ const Scheduler = () => {
                               background: ss.bg,
                               color: 'var(--text-primary)',
                               borderRadius: '12px',
-                              padding: '8px',
-                              fontSize: '0.7rem',
+                              padding: '10px',
+                              fontSize: '0.91rem',
                               boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
                               display: 'flex',
                               flexDirection: 'column',
@@ -956,10 +957,10 @@ const Scheduler = () => {
                           >
                             <div style={{ overflow: 'hidden' }}>
                               <div style={{ fontWeight: 700, whiteSpace: 'nowrap', textOverflow: 'ellipsis', textDecoration: app.status === 'Cancelado' ? 'line-through' : 'none' }}>{app.customer}</div>
-                              <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{app.service}</div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
-                                <span style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--text-primary)' }}>R$ {app.price}</span>
-                                <div style={{ background: ss.badge, color: app.status === 'Agendado' ? 'var(--text-secondary)' : '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{app.service}</div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '3px' }}>
+                                <span style={{ fontWeight: 600, fontSize: '0.98rem', color: 'var(--text-primary)' }}>R$ {app.price}</span>
+                                <div style={{ background: ss.badge, color: app.status === 'Agendado' ? 'var(--text-secondary)' : '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
                                   {ss.label}
                                 </div>
                               </div>

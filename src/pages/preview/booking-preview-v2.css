@@ -2,12 +2,12 @@
 
 /* Design tokens — fluxo /telateste */
 .booking-preview--v2 {
-  --bp-primary: #0f172a;
-  --bp-primary-hover: #1e293b;
-  --bp-accent: #2563eb;
-  --bp-accent-hover: #1d4ed8;
-  --bp-primary-soft: #f1f5f9;
-  --bp-accent-soft: rgba(37, 99, 235, 0.12);
+  --bp-primary: #252f3d;
+  --bp-primary-hover: #323f50;
+  --bp-accent: #252f3d;
+  --bp-accent-hover: #323f50;
+  --bp-primary-soft: #f1f3f6;
+  --bp-accent-soft: rgba(37, 47, 61, 0.12);
   --bp-border: #cbd5e1;
   --bp-border-light: #e2e8f0;
   --bp-text: #0f172a;
@@ -75,6 +75,35 @@
 
 .bp-flow__header--compact {
   padding-bottom: 0.35rem;
+}
+
+.bp-flow__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.65rem;
+  padding: 0.45rem 0.85rem;
+  border: 1.5px solid var(--bp-accent);
+  border-radius: var(--bp-radius-md);
+  background: #fff;
+  color: var(--bp-accent);
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.bp-flow__back:hover {
+  background: var(--bp-accent-soft);
+}
+
+.bp-flow__back:active {
+  transform: scale(0.98);
+}
+
+.bp-hero--in-scroll {
+  margin-bottom: 0.5rem;
 }
 
 .bp-flow__scroll {
@@ -159,7 +188,7 @@
   background: var(--bp-accent);
   color: #fff;
   border-color: var(--bp-accent);
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 14px rgba(37, 47, 61, 0.35);
 }
 
 .bp-stepper__circle--done {
@@ -276,7 +305,7 @@
 
 .bp-service-card:hover {
   border-color: #c7caf5;
-  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 4px 20px rgba(37, 47, 61, 0.1);
 }
 
 .bp-service-card:active {
@@ -286,7 +315,7 @@
 .bp-service-card--selected {
   border: 2px solid var(--bp-accent);
   background: var(--bp-primary-soft);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px rgba(37, 47, 61, 0.12);
 }
 
 .bp-service-card__icon {
@@ -358,7 +387,7 @@
 .bp-pro-card--selected {
   border: 2px solid var(--bp-accent);
   background: var(--bp-primary-soft);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(37, 47, 61, 0.1);
 }
 
 .bp-pro-card__avatar {
@@ -422,7 +451,7 @@
 .bp-btn-select--active {
   background: var(--bp-primary);
   color: #fff;
-  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 10px rgba(37, 47, 61, 0.3);
 }
 
 /* Data — carrossel */
@@ -458,7 +487,7 @@
   align-items: center;
   justify-content: center;
   transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
-  box-shadow: 0 3px 12px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 3px 12px rgba(37, 47, 61, 0.45);
   z-index: 3;
 }
 
@@ -472,7 +501,7 @@
 
 .bp-carousel-nav:hover {
   background: var(--bp-primary-hover);
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.55);
+  box-shadow: 0 4px 16px rgba(37, 47, 61, 0.55);
 }
 
 .bp-carousel-nav:active {
@@ -525,7 +554,7 @@
 
 .bp-date-chip--selected {
   border: 2px solid var(--bp-accent);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px rgba(37, 47, 61, 0.12);
   background: #fff;
 }
 
@@ -592,7 +621,7 @@
   border: 2px solid var(--bp-accent);
   color: var(--bp-accent);
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px rgba(37, 47, 61, 0.12);
   font-weight: 700;
 }
 
@@ -618,12 +647,12 @@
   cursor: pointer;
   font-family: inherit;
   transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 16px rgba(37, 47, 61, 0.35);
 }
 
 .bp-btn-continuar:hover:not(:disabled) {
   background: var(--bp-primary-hover);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 6px 20px rgba(37, 47, 61, 0.4);
 }
 
 .bp-btn-continuar:active:not(:disabled) {
@@ -634,7 +663,7 @@
   opacity: 0.65;
   cursor: not-allowed;
   box-shadow: none;
-  background: #a5a9ef;
+  background: #8a94a3;
 }
 
 .bp-continue-hint {
@@ -819,6 +848,16 @@
   box-shadow: var(--bp-shadow-footer);
 }
 
+.bp-flow__footer--summary .bp-flow__footer-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.bp-flow__footer--summary .bp-btn-continuar--summary {
+  margin: 0;
+}
+
 .bp-security-banner {
   display: flex;
   align-items: center;
@@ -853,7 +892,7 @@
   font-size: 1.02rem;
   letter-spacing: -0.01em;
   border-radius: 14px;
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 6px 20px rgba(37, 47, 61, 0.35);
 }
 
 .bp-btn-continuar--summary:disabled {
@@ -868,12 +907,12 @@
 
 /* Login modal (resumo / header) — tokens aqui pois o overlay pode ficar fora de .booking-preview--v2 */
 .bp-auth-overlay {
-  --bp-primary: #0f172a;
-  --bp-primary-hover: #1e293b;
-  --bp-accent: #2563eb;
-  --bp-accent-hover: #1d4ed8;
-  --bp-primary-soft: #f1f5f9;
-  --bp-accent-soft: rgba(37, 99, 235, 0.12);
+  --bp-primary: #252f3d;
+  --bp-primary-hover: #323f50;
+  --bp-accent: #252f3d;
+  --bp-accent-hover: #323f50;
+  --bp-primary-soft: #f1f3f6;
+  --bp-accent-soft: rgba(37, 47, 61, 0.12);
   --bp-border: #cbd5e1;
   --bp-border-light: #e2e8f0;
   --bp-text: #0f172a;
@@ -1029,14 +1068,14 @@
 .bp-input:focus {
   outline: none;
   border-color: var(--bp-accent);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 0 0 3px rgba(37, 47, 61, 0.15);
 }
 
 .bp-btn-continuar--compact {
   min-height: 44px;
   padding: 0.65rem;
   margin-top: 0.25rem;
-  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 2px 10px rgba(37, 47, 61, 0.25);
 }
 
 .bp-auth-overlay .bp-btn-continuar {

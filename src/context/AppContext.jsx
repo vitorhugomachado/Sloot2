@@ -765,10 +765,12 @@ export const AppProvider = ({ children }) => {
     return { ok: true };
   };
 
-  const sellProduct = async (productId, quantity = 1, barberId = null) => {
+  const sellProduct = async (productId, quantity = 1, barberId = null, saleMeta = {}) => {
     const product = products.find(p => p.id === productId);
     if (!product || product.stock < quantity) return false;
-    
+
+    const { customerId = null, customerName = null } = saleMeta;
+
     await apiFetch(`${API_URL}/products/${productId}`, {
       method: 'PUT',
       body: JSON.stringify({ stock: product.stock - quantity })
@@ -783,7 +785,9 @@ export const AppProvider = ({ children }) => {
         cost: product.cost,
         quantity,
         date: new Date().toISOString().split('T')[0],
-        barberId: barberId || null
+        barberId: barberId || null,
+        customerId: customerId ? Number(customerId) : null,
+        customerName: customerName?.trim() || null,
       })
     });
     

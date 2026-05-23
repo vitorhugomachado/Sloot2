@@ -201,8 +201,8 @@
   }
 
   .bp-desk-pick-card--selected {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 1px #2563eb;
+    border-color: #252f3d;
+    box-shadow: 0 0 0 1px #252f3d;
   }
 
   .bp-desk-pick-card__icon {
@@ -266,8 +266,8 @@
   }
 
   .bp-desk-pro-card.bp-desk-pick-card--selected {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 1px #2563eb;
+    border-color: #252f3d;
+    box-shadow: 0 0 0 1px #252f3d;
   }
 
   .bp-desk-pro-card__avatar {
@@ -281,7 +281,7 @@
     justify-content: center;
     font-size: 1.25rem;
     font-weight: 700;
-    color: #2563eb;
+    color: #252f3d;
     margin-bottom: 0.55rem;
   }
 
@@ -339,12 +339,12 @@
   }
 
   .bp-desk-date-chip--selected {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 1px #2563eb;
+    border-color: #252f3d;
+    box-shadow: 0 0 0 1px #252f3d;
   }
 
   .bp-desk-date-chip--selected .bp-desk-date-chip__wd {
-    color: #2563eb;
+    color: #252f3d;
     font-weight: 600;
   }
 
@@ -397,10 +397,10 @@
   }
 
   .bp-desk-time-slot--selected {
-    border-color: #2563eb;
+    border-color: #252f3d;
     background: #fff;
-    color: #2563eb;
-    box-shadow: 0 0 0 1px #2563eb;
+    color: #252f3d;
+    box-shadow: 0 0 0 1px #252f3d;
     font-weight: 700;
   }
 

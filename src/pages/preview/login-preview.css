@@ -1,8 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .login-preview {
-  --cl-accent: #2563eb;
-  --cl-accent-hover: #1d4ed8;
+  --cl-accent: #252f3d;
+  --cl-accent-hover: #323f50;
   --cl-text: #0f172a;
   --cl-text-muted: #64748b;
   --cl-border: #cbd5e1;
@@ -24,12 +24,9 @@
   position: fixed;
   inset: 0;
   z-index: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
   pointer-events: none;
   user-select: none;
+  will-change: transform;
 }
 
 .login-preview__banner {
@@ -209,7 +206,7 @@
   border: none;
   border-radius: var(--cl-radius-input);
   background: var(--cl-accent);
-  color: var(--cl-text);
+  color: #fff;
   font-size: 1rem;
   font-weight: 700;
   font-family: inherit;

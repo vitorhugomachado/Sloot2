@@ -1,7 +1,7 @@
 /** Ilustrações line-art dos cards KPI (mockup Soft UI). */
 const stroke = '#0F172A';
 const strokeMuted = '#64748B';
-const blue = '#2563EB';
+const blue = '#252f3d';
 const green = '#10B981';
 
 export function RevenueIllustration({ className = '' }) {

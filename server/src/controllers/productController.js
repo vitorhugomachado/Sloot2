@@ -102,6 +102,7 @@ const getSales = async (req, res) => {
       where,
       include: {
         Barber: { select: { id: true, name: true } },
+        Customer: { select: { id: true, name: true } },
       },
       orderBy: { date: 'desc' },
     });
@@ -113,20 +114,47 @@ const getSales = async (req, res) => {
 
 const createSale = async (req, res) => {
   try {
-    const { barberId, ...rest } = req.body;
+    const { barberId, customerId, customerName, ...rest } = req.body;
+    const tenantId = tenantIdFromReq(req);
     const isGerente = req.user?.role === 'Gerente';
     const resolvedBarberId = isGerente
       ? (barberId ? Number(barberId) : null)
       : Number(req.user.id);
 
+    let resolvedCustomerId = null;
+    let resolvedCustomerName = typeof customerName === 'string' && customerName.trim()
+      ? customerName.trim()
+      : null;
+
+    if (customerId != null && customerId !== '') {
+      const cid = Number(customerId);
+      if (!Number.isFinite(cid)) {
+        return res.status(400).json({ message: 'Cliente inválido.' });
+      }
+      const customer = await prisma.customer.findFirst({
+        where: { id: cid, tenantId },
+        select: { id: true, name: true },
+      });
+      if (!customer) {
+        return res.status(400).json({ message: 'Cliente não encontrado.' });
+      }
+      resolvedCustomerId = customer.id;
+      if (!resolvedCustomerName) resolvedCustomerName = customer.name;
+    }
+
     const data = {
       ...rest,
-      tenantId: tenantIdFromReq(req),
+      tenantId,
       barberId: resolvedBarberId,
+      customerId: resolvedCustomerId,
+      customerName: resolvedCustomerName,
     };
     const sale = await prisma.productSale.create({
       data,
-      include: { Barber: { select: { id: true, name: true } } },
+      include: {
+        Barber: { select: { id: true, name: true } },
+        Customer: { select: { id: true, name: true } },
+      },
     });
     res.json(sale);
   } catch (error) {

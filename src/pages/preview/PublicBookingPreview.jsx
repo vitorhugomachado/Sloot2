@@ -158,6 +158,7 @@ export default function PublicBookingPreview({
     return wrap(
       <BookingPreviewDateTimeStep
         workingDayIsos={allWorkingDayIsosInHorizon}
+        selectedBarber={selectedBarber}
         selectedDate={selectedDate}
         selectedTime={selectedTime}
         onPickDate={pickDate}

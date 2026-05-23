@@ -839,7 +839,7 @@ const Settings = () => {
               
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
                 {barbers.map(b => (
-                  <div key={b.id} className="glass-card hover-trigger" style={{ padding: '1.5rem', position: 'relative' }}>
+                  <div key={b.id} className="glass-card hover-trigger settings-catalog-card" style={{ padding: '1.5rem', position: 'relative' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
                       <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: 'var(--panel-bg)', overflow: 'hidden' }}>
                         {b.foto_perfil ? <img src={b.foto_perfil} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1.2rem' }}>{b.name.charAt(0)}</div>}
@@ -853,11 +853,11 @@ const Settings = () => {
                       </div>
                     </div>
                     
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
-                      <button onClick={() => openBarberModal(b)} style={{ flex: 1, padding: '8px', borderRadius: '9999px', background: 'var(--panel-bg)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                    <div className="settings-card-actions" style={{ display: 'flex', gap: '10px', marginTop: '1.5rem' }}>
+                      <button type="button" className="settings-card-action-btn--plain" onClick={() => openBarberModal(b)} style={{ flex: 1, padding: '8px', borderRadius: '9999px', background: 'var(--panel-bg)', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.8rem' }}>
                         <Edit2 size={14} /> Editar
                       </button>
-                      <button onClick={() => { setBarberToDelete(b); setIsDeleteModalOpen(true); }} style={{ padding: '8px', borderRadius: '9999px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <button type="button" className="settings-card-action-btn--delete" onClick={() => { setBarberToDelete(b); setIsDeleteModalOpen(true); }} style={{ padding: '8px', borderRadius: '9999px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -907,7 +907,7 @@ const Settings = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.5rem' }}>
                 {services.map(s => (
-                  <div key={s.id} className="glass-card hover-trigger" style={{ padding: '1.25rem' }}>
+                  <div key={s.id} className="glass-card hover-trigger settings-catalog-card" style={{ padding: '1.25rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                       <div>
                         <div style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: '4px' }}>{s.name}</div>
@@ -915,11 +915,11 @@ const Settings = () => {
                       </div>
                       <div style={{ fontWeight: 700, fontSize: '1rem' }}>R$ {Number(s.price).toFixed(2)}</div>
                     </div>
-                    <div style={{ display: 'flex', gap: '10px', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
-                      <button onClick={() => handleEditService(s)} style={{ flex: 1, padding: '8px', borderRadius: '9999px', background: 'var(--panel-bg)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                    <div className="settings-card-actions" style={{ display: 'flex', gap: '10px' }}>
+                      <button type="button" className="settings-card-action-btn--plain" onClick={() => handleEditService(s)} style={{ flex: 1, padding: '8px', borderRadius: '9999px', background: 'var(--panel-bg)', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.8rem' }}>
                         <Edit2 size={14} /> Editar
                       </button>
-                      <button onClick={() => handleDeleteService(s)} style={{ padding: '8px', borderRadius: '9999px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <button type="button" className="settings-card-action-btn--delete" onClick={() => handleDeleteService(s)} style={{ padding: '8px', borderRadius: '9999px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Trash2 size={16} />
                       </button>
                     </div>

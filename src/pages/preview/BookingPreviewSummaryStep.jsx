@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Calendar, Clock, ShieldCheck, User } from 'lucide-react';
+import { Calendar, ChevronLeft, Clock, ShieldCheck, User } from 'lucide-react';
 import BookingPreviewStepper from './BookingPreviewStepper';
 import BookingPreviewSummaryRow, { getServiceSummaryVisual } from './BookingPreviewSummaryRow';
 
@@ -148,6 +148,7 @@ export default function BookingPreviewSummaryStep({
   isSubmitting,
   onAuthSubmit,
   onGoogleLogin,
+  onBack,
   onConfirm,
   onEditStep,
   previewBanner,
@@ -193,6 +194,12 @@ export default function BookingPreviewSummaryStep({
       {previewBanner}
 
       <header className="bp-flow__header bp-flow__header--summary">
+        {onBack ? (
+          <button type="button" className="bp-flow__back" onClick={onBack}>
+            <ChevronLeft size={20} strokeWidth={2.5} aria-hidden />
+            Voltar
+          </button>
+        ) : null}
         <BookingPreviewStepper current={5} mutedPast />
         <h2 className="bp-section-title bp-section-title--summary">5. Resumo do agendamento</h2>
       </header>
@@ -246,14 +253,23 @@ export default function BookingPreviewSummaryStep({
           </span>
           <span>Seus dados estão protegidos e seguros.</span>
         </div>
-        <button
-          type="button"
-          className="bp-btn-continuar bp-btn-continuar--summary"
-          disabled={isSubmitting}
-          onClick={handleConfirmClick}
-        >
-          {isSubmitting ? 'Confirmando...' : 'Confirmar agendamento'}
-        </button>
+        <div className="bp-flow__footer-actions bp-flow__footer--dual">
+          {onBack ? (
+            <button type="button" className="bp-btn-outline" onClick={onBack}>
+              Voltar
+            </button>
+          ) : (
+            <span />
+          )}
+          <button
+            type="button"
+            className="bp-btn-continuar bp-btn-continuar--summary"
+            disabled={isSubmitting}
+            onClick={handleConfirmClick}
+          >
+            {isSubmitting ? 'Confirmando...' : 'Confirmar agendamento'}
+          </button>
+        </div>
       </footer>
 
       {showAuthCard && !currentCustomer && (
