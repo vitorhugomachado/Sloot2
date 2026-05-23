@@ -7,4 +7,29 @@ function normalizeBookingTime(time) {
   return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
-module.exports = { normalizeBookingTime };
+function timeToMinutes(hhmm) {
+  const slot = normalizeBookingTime(hhmm);
+  if (!slot) return null;
+  const [h, m] = slot.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function getLocalDateIso(now = new Date()) {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function isBookingSlotInPast(dateIso, time, now = new Date()) {
+  if (!dateIso) return false;
+  const today = getLocalDateIso(now);
+  if (dateIso < today) return true;
+  if (dateIso > today) return false;
+  const slotMin = timeToMinutes(time);
+  if (slotMin == null) return true;
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  return slotMin < nowMin;
+}
+
+module.exports = { normalizeBookingTime, isBookingSlotInPast };

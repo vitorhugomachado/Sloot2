@@ -1,4 +1,4 @@
-import { getTakenTimesForBarber } from './bookingAvailability';
+import { getTakenTimesForBarber, isBookingSlotInPast } from './bookingAvailability';
 import {
   getActiveShiftsForWeekday,
   getDayOfWeekFromIso,
@@ -51,7 +51,9 @@ export function getPublicBookingSlotsForDay({ dateIso, barber, durationMinutes, 
   const slotsToDisplay =
     barberShifts.length === 0 || minStart == null || maxEnd == null
       ? []
-      : baseFilteredSlots.filter((t) => t >= minStart && t < maxEnd);
+      : baseFilteredSlots.filter(
+          (t) => t >= minStart && t < maxEnd && !isBookingSlotInPast(dateIso, t),
+        );
 
   const taken = getTakenTimesForBarber(appointments || [], dateIso, barber?.id);
 

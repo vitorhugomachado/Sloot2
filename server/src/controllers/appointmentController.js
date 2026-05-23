@@ -1,5 +1,5 @@
 const prisma = require('../lib/prisma');
-const { normalizeBookingTime } = require('../utils/appointmentTime');
+const { normalizeBookingTime, isBookingSlotInPast } = require('../utils/appointmentTime');
 const { parseDurationMinutes, validateBarberAppointmentSlot } = require('../utils/barberAvailability');
 const { invalidatePublicCache } = require('../middlewares/publicCache');
 const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
@@ -97,6 +97,10 @@ const createAppointment = async (req, res) => {
 
     if (req.user && req.user.role === 'Barbeiro' && Number(req.user.id) !== normalizedBarberId) {
       return res.status(403).json({ message: 'Não pode criar agendamento para outro profissional.' });
+    }
+
+    if (isBookingSlotInPast(String(date), normalizedTime)) {
+      return res.status(400).json({ message: 'Não é possível agendar em um horário que já passou.' });
     }
 
     const tenantId = tenantIdFromReq(req);
