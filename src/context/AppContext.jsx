@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { useLocation } from 'react-router-dom';
 import { API_URL } from '../config/apiUrl';
 import { useTenant } from './TenantContext';
-import { getBootstrapQueryString } from '../utils/bookingHorizon';
+import { getBootstrapQueryString, staffAppointmentsUrl } from '../utils/bookingHorizon';
 import { fetchBootstrapJson, clearBootstrapInFlight } from '../utils/bootstrapInFlight';
 import {
   shouldLeadAppointmentsPoll,
@@ -187,7 +187,7 @@ export const AppProvider = ({ children }) => {
               const user = await userRes.json();
               setCurrentUser(user);
 
-              const apptsRes = await apiFetch(`${API_URL}/appointments`, {
+              const apptsRes = await apiFetch(staffAppointmentsUrl(API_URL), {
                 authScope: 'staff',
                 signal: ac.signal,
               });
@@ -276,7 +276,7 @@ export const AppProvider = ({ children }) => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       if (!shouldLeadAppointmentsPoll(tenantSlug)) return;
       try {
-        const apptsRes = await apiFetch(`${API_URL}/appointments`, { authScope: 'staff' });
+        const apptsRes = await apiFetch(staffAppointmentsUrl(API_URL), { authScope: 'staff' });
         if (!apptsRes.ok) return;
         mergeAppointments(await apptsRes.json());
       } catch (error) {
@@ -457,11 +457,17 @@ export const AppProvider = ({ children }) => {
         setAppointments((prev) => [...prev, savedApp]);
 
         if (token) {
-          apiFetch(`${API_URL}/appointments`, { authScope: 'staff' })
+          apiFetch(staffAppointmentsUrl(API_URL), { authScope: 'staff' })
             .then(async (r) => {
               if (r.ok) {
                 const data = await r.json();
-                if (Array.isArray(data)) setAppointments(data);
+                if (Array.isArray(data)) {
+                  setAppointments((prev) => {
+                    const fetchedIds = new Set(data.map((a) => Number(a.id)));
+                    const extras = prev.filter((a) => !fetchedIds.has(Number(a.id)));
+                    return [...data, ...extras];
+                  });
+                }
               }
             })
             .catch((err) => console.error('Erro ao sincronizar agendamentos:', err));

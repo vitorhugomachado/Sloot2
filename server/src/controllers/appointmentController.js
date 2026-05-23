@@ -3,7 +3,7 @@ const { normalizeBookingTime } = require('../utils/appointmentTime');
 const { parseDurationMinutes, validateBarberAppointmentSlot } = require('../utils/barberAvailability');
 const { invalidatePublicCache } = require('../middlewares/publicCache');
 const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
-const { parseDateRangeFromQuery, publicBookingDateRange } = require('../lib/bookingHorizon');
+const { parseDateRangeFromQuery, parseStaffDateRangeFromQuery, publicBookingDateRange } = require('../lib/bookingHorizon');
 
 const BLOCKING_STATUSES = ['Agendado', 'Confirmado', 'Em progresso'];
 const includeBarber = { Barber: { select: { name: true } } };
@@ -20,7 +20,11 @@ function appointmentStartDate(existing) {
 
 const getAppointments = async (req, res) => {
   try {
-    const where = { ...tenantWhere(req) };
+    const { from, to } = parseStaffDateRangeFromQuery(req.query);
+    const where = {
+      ...tenantWhere(req),
+      date: { gte: from, lte: to },
+    };
     if (req.user.role !== 'Gerente') {
       where.barberId = req.user.id;
     }
@@ -28,6 +32,7 @@ const getAppointments = async (req, res) => {
     const appointments = await prisma.appointment.findMany({
       where,
       include: includeBarber,
+      orderBy: [{ date: 'asc' }, { time: 'asc' }],
     });
     res.json(appointments);
   } catch (error) {
