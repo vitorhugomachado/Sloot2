@@ -144,6 +144,7 @@ railway up
 | App em commit antigo após push | Deploy novo falhou — Railway mantém a última build **com sucesso**. Abre **Deployments** → último deploy (se **Failed**, lê Build/Deploy logs). Confirma repo **vitorhugomachado/Sloot2**, branch **main**, builder **Dockerfile**. Abre `https://TEU-DOMINIO/health` e compara `gitSha` com o commit no GitHub (`b9431d5…`). **Clear build cache** → **Redeploy** |
 | `npm run start:prod` / `ENOENT package.json` no start | O `startCommand` deve ser `node server/index.js` (`railway.toml`); a imagem Docker não copia `package.json` da raiz |
 | Build `EBUSY` em `node_modules/.cache` | Com Dockerfile isto deixa de aplicar; se voltares a Nixpacks: `npm run build:railway` ou `NIXPACKS_NO_CACHE=1` |
+| Build `Could not find Prisma Schema` no `postinstall` | Dockerfile usa `npm ci --ignore-scripts` e `prisma generate` só depois de `COPY . .` — faz pull de `main` e redeploy |
 | Build falha Prisma | `DATABASE_URL` / `DIRECT_URL` no serviço antes do deploy |
 | `P1001` / migrate no build | Migrations correm no **start**, não no build; corrige `DIRECT_URL` (URI Direct no Supabase) |
 | Migration falha Supabase | `DIRECT_URL` = Connection string **Direct** (não pooler `:5432`) |

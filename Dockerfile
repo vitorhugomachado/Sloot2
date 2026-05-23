@@ -9,11 +9,12 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/package-lock.json ./server/
 
-RUN npm ci --include=dev --no-fund --no-audit \
-  && cd server && npm ci --no-fund --no-audit && npx prisma generate
+# --ignore-scripts: postinstall chama prisma generate antes do schema existir (só package.json nesta camada)
+RUN npm ci --include=dev --no-fund --no-audit --ignore-scripts \
+  && cd server && npm ci --no-fund --no-audit --ignore-scripts
 
 COPY . .
-RUN npm run build
+RUN cd server && npx prisma generate && cd .. && npm run build
 
 FROM node:20-alpine AS runner
 ARG RAILWAY_GIT_COMMIT_SHA=unknown
