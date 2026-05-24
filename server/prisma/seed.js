@@ -16,9 +16,11 @@ async function main() {
   await prisma.financialPeriodClosing.deleteMany();
   await prisma.tenant.deleteMany();
 
+  const tenantSlug = String(process.env.DEFAULT_TENANT_SLUG || 'two-brothers').trim().toLowerCase();
+
   const tenant = await prisma.tenant.create({
     data: {
-      slug: 'demo-barbearia',
+      slug: tenantSlug,
       name: 'Demo BarberPro',
       phone: '(11) 99999-9999',
       email: 'contato@demo.com',
@@ -108,7 +110,7 @@ async function main() {
     },
   });
 
-  console.log('Database seeded (tenant: demo-barbearia)');
+  console.log(`Database seeded (tenant: ${tenantSlug})`);
 }
 
 main()

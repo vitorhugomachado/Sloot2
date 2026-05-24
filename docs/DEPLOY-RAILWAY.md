@@ -60,14 +60,17 @@ VITE_GOOGLE_CLIENT_ID=
 
 Depois de mudar `VITE_*`, faz **Redeploy** (variáveis Vite entram só no build).
 
-### Alternativa: Postgres só no Railway
+### Postgres no Railway (em vez do Supabase)
 
-Se quiseres base nova no Railway:
+Passo a passo completo: **[MIGRATE-POSTGRES-RAILWAY.md](./MIGRATE-POSTGRES-RAILWAY.md)**.
+
+Resumo:
 
 1. **+ New** → **PostgreSQL**
-2. `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
+2. Na app: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
 3. `DIRECT_URL` = **igual** a `DATABASE_URL`
-4. Remove as URLs Supabase acima
+4. Remove as URLs Supabase do Postgres
+5. **Redeploy** → migrations criam as tabelas; opcional `npm run db:seed` com a URL do Railway
 
 ---
 

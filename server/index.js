@@ -4,14 +4,29 @@ const { execSync } = require('child_process');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-const required = ['DATABASE_URL', 'JWT_SECRET'];
+const required = ['DATABASE_URL', 'DIRECT_URL', 'JWT_SECRET'];
 const missing = required.filter((key) => !process.env[key]?.trim());
 if (missing.length > 0) {
   console.error(`Variáveis obrigatórias em falta: ${missing.join(', ')}`);
+  if (missing.includes('DIRECT_URL')) {
+    console.error('Railway: DIRECT_URL = mesmo valor que DATABASE_URL (${{Postgres.DATABASE_URL}}).');
+  }
   process.exit(1);
 }
 
+function logDbTarget() {
+  try {
+    const raw = process.env.DATABASE_URL.replace(/^postgres(ql)?:\/\//, 'http://');
+    const u = new URL(raw);
+    const railway = /\.railway\.(app|internal)/i.test(u.hostname);
+    console.log(`[db] migrate deploy → host=${u.hostname}${railway ? ' (Railway)' : ''}`);
+  } catch {
+    console.log('[db] migrate deploy → DATABASE_URL definida');
+  }
+}
+
 function runMigrations() {
+  logDbTarget();
   console.log('Aplicando migrations Prisma (migrate deploy)...');
   try {
     execSync('npx prisma migrate deploy', {
@@ -23,9 +38,11 @@ function runMigrations() {
   } catch (err) {
     console.error('Falha em prisma migrate deploy.');
     console.error(
-      'Confirme DIRECT_URL no Railway: Supabase → Project Settings → Database → Connection string → URI (Direct connection).',
+      'Railway Postgres: DATABASE_URL e DIRECT_URL = ${{Postgres.DATABASE_URL}} (mesmo valor).',
     );
-    console.error('Não uses o host pooler na porta 5432; o direct costuma ser *.connect.supabase.com ou db.*.supabase.co');
+    console.error(
+      'Supabase (legado): DIRECT_URL = URI Direct (db.*.supabase.co), não pooler :5432.',
+    );
     process.exit(1);
   }
 }

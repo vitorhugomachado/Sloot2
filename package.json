@@ -10,6 +10,8 @@
     "postinstall": "cd server && npm install && npx prisma generate",
     "start:prod": "cd server && node index.js",
     "db:seed": "cd server && npx prisma db seed",
+    "db:migrate:deploy": "cd server && npx prisma migrate deploy",
+    "db:railway:setup": "node server/scripts/railway_db_setup.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
