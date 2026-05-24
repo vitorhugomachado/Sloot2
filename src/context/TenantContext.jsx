@@ -46,15 +46,20 @@ export function TenantProvider({ children, slug: slugProp }) {
     };
   }, [slug]);
 
+  const tenantHeaders = useMemo(
+    () => ({ 'X-Tenant-Slug': slug }),
+    [slug],
+  );
+
   const value = useMemo(
     () => ({
       slug,
       tenant,
       loading,
       error,
-      tenantHeaders: { 'X-Tenant-Slug': slug },
+      tenantHeaders,
     }),
-    [slug, tenant, loading, error],
+    [slug, tenant, loading, error, tenantHeaders],
   );
 
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;

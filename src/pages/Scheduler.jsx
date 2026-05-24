@@ -50,6 +50,11 @@ function softDayHaptic() {
   }
 }
 
+function isSchedulerInServiceStatus(status) {
+  const s = String(status || '').trim().toLowerCase();
+  return s === 'em progresso' || s === 'em atendimento';
+}
+
 function schedulerToIsoLocal(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -699,7 +704,7 @@ const Scheduler = () => {
                             <button
                               key={app.id}
                               type="button"
-                              className="scheduler-mobile-macro-card scheduler-appt-bar scheduler-appt-bar--interactive"
+                              className={`scheduler-mobile-macro-card scheduler-appt-bar scheduler-appt-bar--interactive${isSchedulerInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
                               onMouseEnter={onAppointmentHoverEnter(app, b?.name)}
                               onMouseLeave={clearAppointmentHoverTip}
                               onClick={(e) => openActionModal(app, e)}
@@ -733,7 +738,7 @@ const Scheduler = () => {
                           <button
                             key={app.id}
                             type="button"
-                            className="scheduler-mobile-single-card fade-in"
+                            className={`scheduler-mobile-single-card fade-in${isSchedulerInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
                             onMouseEnter={onAppointmentHoverEnter(
                               app,
                               barbers.find((x) => x.id === app.barberId)?.name
@@ -900,7 +905,7 @@ const Scheduler = () => {
                            key={app.id}
                            role="button"
                            tabIndex={actionable ? 0 : -1}
-                           className={`scheduler-appt-bar fade-in${actionable ? ' scheduler-appt-bar--interactive' : ' scheduler-appt-bar--muted'}`}
+                           className={`scheduler-appt-bar fade-in${actionable ? ' scheduler-appt-bar--interactive' : ' scheduler-appt-bar--muted'}${isSchedulerInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
                            onMouseEnter={onAppointmentHoverEnter(app, b?.name)}
                            onMouseLeave={clearAppointmentHoverTip}
                            onClick={(e) => actionable && openActionModal(app, e)}
@@ -931,7 +936,7 @@ const Scheduler = () => {
                         return (
                           <div 
                             key={app.id}
-                            className="fade-in scheduler-cell-appts__single"
+                            className={`fade-in scheduler-cell-appts__single${isSchedulerInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
                             onMouseEnter={onAppointmentHoverEnter(
                               app,
                               barbers.find((x) => x.id === app.barberId)?.name

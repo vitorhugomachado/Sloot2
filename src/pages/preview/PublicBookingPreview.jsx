@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check } from 'lucide-react';
 import { useTenant } from '../../context/TenantContext';
 import { BOOKING_DESKTOP_MIN_WIDTH, useMediaQuery } from '../../hooks/useMediaQuery';
 import { scrollBookingFlowToTop, usePublicBookingFlow } from '../../hooks/usePublicBookingFlow';
@@ -10,6 +9,7 @@ import BookingPreviewBarberStep from './BookingPreviewBarberStep';
 import BookingPreviewDateTimeStep from './BookingPreviewDateTimeStep';
 import BookingPreviewSummaryStep from './BookingPreviewSummaryStep';
 import PublicBookingPreviewDesktop from './PublicBookingPreviewDesktop';
+import BookingPreviewSuccessStep from './BookingPreviewSuccessStep';
 import './booking-preview.css';
 import './booking-preview-v2.css';
 import './booking-preview-desktop.css';
@@ -46,7 +46,10 @@ export default function PublicBookingPreview({
     setAuthData,
     authError,
     setAuthError,
+    authInfo,
     googleBusy,
+    forgotBusy,
+    openForgotPassword,
     services,
     activeBarbers,
     currentCustomer,
@@ -90,27 +93,14 @@ export default function PublicBookingPreview({
   if (step === 5) {
     return (
       <div className={wrapClass}>
-        <section className="bp-success">
-          <div className="bp-success__icon">
-            <Check size={40} strokeWidth={2.5} />
-          </div>
-          <h2 className="bp-section-title">Agendamento confirmado!</h2>
-          <p className="bp-empty">
-            {selectedService?.name} com {selectedBarber?.name}
-            <br />
-            {selectedDate?.split('-').reverse().join('/')} às {selectedTime}
-          </p>
-          <div className="bp-success__actions">
-            <button type="button" className="bp-btn-continuar" onClick={resetBooking}>
-              Novo agendamento
-            </button>
-            {currentCustomer && (
-              <button type="button" className="bp-btn-outline" onClick={openPortal}>
-                Meus agendamentos
-              </button>
-            )}
-          </div>
-        </section>
+        <BookingPreviewSuccessStep
+          selectedService={selectedService}
+          selectedBarber={selectedBarber}
+          selectedDate={selectedDate}
+          selectedTime={selectedTime}
+          onNewBooking={resetBooking}
+          onOpenPortal={openPortal}
+        />
       </div>
     );
   }
@@ -185,7 +175,10 @@ export default function PublicBookingPreview({
         authData={authData}
         setAuthData={setAuthData}
         authError={authError}
+        authInfo={authInfo}
         googleBusy={googleBusy}
+        forgotBusy={forgotBusy}
+        openForgotPassword={openForgotPassword}
         bookingError={bookingError}
         isSubmitting={isSubmitting}
         onAuthSubmit={handleAuthSubmit}

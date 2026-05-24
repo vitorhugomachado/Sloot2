@@ -1,0 +1,152 @@
+/* Portal do cliente — mesma paleta do fluxo de agendamento (preto e cinza) */
+.customer-portal-root {
+  --cp-primary: #1a1a1a;
+  --cp-primary-hover: #333333;
+  --cp-on-primary: #ffffff;
+  --cp-bg: #f0f2f5;
+  --cp-surface: #ffffff;
+  --cp-border: #e5e7eb;
+  --cp-border-input: #d1d5db;
+  --cp-text: #1a1a1a;
+  --cp-text-muted: #6b7280;
+  --cp-soft: #f3f4f6;
+  --cp-soft-hover: #e5e7eb;
+
+  min-height: 100vh;
+  background: var(--cp-bg);
+  color: var(--cp-text);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+.customer-portal-root .glass-card,
+.customer-portal-root .customer-portal-upcoming-card,
+.customer-portal-root .customer-portal-stat-tile,
+.customer-portal-root .customer-portal-stat-grid > div {
+  border: 1px solid var(--cp-border) !important;
+  background: var(--cp-surface);
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.06);
+}
+
+.customer-portal-root .btn-primary {
+  background: var(--cp-primary) !important;
+  color: var(--cp-on-primary) !important;
+  border: 1px solid var(--cp-primary) !important;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.customer-portal-root .btn-primary:hover {
+  background: var(--cp-primary-hover) !important;
+  border-color: var(--cp-primary-hover) !important;
+}
+
+.customer-portal-root .btn-secondary {
+  background: var(--cp-surface) !important;
+  color: var(--cp-text) !important;
+  border: 1.5px solid var(--cp-primary) !important;
+  border-radius: 12px;
+}
+
+.customer-portal-root .btn-secondary:hover {
+  background: var(--cp-soft) !important;
+}
+
+.customer-portal-root .customer-portal-header-btn,
+.customer-portal-root .customer-portal-tab {
+  border: 1px solid var(--cp-border-input) !important;
+  background: var(--cp-surface) !important;
+  color: var(--cp-text-muted) !important;
+}
+
+.customer-portal-root .customer-portal-header-btn:hover,
+.customer-portal-root .customer-portal-tab:hover {
+  background: var(--cp-soft) !important;
+  border-color: var(--cp-border-input) !important;
+  color: var(--cp-text) !important;
+}
+
+.customer-portal-root .customer-portal-header-btn--neutral {
+  color: var(--cp-text) !important;
+}
+
+.customer-portal-root .customer-portal-tab--active {
+  background: var(--cp-primary) !important;
+  color: var(--cp-on-primary) !important;
+  border-color: var(--cp-primary) !important;
+}
+
+.customer-portal-root .customer-portal-title {
+  color: var(--cp-text);
+}
+
+.customer-portal-root .customer-portal-welcome {
+  box-shadow: 0 4px 20px rgba(17, 24, 39, 0.06);
+}
+
+.customer-portal-root .customer-portal-welcome__avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--cp-primary);
+  color: var(--cp-on-primary);
+}
+
+.customer-portal-root .customer-portal-upcoming-card {
+  background: var(--cp-soft) !important;
+  border: 1px solid var(--cp-border) !important;
+}
+
+.customer-portal-root .customer-portal-stat-grid > div {
+  background: var(--cp-soft) !important;
+}
+
+.customer-portal-root .customer-portal-history-subtitle,
+.customer-portal-root .customer-portal-history-empty__message,
+.customer-portal-root .customer-portal-rating-wait,
+.customer-portal-root .customer-portal-rating__label {
+  color: var(--cp-text-muted) !important;
+}
+
+.customer-portal-root .customer-portal-history-count-badge {
+  background: var(--cp-soft);
+  border-color: var(--cp-border);
+  color: var(--cp-text);
+}
+
+.customer-portal-root .customer-portal-appointment-card--agendado,
+.customer-portal-root .customer-portal-appointment-card--confirmado {
+  border-left-color: var(--cp-primary) !important;
+}
+
+.customer-portal-root .customer-portal-status-pill--agendado,
+.customer-portal-root .customer-portal-status-pill--confirmado {
+  background: rgba(26, 26, 26, 0.08) !important;
+  color: var(--cp-primary) !important;
+}
+
+.customer-portal-root .customer-portal-profile-input {
+  background: var(--cp-surface) !important;
+  color: var(--cp-text) !important;
+  border: 1px solid var(--cp-border-input) !important;
+}
+
+.customer-portal-root .customer-portal-profile-input:focus-visible {
+  outline: 2px solid var(--cp-primary) !important;
+  outline-offset: 2px;
+}
+
+.customer-portal-root .customer-portal-skeleton-card {
+  border-color: var(--cp-border);
+  background: var(--cp-soft);
+}
+
+.customer-portal-root .customer-portal-rating__star--on {
+  color: #374151;
+}

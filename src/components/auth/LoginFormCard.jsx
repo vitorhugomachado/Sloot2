@@ -36,9 +36,12 @@ export default function LoginFormCard({
   authData,
   setAuthData,
   authError,
+  authInfo,
   googleBusy,
+  forgotBusy,
   onAuthSubmit,
   onGoogleLogin,
+  onForgotPassword,
 }) {
   const isCustomerMode = authData != null && onAuthSubmit != null;
   const [showPassword, setShowPassword] = useState(false);
@@ -46,15 +49,23 @@ export default function LoginFormCard({
   const [password, setPassword] = useState('');
 
   const isRegister = isCustomerMode && authMode === 'register';
+  const isForgot = isCustomerMode && authMode === 'forgot';
   const displayError = isCustomerMode ? authError : errorProp;
 
-  const resolvedTitle = title ?? (isRegister ? 'Criar conta' : 'Entrar na conta');
-  const resolvedSubtitle =
-    subtitle ??
-    (isRegister
-      ? 'Preencha seus dados para acessar sua agenda.'
-      : 'Informe seus dados para entrar na sua conta.');
-  const resolvedSubmitLabel = submitLabel ?? (isRegister ? 'Cadastrar' : 'Entrar');
+  const resolvedTitle = title ?? (
+    isForgot ? 'Esqueci minha senha' : isRegister ? 'Criar conta' : 'Entrar na conta'
+  );
+  const resolvedSubtitle = isCustomerMode
+    ? (subtitle ??
+      (isForgot
+        ? 'Informe o e-mail da sua conta. Enviaremos um link para criar uma nova senha.'
+        : isRegister
+          ? 'Preencha seus dados para acessar sua agenda.'
+          : 'Informe seus dados para entrar na sua conta.'))
+    : subtitle;
+  const resolvedSubmitLabel = submitLabel ?? (
+    isForgot ? 'Enviar link' : isRegister ? 'Cadastrar' : 'Entrar'
+  );
 
   const handleSimpleSubmit = async (e) => {
     e.preventDefault();
@@ -83,8 +94,12 @@ export default function LoginFormCard({
           />
         ) : null}
         <h1 className="cl-login-card__title">{resolvedTitle}</h1>
-        <p className="cl-login-card__subtitle">{resolvedSubtitle}</p>
+        {resolvedSubtitle ? (
+          <p className="cl-login-card__subtitle">{resolvedSubtitle}</p>
+        ) : null}
       </header>
+
+      {authInfo ? <p className="cl-login-card__info" role="status">{authInfo}</p> : null}
 
       <form className="cl-login-card__form" onSubmit={handleFormSubmit}>
         {isRegister && (
@@ -127,28 +142,40 @@ export default function LoginFormCard({
           {showEmailIcon ? <FieldCircleIcon /> : null}
         </label>
 
-        <label className="cl-field cl-field--password">
-          <input
-            className="cl-field__input"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="Senha"
-            required
-            value={passwordValue}
-            onChange={onPasswordChange}
-            autoComplete={isRegister ? 'new-password' : 'current-password'}
-          />
-          <button
-            type="button"
-            className="cl-field__toggle"
-            onClick={() => setShowPassword((v) => !v)}
-          >
-            {showPassword ? 'Ocultar' : 'Mostrar'}
-          </button>
-        </label>
+        {!isForgot && (
+          <label className="cl-field cl-field--password">
+            <input
+              className="cl-field__input"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Senha"
+              required
+              value={passwordValue}
+              onChange={onPasswordChange}
+              autoComplete={isRegister ? 'new-password' : 'current-password'}
+            />
+            <button
+              type="button"
+              className="cl-field__toggle"
+              onClick={() => setShowPassword((v) => !v)}
+            >
+              {showPassword ? 'Ocultar' : 'Mostrar'}
+            </button>
+          </label>
+        )}
 
-        {showForgot && !isRegister && (
+        {showForgot && !isRegister && !isCustomerMode && (
           <button type="button" className="cl-login-card__forgot" disabled title="Em breve">
             Problemas para entrar?
+          </button>
+        )}
+        {showForgot && isCustomerMode && authMode === 'login' && onForgotPassword && (
+          <button type="button" className="cl-login-card__forgot" onClick={onForgotPassword}>
+            Esqueci minha senha
+          </button>
+        )}
+        {isCustomerMode && authMode === 'forgot' && onForgotPassword && (
+          <button type="button" className="cl-login-card__link" onClick={() => setAuthMode('login')}>
+            Voltar ao login
           </button>
         )}
 
@@ -157,12 +184,16 @@ export default function LoginFormCard({
           <p className="cl-login-card__error cl-login-card__error--hint">{PHONE_ERROR}</p>
         )}
 
-        <button type="submit" className="cl-login-card__submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Entrando…' : resolvedSubmitLabel}
+        <button
+          type="submit"
+          className="cl-login-card__submit"
+          disabled={isSubmitting || forgotBusy}
+        >
+          {forgotBusy ? 'Enviando…' : isSubmitting ? 'Entrando…' : resolvedSubmitLabel}
         </button>
       </form>
 
-      {showGoogle && (
+      {showGoogle && !isForgot && (
         <>
           <p className="cl-login-card__divider" aria-hidden>
             — Ou entre com —
@@ -181,7 +212,7 @@ export default function LoginFormCard({
         </>
       )}
 
-      {showRegister && isCustomerMode && (
+      {showRegister && isCustomerMode && !isForgot && (
         <p className="cl-login-card__footer">
           {isRegister ? (
             <>

@@ -1,5 +1,9 @@
-/* Mobile: rolagem da página (hero + fluxo não cabem em 100dvh fixo) */
+/* Coluna única: header + card com o mesmo alinhamento lateral e espaçamento entre eles */
 .public-booking-page.public-booking-page--v2 {
+  --pb-gutter-x: max(1rem, env(safe-area-inset-left, 0px));
+  --pb-gutter-x-right: max(1rem, env(safe-area-inset-right, 0px));
+  --pb-stack-gap: 1rem;
+
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
@@ -7,6 +11,20 @@
   max-height: none;
   overflow: visible;
   background: #f8fafc;
+  box-sizing: border-box;
+  padding-top: 0.75rem;
+  padding-right: var(--pb-gutter-x-right);
+  padding-bottom: 0;
+  padding-left: var(--pb-gutter-x);
+}
+
+.public-booking-page--v2 > .bp-hero-header {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 var(--pb-stack-gap);
+  box-sizing: border-box;
+  border-radius: 16px;
 }
 
 .public-booking-page--v2 > .booking-preview.booking-preview--v2 {
@@ -15,6 +33,14 @@
   display: flex;
   flex-direction: column;
   overflow: visible;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.public-booking-page--v2 > .booking-preview.booking-preview--v2:has(.bp-success) {
+  flex: 1 1 auto;
 }
 
 .public-booking-page--v2 .booking-preview--v2,
@@ -24,8 +50,13 @@
 
 .public-booking-page--v2 .bp-flow {
   flex: 0 0 auto;
+  width: 100%;
   max-width: 100%;
   margin: 0;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(17, 24, 39, 0.06);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
 }
 
 .public-booking-page--v2 .bp-flow__scroll {
@@ -43,53 +74,20 @@
 
 @media (min-width: 1024px) {
   .public-booking-page.public-booking-page--v2 {
-    height: auto;
-    max-height: none;
-    overflow: visible;
+    --pb-gutter-x: clamp(1rem, 2.5vw, 2rem);
+    --pb-gutter-x-right: clamp(1rem, 2.5vw, 2rem);
+    --pb-stack-gap: 1rem;
+    padding-top: clamp(0.75rem, 1.5vw, 1rem);
   }
 
   .public-booking-page--v2 > .booking-preview.booking-preview--v2 {
     flex: none;
     overflow: visible;
   }
-}
-
-/* Header hero — mobile (página full-bleed) */
-.public-booking-page--v2 .bp-hero-header {
-  flex-shrink: 0;
-  width: 100%;
-  max-width: 100%;
-}
-
-@media (max-width: 1023px) {
-  .public-booking-page--v2 .bp-hero-header {
-    border-radius: 0;
-  }
-}
-
-/* Layout página pública — header em business-hero-header.css */
-@media (min-width: 1024px) {
-  .public-booking-page.public-booking-page--v2 {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    padding: clamp(0.75rem, 1.5vw, 1rem) clamp(1rem, 2.5vw, 2rem) 0;
-  }
-
-  .public-booking-page--v2 > .booking-preview.booking-preview--v2 {
-    width: 100%;
-    max-width: 100%;
-  }
 
   .public-booking-page--v2 .booking-preview.booking-preview--v2.booking-preview--desktop {
-    padding-left: 0;
-    padding-right: 0;
-    padding-top: 0;
-  }
-
-  .public-booking-page--v2 .bp-hero-header {
-    width: 100%;
-    max-width: 100%;
-    margin-bottom: 1rem;
+    padding: 0;
+    background: transparent;
+    min-height: 0;
   }
 }

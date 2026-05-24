@@ -134,7 +134,7 @@ const PublicBooking = ({ onOpenPortal }) => {
     setVisibleDaysCount((prev) => Math.max(prev, idx + 1));
   };
 
-  const businessTitle = (businessInfo && businessInfo.name ? businessInfo.name : '').trim() || 'SLOOT';
+  const businessTitle = (businessInfo && businessInfo.name ? businessInfo.name : '').trim() || 'slooti';
 
   const renderProgressBar = () => (
     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '3rem' }}>
@@ -792,7 +792,7 @@ const PublicBooking = ({ onOpenPortal }) => {
           {businessInfo && businessInfo.logo_url ? (
             <img src={businessInfo.logo_url} alt="Logo" style={{ height: '32px', width: '32px', borderRadius: '6px', objectFit: 'contain', background: 'white' }} />
           ) : null}
-          <span className="sloot-logo-text" style={{ fontSize: '1.2rem', color: '#FFFDF2', paddingTop: '2px' }}>SLOOT</span>
+          <span className="slooti-logo slooti-logo--md slooti-logo--on-dark" aria-label="slooti">slooti</span>
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', color: '#FFFDF2' }}>

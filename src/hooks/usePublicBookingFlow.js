@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useApp } from '../context/AppContext';
+import { useTenant } from '../context/TenantContext';
 import { isValidPhone, normalizePhone, PHONE_ERROR } from '../utils/phone';
+import { requestCustomerPasswordReset } from '../utils/customerPasswordReset';
 import { getPublicBookingSlotsForDay, hasBarberShiftOnDate } from '../utils/publicBookingSlots';
 import { normalizeBookingTime } from '../utils/bookingAvailability';
 
@@ -50,6 +52,7 @@ export function buildCalendarDays(monthDate) {
 }
 
 export function usePublicBookingFlow() {
+  const { slug } = useTenant();
   const {
     barbers,
     services,
@@ -74,7 +77,9 @@ export function usePublicBookingFlow() {
   const [authMode, setAuthMode] = useState('login');
   const [authData, setAuthData] = useState({ email: '', password: '', name: '', phone: '' });
   const [authError, setAuthError] = useState('');
+  const [authInfo, setAuthInfo] = useState('');
   const [googleBusy, setGoogleBusy] = useState(false);
+  const [forgotBusy, setForgotBusy] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [visibleDaysCount, setVisibleDaysCount] = useState(INITIAL_VISIBLE_BOOKING_DAYS);
   const [calendarMonth, setCalendarMonth] = useState(() => {
@@ -90,7 +95,7 @@ export function usePublicBookingFlow() {
     [barbers],
   );
 
-  const businessTitle = (businessInfo?.name || '').trim() || 'SLOOT';
+  const businessTitle = (businessInfo?.name || '').trim() || 'slooti';
   const durationMinutes = parseInt(String(selectedService?.duration), 10) || 0;
 
   useEffect(() => {
@@ -275,9 +280,30 @@ export function usePublicBookingFlow() {
     }
   };
 
+  const openForgotPassword = useCallback(() => {
+    setAuthError('');
+    setAuthInfo('');
+    setAuthMode('forgot');
+  }, []);
+
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
+    setAuthInfo('');
+
+    if (authMode === 'forgot') {
+      setForgotBusy(true);
+      try {
+        const message = await requestCustomerPasswordReset(authData.email, slug);
+        setAuthInfo(message);
+      } catch (err) {
+        setAuthError(err.message);
+      } finally {
+        setForgotBusy(false);
+      }
+      return;
+    }
+
     try {
       if (authMode === 'login') {
         await customerLogin(authData.email, authData.password);
@@ -367,7 +393,10 @@ export function usePublicBookingFlow() {
     setAuthData,
     authError,
     setAuthError,
+    authInfo,
     googleBusy,
+    forgotBusy,
+    openForgotPassword,
     showDatePicker,
     setShowDatePicker,
     visibleDaysCount,

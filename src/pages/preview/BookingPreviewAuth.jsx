@@ -39,24 +39,48 @@ export function AuthLoginCard({
   authData,
   setAuthData,
   authError,
+  authInfo,
   googleBusy,
+  forgotBusy,
+  openForgotPassword,
   onAuthSubmit,
   onGoogleLogin,
   onClose,
-  title = 'Entre para confirmar',
-  subtitle = 'Faça login ou crie sua conta para finalizar o agendamento.',
+  title,
+  subtitle,
 }) {
+  const isForgot = authMode === 'forgot';
+  const isRegister = authMode === 'register';
+
+  const resolvedTitle = title ?? (
+    isForgot ? 'Esqueci minha senha' : isRegister ? 'Criar conta' : 'Entre para confirmar'
+  );
+  const resolvedSubtitle = subtitle ?? (
+    isForgot
+      ? 'Informe o e-mail da sua conta. Enviaremos um link para criar uma nova senha.'
+      : isRegister
+        ? 'Preencha seus dados para finalizar o cadastro.'
+        : 'Faça login ou crie sua conta para finalizar o agendamento.'
+  );
+
   return (
     <div className="bp-auth-card" role="dialog" aria-labelledby="bp-auth-card-title" aria-modal="true">
       <button type="button" className="bp-auth-card__close" onClick={onClose} aria-label="Fechar">
         <CloseIcon />
       </button>
       <p id="bp-auth-card-title" className="bp-auth-card__title">
-        {title}
+        {resolvedTitle}
       </p>
-      <p className="bp-auth-card__subtitle">{subtitle}</p>
+      <p className="bp-auth-card__subtitle">{resolvedSubtitle}</p>
+
+      {authInfo ? (
+        <p className="bp-auth-card__info" role="status">
+          {authInfo}
+        </p>
+      ) : null}
+
       <form className="bp-auth-card__form" onSubmit={onAuthSubmit}>
-        {authMode === 'register' && (
+        {isRegister && (
           <>
             <input
               className="bp-input"
@@ -83,33 +107,64 @@ export function AuthLoginCard({
           required
           value={authData.email}
           onChange={(e) => setAuthData({ ...authData, email: e.target.value })}
+          autoComplete="email"
         />
-        <input
-          className="bp-input"
-          type="password"
-          placeholder="Senha"
-          required
-          value={authData.password}
-          onChange={(e) => setAuthData({ ...authData, password: e.target.value })}
-        />
+        {!isForgot && (
+          <input
+            className="bp-input"
+            type="password"
+            placeholder="Senha"
+            required
+            value={authData.password}
+            onChange={(e) => setAuthData({ ...authData, password: e.target.value })}
+            autoComplete={isRegister ? 'new-password' : 'current-password'}
+          />
+        )}
         {authError && <p className="bp-error bp-error--left">{authError}</p>}
-        <button type="submit" className="bp-btn-continuar bp-btn-continuar--compact">
-          {authMode === 'login' ? 'Entrar' : 'Cadastrar'}
+        <button
+          type="submit"
+          className="bp-btn-continuar bp-btn-continuar--compact"
+          disabled={forgotBusy}
+        >
+          {isForgot
+            ? (forgotBusy ? 'Enviando…' : 'Enviar link')
+            : (authMode === 'login' ? 'Entrar' : 'Cadastrar')}
         </button>
       </form>
+
       {authMode === 'login' && (
-        <button type="button" className="bp-btn-google" onClick={onGoogleLogin} disabled={googleBusy}>
-          <GoogleIcon />
-          <span>{googleBusy ? 'Conectando...' : 'Entrar com Google'}</span>
+        <>
+          <button
+            type="button"
+            className="bp-auth-card__forgot-link"
+            onClick={openForgotPassword}
+          >
+            Esqueci minha senha
+          </button>
+          <button type="button" className="bp-btn-google" onClick={onGoogleLogin} disabled={googleBusy}>
+            <GoogleIcon />
+            <span>{googleBusy ? 'Conectando...' : 'Entrar com Google'}</span>
+          </button>
+        </>
+      )}
+
+      {isForgot ? (
+        <button
+          type="button"
+          className="bp-link-btn"
+          onClick={() => setAuthMode('login')}
+        >
+          Voltar ao login
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="bp-link-btn"
+          onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+        >
+          {authMode === 'login' ? 'Criar conta' : 'Já tenho conta'}
         </button>
       )}
-      <button
-        type="button"
-        className="bp-link-btn"
-        onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-      >
-        {authMode === 'login' ? 'Criar conta' : 'Já tenho conta'}
-      </button>
     </div>
   );
 }

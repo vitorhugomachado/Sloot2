@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { API_URL } from '../config/apiUrl';
 import { useTenant } from './TenantContext';
@@ -19,6 +20,10 @@ import {
   setStaffToken as persistStaffToken,
   getCustomerToken,
   setCustomerToken as persistCustomerToken,
+  setPendingCustomer,
+  getPendingCustomer,
+  clearPendingCustomer,
+  isCustomerTokenForTenant,
 } from '../utils/tenantAuthStorage';
 
 const AppContext = createContext();
@@ -67,6 +72,19 @@ export const AppProvider = ({ children }) => {
 
   /** Evita que respostas PUT fora de ordem sobrescrevam permissões mais recentes. */
   const barberPermissionsRequestSeq = useRef(new Map());
+  const prevTenantSlugRef = useRef(tenantSlug);
+
+  const resolveAuthToken = useCallback(
+    (authScope) => {
+      const storedStaff = getStaffToken(tenantSlug, tenant?.id);
+      const storedCustomer = getCustomerToken(tenantSlug, tenant?.id);
+
+      if (authScope === 'staff') return token || storedStaff;
+      if (authScope === 'customer') return customerToken || storedCustomer;
+      return token || customerToken || storedStaff || storedCustomer;
+    },
+    [token, customerToken, tenantSlug, tenant?.id],
+  );
 
   const apiFetch = async (url, options = {}) => {
     const headers = {
@@ -76,11 +94,7 @@ export const AppProvider = ({ children }) => {
     };
 
     const authScope = options.authScope || 'auto';
-    let activeToken = null;
-
-    if (authScope === 'staff') activeToken = token;
-    else if (authScope === 'customer') activeToken = customerToken;
-    else if (authScope === 'auto') activeToken = token || customerToken;
+    const activeToken = resolveAuthToken(authScope);
 
     if (activeToken) {
       headers['Authorization'] = `Bearer ${activeToken}`;
@@ -88,15 +102,14 @@ export const AppProvider = ({ children }) => {
 
     const { authScope: _authScope, signal, ...fetchOptions } = options;
     const res = await fetch(url, { ...fetchOptions, headers, signal });
-    
+
     if (!options.skipLogout) {
       if (res.status === 401) {
-        if (authScope === 'customer' && customerToken) customerLogout();
-        if (authScope === 'staff' && token) logout();
+        if (authScope === 'customer' && activeToken) customerLogout();
+        if (authScope === 'staff' && activeToken) logout();
       }
-      if (res.status === 403) {
-        if (authScope === 'customer' && customerToken) customerLogout();
-        if (authScope === 'staff' && token) logout();
+      if (res.status === 403 && authScope === 'staff' && activeToken) {
+        logout();
       }
     }
     return res;
@@ -125,17 +138,18 @@ export const AppProvider = ({ children }) => {
   const loadPublicBootstrap = useCallback(async (signal) => {
     const qs = getBootstrapQueryString();
     const url = `${API_URL}/public/bootstrap?${qs}`;
+    const headers = { 'X-Tenant-Slug': tenantSlug };
     const timeout = new Promise((_, reject) => {
       const id = setTimeout(() => reject(new Error('Bootstrap timeout')), BOOTSTRAP_TIMEOUT_MS);
       signal?.addEventListener('abort', () => clearTimeout(id), { once: true });
     });
     const data = await Promise.race([
-      fetchBootstrapJson(url, tenantHeaders, tenantSlug),
+      fetchBootstrapJson(url, headers, tenantSlug),
       timeout,
     ]);
     if (signal?.aborted) return;
     applyBootstrapData(data);
-  }, [tenantHeaders, tenantSlug, applyBootstrapData]);
+  }, [tenantSlug, applyBootstrapData]);
 
   const hydrateFromCache = useCallback(() => {
     const cached = readBootstrapFromCache(tenantSlug);
@@ -153,11 +167,19 @@ export const AppProvider = ({ children }) => {
     const ac = new AbortController();
     const staffTok = getStaffToken(tenantSlug, tenant.id);
     const custTok = getCustomerToken(tenantSlug, tenant.id);
+    const tenantSlugChanged = prevTenantSlugRef.current !== tenantSlug;
+    prevTenantSlugRef.current = tenantSlug;
 
     setToken(staffTok);
-    setCustomerToken(custTok);
+    setCustomerToken((prev) => custTok || prev);
     if (!staffTok) setCurrentUser(null);
-    if (!custTok) setCurrentCustomer(null);
+    if (!custTok) {
+      setCurrentCustomer((prev) => {
+        if (tenantSlugChanged) return null;
+        if (prev) return prev;
+        return getPendingCustomer(tenantSlug);
+      });
+    }
 
     hydrateFromCache();
     setProducts([]);
@@ -226,11 +248,17 @@ export const AppProvider = ({ children }) => {
           try {
             const custRes = await apiFetch(`${API_URL}/customer-auth/me`, {
               authScope: 'customer',
+              skipLogout: true,
               signal: ac.signal,
             });
             if (!ac.signal.aborted) {
-              if (custRes.ok) setCurrentCustomer(await custRes.json());
-              else customerLogout();
+              if (custRes.ok) {
+                const me = await custRes.json();
+                setCurrentCustomer(me);
+                clearPendingCustomer(tenantSlug);
+              } else if (custRes.status === 401 || custRes.status === 403 || custRes.status === 404) {
+                customerLogout();
+              }
             }
           } catch (e) {
             if (!ac.signal.aborted) console.error('Customer auth error:', e);
@@ -239,7 +267,7 @@ export const AppProvider = ({ children }) => {
       } catch (error) {
         if (!ac.signal.aborted) console.error('Error fetching data:', error);
       } finally {
-        if (!ac.signal.aborted) setBootstrapLoading(false);
+        setBootstrapLoading(false);
       }
     };
 
@@ -249,7 +277,7 @@ export const AppProvider = ({ children }) => {
       ac.abort();
       clearBootstrapInFlight(tenantSlug);
     };
-  }, [tenantSlug, tenant?.id, tenantLoading, tenant, hydrateFromCache, loadPublicBootstrap]);
+  }, [tenantSlug, tenant?.id, tenantLoading]);
 
   useEffect(() => {
     if (!token || !isStaffRoutePath(location.pathname)) return undefined;
@@ -315,45 +343,85 @@ export const AppProvider = ({ children }) => {
     return user;
   };
 
-  const customerLogin = async (email, password) => {
-    const res = await fetch(`${API_URL}/customer-auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...tenantHeaders },
-      body: JSON.stringify({
-        email: email != null ? String(email).trim().toLowerCase() : email,
-        password,
-      })
+  const commitCustomerSession = useCallback((newToken, user) => {
+    persistCustomerToken(tenantSlug, newToken);
+    flushSync(() => {
+      setCustomerToken(newToken);
+      setCurrentCustomer(user);
     });
-    
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.message || 'Falha no login');
+    setPendingCustomer(tenantSlug, user);
+    return user;
+  }, [tenantSlug]);
+
+  const customerLogin = async (email, password) => {
+    let res;
+    try {
+      res = await fetch(`${API_URL}/customer-auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...tenantHeaders },
+        body: JSON.stringify({
+          email: email != null ? String(email).trim().toLowerCase() : email,
+          password,
+        }),
+      });
+    } catch {
+      throw new Error('Não foi possível contactar o servidor');
     }
 
-    const { token: newToken, user } = await res.json();
-    persistCustomerToken(tenantSlug, newToken);
-    setCustomerToken(newToken);
-    setCurrentCustomer(user);
-    return user;
+    if (!res.ok) {
+      let message = 'Falha no login';
+      try {
+        const error = await res.json();
+        message = error.message || message;
+      } catch {
+        /* resposta não-JSON */
+      }
+      throw new Error(message);
+    }
+
+    let payload;
+    try {
+      payload = await res.json();
+    } catch {
+      throw new Error('Resposta inválida do servidor');
+    }
+
+    const { token: newToken, user } = payload;
+    return commitCustomerSession(newToken, user);
   };
 
   const customerGoogleLogin = async (credential) => {
-    const res = await fetch(`${API_URL}/customer-auth/google`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...tenantHeaders },
-      body: JSON.stringify({ credential }),
-    });
-
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.message || 'Falha no login com Google');
+    let res;
+    try {
+      res = await fetch(`${API_URL}/customer-auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...tenantHeaders },
+        body: JSON.stringify({ credential }),
+      });
+    } catch {
+      throw new Error('Não foi possível contactar o servidor');
     }
 
-    const { token: newToken, user } = await res.json();
-    persistCustomerToken(tenantSlug, newToken);
-    setCustomerToken(newToken);
-    setCurrentCustomer(user);
-    return user;
+    if (!res.ok) {
+      let message = 'Falha no login com Google';
+      try {
+        const error = await res.json();
+        message = error.message || message;
+      } catch {
+        /* resposta não-JSON */
+      }
+      throw new Error(message);
+    }
+
+    let payload;
+    try {
+      payload = await res.json();
+    } catch {
+      throw new Error('Resposta inválida do servidor');
+    }
+
+    const { token: newToken, user } = payload;
+    return commitCustomerSession(newToken, user);
   };
 
   const customerRegister = async (data) => {
@@ -379,10 +447,7 @@ export const AppProvider = ({ children }) => {
     }
 
     const { token: newToken, user } = await res.json();
-    persistCustomerToken(tenantSlug, newToken);
-    setCustomerToken(newToken);
-    setCurrentCustomer(user);
-    return user;
+    return commitCustomerSession(newToken, user);
   };
 
   const getCustomerAppointments = async () => {
@@ -408,9 +473,38 @@ export const AppProvider = ({ children }) => {
 
   const customerLogout = () => {
     persistCustomerToken(tenantSlug, null);
+    clearPendingCustomer(tenantSlug);
     setCustomerToken(null);
     setCurrentCustomer(null);
   };
+
+  const syncNavigatedCustomer = useCallback((customer) => {
+    if (customer) setCurrentCustomer((prev) => prev ?? customer);
+  }, []);
+
+  const refreshCurrentCustomer = useCallback(async () => {
+    const active = getCustomerToken(tenantSlug, tenant?.id) || customerToken;
+    if (!active) return null;
+
+    setCustomerToken(active);
+    try {
+      const res = await apiFetch(`${API_URL}/customer-auth/me`, {
+        authScope: 'customer',
+        skipLogout: true,
+      });
+      if (res.ok) {
+        const user = await res.json();
+        setCurrentCustomer(user);
+        clearPendingCustomer(tenantSlug);
+        return user;
+      }
+      if (res.status === 401 || res.status === 403 || res.status === 404) customerLogout();
+      return null;
+    } catch (e) {
+      console.error('Customer profile refresh error:', e);
+      return null;
+    }
+  }, [tenantSlug, tenant?.id, customerToken]);
 
   const logout = () => {
     persistStaffToken(tenantSlug, null);
@@ -967,6 +1061,13 @@ export const AppProvider = ({ children }) => {
       .sort((a, b) => b.revenue - a.revenue);
   }, [barbers, currentUser, getFinancialStats]);
 
+  const storedCustomerToken = getCustomerToken(tenantSlug, tenant?.id);
+  const customerSessionActive =
+    !!currentCustomer
+    || !!storedCustomerToken
+    || isCustomerTokenForTenant(customerToken, tenant?.id)
+    || !!getPendingCustomer(tenantSlug);
+
   return (
     <AppContext.Provider value={{
       barbers, appointments, services, businessInfo, products, productSales, expenses, monthClosings, periodClosings,
@@ -979,7 +1080,7 @@ export const AppProvider = ({ children }) => {
       getFinancialStats, getBarberRanking,
       addExpense, removeExpense, updateExpense, refreshMonthClosings, createMonthClosing, refreshPeriodClosings, createPeriodClosing,
       login, logout, currentUser, token, loading, bootstrapLoading, staffLoading,
-      currentCustomer, isCustomerAuthenticated: !!currentCustomer, customerLogin, customerGoogleLogin, customerRegister, customerLogout,
+      currentCustomer, isCustomerAuthenticated: customerSessionActive, customerLogin, customerGoogleLogin, customerRegister, customerLogout, refreshCurrentCustomer, syncNavigatedCustomer,
       getCustomerAppointments, updateCustomerProfile,
       customerUpdateAppointmentStatus, customerCancelAppointment,
       customerRateAppointment,

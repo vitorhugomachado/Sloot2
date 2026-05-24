@@ -33,7 +33,7 @@ export default function PlatformLogin({ onSuccess }) {
     <LoginScreenLayout>
       <LoginFormCard
         title="Administração"
-        subtitle="Acesso exclusivo para gestão da plataforma Sloot."
+        subtitle="Acesso exclusivo para gestão da plataforma slooti."
         emailInputType="email"
         emailPlaceholder="seu@email.com"
         showEmailIcon={false}

@@ -1,37 +1,64 @@
 import { useCallback, useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useTenant } from '../context/TenantContext';
 import { isValidPhone, normalizePhone, PHONE_ERROR } from '../utils/phone';
+import { requestCustomerPasswordReset } from '../utils/customerPasswordReset';
 
 export function useCustomerAuth({ onSuccess } = {}) {
+  const { slug } = useTenant();
   const { customerLogin, customerRegister, customerGoogleLogin } = useApp();
   const [authMode, setAuthMode] = useState('login');
   const [authData, setAuthData] = useState({ email: '', password: '', name: '', phone: '' });
   const [authError, setAuthError] = useState('');
+  const [authInfo, setAuthInfo] = useState('');
   const [googleBusy, setGoogleBusy] = useState(false);
+  const [forgotBusy, setForgotBusy] = useState(false);
 
-  const afterAuth = useCallback(() => {
-    onSuccess?.();
+  const afterAuth = useCallback((user) => {
+    onSuccess?.(user);
   }, [onSuccess]);
+
+  const openForgotPassword = useCallback(() => {
+    setAuthError('');
+    setAuthInfo('');
+    setAuthMode('forgot');
+  }, []);
 
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
+    setAuthInfo('');
+
+    if (authMode === 'forgot') {
+      setForgotBusy(true);
+      try {
+        const message = await requestCustomerPasswordReset(authData.email, slug);
+        setAuthInfo(message);
+      } catch (err) {
+        setAuthError(err.message);
+      } finally {
+        setForgotBusy(false);
+      }
+      return;
+    }
+
     try {
+      let user;
       if (authMode === 'login') {
-        await customerLogin(authData.email, authData.password);
+        user = await customerLogin(authData.email, authData.password);
       } else {
         if (!isValidPhone(authData.phone)) {
           setAuthError(PHONE_ERROR);
           return;
         }
-        await customerRegister({
+        user = await customerRegister({
           email: authData.email.trim().toLowerCase(),
           password: authData.password,
           name: authData.name,
           phone: normalizePhone(authData.phone),
         });
       }
-      afterAuth();
+      afterAuth(user);
     } catch (err) {
       setAuthError(err.message);
     }
@@ -40,6 +67,7 @@ export function useCustomerAuth({ onSuccess } = {}) {
   const handleGoogleCustomerLogin = async () => {
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     setAuthError('');
+    setAuthInfo('');
 
     if (!googleClientId) {
       setAuthError('Configuração ausente: defina VITE_GOOGLE_CLIENT_ID no frontend.');
@@ -71,8 +99,8 @@ export function useCustomerAuth({ onSuccess } = {}) {
         });
       });
 
-      await customerGoogleLogin(credential);
-      afterAuth();
+      const user = await customerGoogleLogin(credential);
+      afterAuth(user);
     } catch (err) {
       setAuthError(err.message || 'Erro no login com Google');
     } finally {
@@ -86,8 +114,13 @@ export function useCustomerAuth({ onSuccess } = {}) {
     authData,
     setAuthData,
     authError,
+    authInfo,
     googleBusy,
+    forgotBusy,
+    openForgotPassword,
     handleAuthSubmit,
     handleGoogleCustomerLogin,
+    onAuthSubmit: handleAuthSubmit,
+    onGoogleLogin: handleGoogleCustomerLogin,
   };
 }

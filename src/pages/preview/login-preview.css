@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700&display=swap');
 
 .login-preview {
-  --cl-accent: #252f3d;
-  --cl-accent-hover: #323f50;
-  --cl-text: #0f172a;
-  --cl-text-muted: #64748b;
-  --cl-border: #cbd5e1;
+  --cl-accent: #FF6A00;
+  --cl-accent-hover: #FF8533;
+  --cl-text: #1A1A1A;
+  --cl-text-muted: #6B7280;
+  --cl-border: #696969;
   --cl-card-shadow: 0 16px 48px rgba(17, 24, 39, 0.08), 0 2px 8px rgba(17, 24, 39, 0.04);
   --cl-radius-card: 40px;
   --cl-radius-input: 10px;
@@ -14,10 +14,76 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-weight: 300;
   color: var(--cl-text);
-  background-color: #f8fafc;
+  background-color: #FFFDF7;
   overflow: hidden;
+}
+
+/* Login barbeiros — fundo slooti (imagem em public/images/slooti-staff-login-bg.webp) */
+.login-preview--staff {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.login-preview--staff .login-preview__bg {
+  background-position: center center;
+  background-size: cover;
+}
+
+.login-preview--staff .login-preview__stage {
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.login-preview--staff .cl-login-card {
+  background: rgba(255, 253, 247, 0.88);
+  border: 1px solid #696969;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+}
+
+.login-preview--staff .cl-login-card__title {
+  color: #1a1a1a;
+}
+
+.login-preview--staff .cl-login-card__subtitle {
+  color: var(--cl-text-muted);
+}
+
+.login-preview--staff .cl-field {
+  background-color: #ffffff;
+  border: 1px solid #000000;
+}
+
+.login-preview--staff .cl-field:focus-within {
+  border-color: #ff6a00;
+}
+
+.login-preview--staff .cl-field__input,
+.login-preview--staff .cl-field__input:focus {
+  background: transparent !important;
+  border: none !important;
+  color: #000000 !important;
+}
+
+.login-preview--staff .cl-field__input::placeholder {
+  color: #9ca3af;
+}
+
+.login-preview--staff .cl-field__toggle {
+  color: #000000;
+}
+
+.login-preview--staff .cl-login-card__submit {
+  border: 1px solid rgba(3, 3, 3, 1);
+}
+
+.login-preview--staff .cl-login-card__footer,
+.login-preview--staff .cl-login-card__error {
+  color: var(--cl-text-muted);
 }
 
 .login-preview__bg {
@@ -53,7 +119,7 @@
   justify-content: center;
   padding: 1.5rem 1rem 2.5rem;
   position: relative;
-  z-index: 1;
+  z-index: 2;
   width: 100%;
 }
 
@@ -61,7 +127,8 @@
 .cl-login-card {
   width: 100%;
   max-width: 420px;
-  background: #fff;
+  background: #ffffff;
+  border: 1px solid #696969;
   border-radius: var(--cl-radius-card);
   padding: 2.25rem 2rem 2rem;
   box-shadow: var(--cl-card-shadow);
@@ -197,6 +264,16 @@
 
 .cl-login-card__error--hint {
   color: #b45309;
+}
+
+.cl-login-card__info {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: #ecfdf5;
+  color: #065f46;
+  font-size: 0.8125rem;
+  line-height: 1.4;
 }
 
 .cl-login-card__submit {

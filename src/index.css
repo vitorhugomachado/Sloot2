@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@400;600;700&family=Inter:wght@400;500;600&family=Poppins:wght@400;500;600;700&family=Montserrat:wght@900&family=Roboto:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700&display=swap');
 
 /* Painéis staff: abas inativas ficam ocultas mas montadas (troca rápida) */
 .staff-tab-panel[hidden] {
@@ -10,105 +10,89 @@
 @tailwind utilities;
 
 :root {
-  /* Slate brand palette */
-  --brand-50: #f8fafc;
-  --brand-100: #f1f5f9;
-  --brand-200: #e2e8f0;
-  --brand-300: #cbd5e1;
-  --brand-400: #94a3b8;
-  --brand-500: #64748b;
-  --brand-600: #475569;
-  --brand-700: #334155;
-  --brand-800: #1e293b;
-  --brand-900: #0f172a;
-  --brand-950: #020617;
+  /* slooti palette */
+  --color-black: #000000;
+  --color-gray-dark: #0F0F0F;
+  --color-gray-border: #696969;
+  --color-white: #FFFFFF;
+  --color-orange: #FF6A00;
 
-  --bg-color: #f8fafc;
-  --surface-color: #ffffff;
-  --border-color: #cbd5e1;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-
-  /* Primária (botões, navegação ativa) */
-  --primary-color: #252f3d;
-  --primary-hover: #323f50;
+  --primary-color: #FF6A00;
+  --primary-hover: #FF8533;
   --primary-text: #ffffff;
 
-  /* Accent — mesma cor da marca */
-  --accent-color: #252f3d;
-  --accent-hover: #323f50;
-  --accent-text: #ffffff;
-  --accent-soft: rgba(37, 47, 61, 0.12);
-  --success-color: #10b981;
+  --accent-color: #FF6A00;
+  --accent-hover: #FF8533;
+  --accent-text: #000000;
+  --accent-soft: rgba(255, 106, 0, 0.14);
 
-  /* KPI Accent Colors */
-  --kpi-revenue: #D4AF37;
-  --kpi-profit: #252f3d;
+  --sidebar-bg: #000000;
+  --sidebar-text: #ffffff;
+  --sidebar-text-muted: rgba(255, 255, 255, 0.55);
+  --sidebar-border: #696969;
+  --sidebar-nav-hover-bg: rgba(255, 255, 255, 0.06);
+
+  --bg-color: #FFFDF7;
+  --surface-color: #FFFFFF;
+  --card-bg: #FFFFFF;
+  --border-color: #696969;
+  --text-primary: #1A1A1A;
+  --text-secondary: #6B7280;
+
+  --success-color: #22C55E;
+  --danger-color: #EF4444;
+  --error-color: #EF4444;
+  --warning-color: #F59E0B;
+  --info-color: #3B82F6;
+
+  --brand-50: #FFFDF7;
+  --brand-100: #FFE0CC;
+  --brand-200: #FFD4B8;
+  --brand-300: #FF8533;
+  --brand-400: #FF8533;
+  --brand-500: #FF6A00;
+  --brand-600: #E55F00;
+  --brand-700: #CC5500;
+  --brand-800: #994000;
+  --brand-900: #1A1A1A;
+  --brand-950: #0D0D0D;
+
+  --kpi-revenue: #FF6A00;
+  --kpi-profit: #FF8533;
   --kpi-commission: #DB2777;
   --kpi-ticket: #7C3AED;
-  --kpi-sales: #4F46E5;
-  --kpi-margin: #10b981;
+  --kpi-sales: #3B82F6;
+  --kpi-margin: #22C55E;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 2px 0 rgba(26, 26, 26, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(26, 26, 26, 0.08), 0 2px 4px -1px rgba(26, 26, 26, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(26, 26, 26, 0.1), 0 4px 6px -2px rgba(26, 26, 26, 0.05);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: #696969;
   --glass-blur: blur(12px);
-  /* Contorno de cards — borda cinza suave, cantos arredondados */
-  --card-outline: #cbd5e1;
+  --card-outline: #696969;
+  --calendar-border: #696969;
   --card-radius: 16px;
-  --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  --modal-backdrop-bg: rgba(0, 0, 0, 0.5);
+  --card-shadow: 0 4px 24px rgba(255, 106, 0, 0.06);
+  --modal-backdrop-bg: rgba(26, 26, 26, 0.5);
   --modal-backdrop-filter: blur(8px);
-  /* Above .sidebar (1001); use --modal-z-popover for layers on top (e.g. mini receipt) */
   --modal-z-backdrop: 1100;
   --modal-z-popover: 1110;
-  --panel-bg: #ffffff;
-  --hover-bg: rgba(0,0,0,0.04);
-  --icon-bg: rgba(0,0,0,0.05);
-  --icon-hover: rgba(0,0,0,0.1);
-  --line-color: rgba(0,0,0,0.08);
-  --dash-card-bg: #ffffff;
-  --dash-panel-bg: #ffffff;
-  /* Seleção de texto (padrão azul do sistema — não usa o verde da marca) */
-  --selection-bg: rgba(37, 47, 61, 0.22);
-  --selection-color: #0f172a;
+  --panel-bg: #FFFFFF;
+  --hover-bg: rgba(255, 106, 0, 0.06);
+  --icon-bg: rgba(255, 106, 0, 0.08);
+  --icon-hover: rgba(255, 106, 0, 0.14);
+  --line-color: rgba(105, 105, 105, 0.45);
+  --dash-card-bg: #FFFFFF;
+  --dash-panel-bg: #FFFFFF;
+  --selection-bg: rgba(255, 106, 0, 0.22);
+  --selection-color: #1A1A1A;
+
+  --font-weight-light: 200;
+  --font-weight-regular: 300;
+  --font-weight-medium: 400;
 }
 
-[data-theme='dark'] {
-  --bg-color: #0f172a;
-  --surface-color: #1e293b;
-  --border-color: rgba(203, 213, 225, 0.2);
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --primary-color: #323f50;
-  --primary-hover: #3d4d61;
-  --primary-text: #ffffff;
-  --accent-color: #323f50;
-  --accent-hover: #3d4d61;
-  --accent-text: #ffffff;
-  --accent-soft: rgba(37, 47, 61, 0.22);
-  --success-color: #10b981;
-  --shadow-sm: 0 2px 4px rgba(0,0,0,0.4);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.5);
-  --shadow-lg: 0 10px 15px rgba(0,0,0,0.6);
-  --glass-bg: rgba(30, 30, 36, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --card-outline: rgba(255, 255, 255, 0.14);
-  --card-radius: 12px;
-  --modal-backdrop-bg: rgba(0, 0, 0, 0.55);
-  --panel-bg: #1e293b;
-  --card-outline: rgba(203, 213, 225, 0.25);
-  --selection-bg: rgba(37, 47, 61, 0.35);
-  --selection-color: #f8fafc;
-  --hover-bg: rgba(255,255,255,0.05);
-  --icon-bg: rgba(255,255,255,0.04);
-  --icon-hover: rgba(255,255,255,0.08);
-  --line-color: rgba(255,255,255,0.08);
-  --dash-card-bg: #1e293b;
-  --dash-panel-bg: #0f172a;
-}
 
 * {
   margin: 0;
@@ -118,25 +102,119 @@
 
 body {
   transition: background-color 0.3s ease, color 0.3s ease;
-  font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-weight: var(--font-weight-regular);
   background-color: var(--bg-color);
   color: var(--text-primary);
-  line-height: 1.6;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, .brand-font {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 600;
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -0.02em;
 }
 
-.sloot-logo-text {
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: -2px;
+/* Wordmark slooti */
+.slooti-logo {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-weight: 200;
+  font-size: 1.75rem;
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
   line-height: 1;
-  color: var(--text-primary);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+}
+
+.slooti-logo--on-dark {
+  color: #ffffff;
+}
+
+.slooti-logo--on-light {
+  color: #1a1a1a;
+}
+
+.slooti-logo--on-light .slooti-logo__i-stem,
+.slooti-logo--on-light .slooti-logo__mark-char {
+  color: #1a1a1a;
+}
+
+.slooti-logo--sm { font-size: 1rem; }
+.slooti-logo--md { font-size: 1.35rem; }
+.slooti-logo--lg { font-size: 1.85rem; }
+.slooti-logo--xl { font-size: 2.5rem; }
+
+.slooti-logo__i {
+  position: relative;
+  display: inline-block;
+  margin-left: 0.02em;
+}
+
+.slooti-logo__i-stem {
+  color: #ffffff;
+  font-style: normal;
+}
+
+.slooti-logo__i-dot {
+  position: absolute;
+  top: 0.02em;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0.208em;
+  height: 0.208em;
+  border-radius: 50%;
+  background: #ff6a00;
+  pointer-events: none;
+}
+
+.slooti-logo--mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15em;
+}
+
+.slooti-logo__mark-char {
+  font-weight: 200;
+  color: #ffffff;
+  text-transform: lowercase;
+}
+
+.slooti-logo__mark-dot {
+  width: 0.36em;
+  height: 0.36em;
+  border-radius: 50%;
+  background: #ff6a00;
+  flex-shrink: 0;
+}
+
+.slooti-logo-img {
+  display: block;
+  height: 2rem;
+  width: auto;
+  object-fit: contain;
+}
+
+.slooti-logo-img.slooti-logo--lg { height: 2.25rem; }
+.slooti-logo-img.slooti-logo--xl { height: 3rem; }
+
+.sidebar .slooti-logo,
+.sidebar .slooti-logo--mark {
+  flex-shrink: 0;
+}
+
+/* legado — redireciona para slooti */
+.sloot-logo-text {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 200;
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: #ffffff;
   display: inline-block;
 }
 
@@ -585,9 +663,6 @@ h1, h2, h3, h4, .brand-font {
   border-right: none;
 }
 
-[data-theme='dark'] .scheduler-desktop-week-header__cell {
-  background: transparent;
-}
 
 .scheduler-desktop-week-header__cell--selected {
   background: var(--accent-color);
@@ -713,9 +788,6 @@ h1, h2, h3, h4, .brand-font {
   box-sizing: border-box;
 }
 
-[data-theme='dark'] .scheduler-appointment-hover-tip {
-  background: var(--panel-bg);
-}
 
 .scheduler-appointment-hover-tip__icon {
   display: flex;
@@ -887,7 +959,7 @@ h1, h2, h3, h4, .brand-font {
   border-radius: 20px;
   box-shadow: var(--card-shadow);
   box-sizing: border-box;
-  background: #ffffff;
+  background: var(--surface-color);
 }
 
 /* Agenda (Scheduler) — apenas max-width 768px; desktop inalterado */
@@ -1280,9 +1352,6 @@ h1, h2, h3, h4, .brand-font {
   background: rgba(255, 255, 255, 1);
 }
 
-[data-theme='dark'] .modal-glass-panel.client-form-modal {
-  background: var(--panel-bg);
-}
 
 /* If composed with .glass-card, keep modal panels from lifting on hover */
 .glass-card.modal-glass-panel:hover {
@@ -1302,12 +1371,6 @@ h1, h2, h3, h4, .brand-font {
     0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
-[data-theme='dark'] .modal-glass-panel:has(.booking-reserve-form) {
-  background: rgba(22, 22, 24, 0.58);
-  box-shadow:
-    0 18px 50px rgba(0, 0, 0, 0.5),
-    0 2px 10px rgba(0, 0, 0, 0.35);
-}
 
 /* Agenda — todos os modais (detalhes, ações, reservar) */
 .modal-glass-panel.scheduler-modal-panel {
@@ -1316,9 +1379,6 @@ h1, h2, h3, h4, .brand-font {
   -webkit-backdrop-filter: none;
 }
 
-[data-theme='dark'] .modal-glass-panel.scheduler-modal-panel {
-  background: var(--panel-bg);
-}
 
 .modal-glass-panel:has(.booking-reserve-form) input.booking-reserve-form__field:not([type='date']),
 .modal-glass-panel:has(.booking-reserve-form) select.booking-reserve-form__field {
@@ -1328,11 +1388,6 @@ h1, h2, h3, h4, .brand-font {
   -webkit-backdrop-filter: blur(10px);
 }
 
-[data-theme='dark'] .modal-glass-panel:has(.booking-reserve-form) input.booking-reserve-form__field:not([type='date']),
-[data-theme='dark'] .modal-glass-panel:has(.booking-reserve-form) select.booking-reserve-form__field {
-  background: rgba(255, 255, 255, 0.09) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-}
 
 .modal-glass-panel:has(.booking-reserve-form) input.booking-reserve-form__field:not([type='date']):focus,
 .modal-glass-panel:has(.booking-reserve-form) select.booking-reserve-form__field:focus {
@@ -1340,20 +1395,12 @@ h1, h2, h3, h4, .brand-font {
   border-color: var(--card-outline) !important;
 }
 
-[data-theme='dark'] .modal-glass-panel:has(.booking-reserve-form) input.booking-reserve-form__field:not([type='date']):focus,
-[data-theme='dark'] .modal-glass-panel:has(.booking-reserve-form) select.booking-reserve-form__field:focus {
-  background: rgba(255, 255, 255, 0.14) !important;
-  border-color: var(--card-outline) !important;
-}
 
 .modal-glass-panel:has(.booking-reserve-form) input[type='date'].booking-reserve-form__field {
   background: #ffffff !important;
   border: 1px solid var(--card-outline) !important;
 }
 
-[data-theme='dark'] .modal-glass-panel:has(.booking-reserve-form) input[type='date'].booking-reserve-form__field {
-  background: var(--panel-bg) !important;
-}
 
 .modal-glass-panel:has(.booking-reserve-form) .booking-reserve-form__static {
   background: rgba(255, 255, 255, 0.48) !important;
@@ -1362,19 +1409,12 @@ h1, h2, h3, h4, .brand-font {
   -webkit-backdrop-filter: blur(8px);
 }
 
-[data-theme='dark'] .modal-glass-panel:has(.booking-reserve-form) .booking-reserve-form__static {
-  background: rgba(255, 255, 255, 0.07) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-}
 
 .modal-glass-panel:has(.booking-reserve-form) .booking-reserve-form__submit.btn-primary {
   border: 1px solid var(--card-outline) !important;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
 }
 
-[data-theme='dark'] .modal-glass-panel:has(.booking-reserve-form) .booking-reserve-form__submit.btn-primary {
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
-}
 
 /* Reservar horário — Scheduler + Dashboard */
 .booking-reserve-form__title-row {
@@ -1525,7 +1565,7 @@ button.action-modal-choice-btn:active {
 button.action-modal-choice-btn--start {
   background: #eff6ff;
   border-color: #bfdbfe;
-  color: #252f3d;
+  color: #000;
 }
 
 button.action-modal-choice-btn--start:hover {
@@ -1534,7 +1574,7 @@ button.action-modal-choice-btn--start:hover {
 }
 
 button.action-modal-choice-btn--start svg {
-  color: #252f3d;
+  color: #000;
   opacity: 1;
 }
 
@@ -1570,31 +1610,10 @@ button.action-modal-choice-btn--cancel svg {
   opacity: 1;
 }
 
-[data-theme='dark'] button.action-modal-choice-btn--start {
-  background: rgba(37, 47, 61, 0.15);
-  border-color: rgba(147, 197, 253, 0.35);
-  color: #93c5fd;
-}
 
-[data-theme='dark'] button.action-modal-choice-btn--start svg {
-  color: #60a5fa;
-}
 
-[data-theme='dark'] button.action-modal-choice-btn--pay {
-  background: rgba(16, 185, 129, 0.12);
-  border-color: rgba(110, 231, 183, 0.35);
-  color: #6ee7b7;
-}
 
-[data-theme='dark'] button.action-modal-choice-btn--pay svg {
-  color: #34d399 !important;
-}
 
-[data-theme='dark'] button.action-modal-choice-btn--cancel {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(252, 165, 165, 0.35);
-  color: #fca5a5;
-}
 
 /* Modal de ação — CTAs de confirmação (início / cancelamento) com borda preta */
 button.action-modal-cta-btn {
@@ -1619,7 +1638,7 @@ button.action-modal-cta-btn--start {
 button.action-modal-cta-btn--start-blue {
   background: #eff6ff;
   border-color: #bfdbfe;
-  color: #252f3d;
+  color: var(--primary-color);
 }
 
 button.action-modal-cta-btn--start-blue:hover {
@@ -1636,9 +1655,6 @@ button.action-modal-cta-btn--danger:hover {
   background: #fee2e2;
 }
 
-[data-theme='dark'] button.action-modal-choice-btn--cancel svg {
-  color: #fca5a5;
-}
 
 /* Painéis e campos — modais de ação / checkout (padrão do resumo do agendamento) */
 .action-modal-panel {
@@ -1651,9 +1667,6 @@ button.action-modal-cta-btn--danger:hover {
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .action-modal-panel {
-  background: rgba(255, 255, 255, 0.04);
-}
 
 .action-modal-panel--dashed {
   border-style: dashed;
@@ -1661,10 +1674,6 @@ button.action-modal-cta-btn--danger:hover {
   background: #f9fafb;
 }
 
-[data-theme='dark'] .action-modal-panel--dashed {
-  border-color: var(--border-color);
-  background: rgba(255, 255, 255, 0.03);
-}
 
 .action-modal-panel__head {
   display: flex;
@@ -1729,15 +1738,7 @@ button.action-modal-cta-btn--danger:hover {
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .action-modal-panel__chip-btn {
-  background: var(--panel-bg);
-  color: var(--text-primary);
-  border-color: var(--primary-color);
-}
 
-[data-theme='dark'] .action-modal-panel__chip-btn:hover {
-  border-color: var(--card-outline);
-}
 
 select.action-modal-field,
 input.action-modal-field {
@@ -1820,9 +1821,6 @@ input.action-modal-field--qty {
   box-sizing: border-box;
 }
 
-[data-theme='dark'] .action-modal-status-pill {
-  border-color: var(--card-outline);
-}
 
 @media (max-width: 768px) {
   .booking-reserve-form__row {
@@ -2029,7 +2027,7 @@ input.action-modal-field--qty {
 }
 
 .crm-mobile-kpi-chip--info {
-  background: rgba(37, 47, 61, 0.08);
+  background: rgba(255, 106, 0, 0.08);
 }
 
 .crm-mobile-kpi-chip__label {
@@ -2437,9 +2435,6 @@ input.action-modal-field--qty {
   flex-shrink: 0;
 }
 
-[data-theme='dark'] .crm-mobile-details {
-  background: rgba(255, 255, 255, 0.03);
-}
 
 /* Settings — expediente semanal (day toggles): override global button padding */
 .settings-weekday-row {
@@ -2521,37 +2516,29 @@ button {
   border-color: var(--primary-hover);
 }
 
-[data-theme='dark'] .main-content .btn-secondary {
-  background-color: var(--surface-color);
-  color: var(--text-primary);
-}
 
-[data-theme='dark'] .main-content .btn-secondary:hover {
-  background-color: var(--hover-bg);
-  border-color: var(--border-color);
-}
 
 .main-content .glass-card.hover-trigger button:not(.settings-card-action-btn--plain):not(.settings-card-action-btn--delete) {
   border: 1px solid var(--primary-color) !important;
   box-sizing: border-box;
 }
 
-/* Configurações — catálogo: todas as bordas #CBD5E1 */
+/* Configurações — catálogo: bordas da paleta */
 .settings-page .glass-card.settings-catalog-card,
 .settings-page .set-mobile-card {
-  border: 1px solid #cbd5e1 !important;
+  border: 1px solid var(--card-outline) !important;
 }
 
 .settings-page .glass-card.settings-catalog-card .settings-card-actions,
 .settings-page .set-mobile-card__actions {
-  border-top: 1px solid #cbd5e1;
+  border-top: 1px solid var(--card-outline);
 }
 
 .settings-page .glass-card.settings-catalog-card button.settings-card-action-btn--plain,
 .settings-page .glass-card.settings-catalog-card button.settings-card-action-btn--delete,
 .settings-page button.set-mobile-action-btn,
 .settings-page button.settings-action-icon-btn {
-  border: 1px solid #cbd5e1 !important;
+  border: 1px solid var(--card-outline) !important;
   box-sizing: border-box;
 }
 
@@ -2631,19 +2618,7 @@ button {
   filter: none;
 }
 
-[data-theme='dark'] .sloot-circle-action--confirm {
-  color: #c4c5fc;
-  background: rgba(37, 47, 61, 0.16);
-  border: 1px solid rgba(37, 47, 61, 0.4);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-}
 
-[data-theme='dark'] .sloot-circle-action--confirm:hover {
-  background: rgba(37, 47, 61, 0.26);
-  border-color: rgba(165, 167, 250, 0.55);
-  color: #e0e1fe;
-  filter: none;
-}
 
 .sloot-circle-action--cancel-outline {
   color: #e57373;
@@ -2657,17 +2632,7 @@ button {
   color: #d32f2f;
 }
 
-[data-theme='dark'] .sloot-circle-action--cancel-outline {
-  color: #f5a5a5;
-  background: rgba(248, 113, 113, 0.1);
-  border: 1px solid rgba(248, 113, 113, 0.28);
-}
 
-[data-theme='dark'] .sloot-circle-action--cancel-outline:hover {
-  background: rgba(248, 113, 113, 0.16);
-  border-color: rgba(252, 165, 165, 0.4);
-  color: #fecaca;
-}
 
 .layout {
   display: flex;
@@ -2691,7 +2656,7 @@ button {
   height: 420px;
   top: -120px;
   left: 60px;
-  background: radial-gradient(circle, rgba(37, 47, 61, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 106, 0, 0.1) 0%, transparent 70%);
 }
 
 .layout::after {
@@ -2699,13 +2664,14 @@ button {
   height: 380px;
   bottom: -80px;
   right: -40px;
-  background: radial-gradient(circle, rgba(37, 47, 61, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 160, 0, 0.08) 0%, transparent 70%);
 }
 
 .sidebar {
   width: 260px;
-  background: #ffffff;
-  border-right: 1px solid var(--border-color);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  color: var(--sidebar-text);
   padding: 1.5rem 1rem;
   box-shadow: 2px 0 16px rgba(0, 0, 0, 0.03);
   z-index: 1001;
@@ -2797,9 +2763,6 @@ button {
   overflow: visible;
 }
 
-[data-theme="dark"] .sidebar-toggle-btn--bars {
-  color: #f4f4f5;
-}
 
 .nav-item-label {
   transition:
@@ -2833,10 +2796,16 @@ button {
   display: none;
 }
 
+.sidebar .slooti-logo,
+.sidebar .brand-name,
+.sidebar-footer-name {
+  color: var(--sidebar-text);
+}
+
 .sidebar-footer {
   margin-top: auto;
   padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -2881,7 +2850,16 @@ button {
 
 .sidebar-footer-role {
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--sidebar-text-muted);
+}
+
+.sidebar .sidebar-toggle-btn {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar .sidebar-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .sidebar-logout-btn {
@@ -2893,7 +2871,7 @@ button {
   border: none;
   border-radius: 10px;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--sidebar-text-muted);
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 500;
@@ -2901,8 +2879,8 @@ button {
 }
 
 .sidebar-logout-btn:hover {
-  background: var(--hover-bg);
-  color: var(--text-primary);
+  background: var(--sidebar-nav-hover-bg);
+  color: var(--sidebar-text);
 }
 
 .sidebar.collapsed .sidebar-logout-btn {
@@ -2914,32 +2892,29 @@ button {
   color: var(--text-primary);
 }
 
-.nav-item {
+.sidebar .nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px;
   border-radius: 12px;
-  color: var(--text-secondary);
+  color: var(--sidebar-text-muted);
   text-decoration: none;
   margin-bottom: 6px;
   transition: all 0.2s ease;
 }
 
-.nav-item:hover {
-  background-color: var(--hover-bg);
-  color: var(--text-primary);
+.sidebar .nav-item:hover {
+  background-color: var(--sidebar-nav-hover-bg);
+  color: var(--sidebar-text);
 }
 
-.nav-item.active {
+.sidebar .nav-item.active {
   background-color: var(--primary-color);
   color: var(--primary-text);
-  box-shadow: 0 4px 12px rgba(37, 47, 61, 0.28);
+  box-shadow: 0 4px 12px rgba(255, 106, 0, 0.35);
 }
 
-[data-theme='dark'] .nav-item.active {
-  box-shadow: 0 4px 14px rgba(37, 47, 61, 0.45);
-}
 
 .nav-item.active svg {
   color: #ffffff;
@@ -3012,9 +2987,6 @@ button {
   background: rgba(0, 0, 0, 0.045);
 }
 
-[data-theme='dark'] .hover-trigger:hover .scheduler-grid-slot-hint {
-  background: rgba(255, 255, 255, 0.06);
-}
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
@@ -3045,12 +3017,9 @@ button {
   flex-direction: column;
   gap: 1.5rem;
   width: 100%;
-  --dash-card-border: #cbd5e1;
+  --dash-card-border: var(--card-outline);
 }
 
-[data-theme='dark'] .dash-page {
-  --dash-card-border: rgba(255, 255, 255, 0.88);
-}
 
 .dash-page__inner {
   width: 100%;
@@ -3071,17 +3040,11 @@ button {
   -webkit-backdrop-filter: none;
 }
 
-[data-theme='dark'] .dash-page .modal-backdrop .modal-glass-panel {
-  background: var(--panel-bg);
-}
 
 .dash-page .modal-backdrop .action-modal-panel__title {
   color: var(--text-secondary);
 }
 
-[data-theme='dark'] .dash-page .modal-backdrop .action-modal-panel__title {
-  color: var(--text-primary);
-}
 
 .dash-page .modal-backdrop .action-modal-panel {
   color: var(--text-primary);
@@ -3330,10 +3293,6 @@ button {
   color: var(--accent-color);
 }
 
-[data-theme='dark'] .dash-kpi-icon.purple {
-  background: var(--accent-soft);
-  color: var(--accent-color);
-}
 
 .dash-kpi-icon.amber {
   background: rgba(217, 170, 81, 0.15);
@@ -3342,7 +3301,7 @@ button {
 
 .dash-kpi-icon.slate {
   background: rgba(100, 116, 139, 0.12);
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 /* --- Occupancy Gauge Card --- */
@@ -3386,14 +3345,6 @@ button {
     var(--icon-bg);
 }
 
-[data-theme='dark'] .dash-occ-bar-track {
-  background: repeating-linear-gradient(
-      135deg,
-      transparent 0 5px,
-      rgba(255, 255, 255, 0.05) 5px 6px
-    ),
-    var(--icon-bg);
-}
 
 .dash-occ-bar-fill {
   height: 100%;
@@ -3476,7 +3427,7 @@ button {
 .dash-toggle-btn.active {
   background: var(--accent-color);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(37, 47, 61, 0.35);
+  box-shadow: 0 2px 8px rgba(255, 106, 0, 0.35);
 }
 
 /* --- Barber Performance Bars --- */
@@ -3541,6 +3492,8 @@ button {
 }
 
 .dash-timeline-item {
+  --timeline-status-color: var(--accent-color);
+  --timeline-line-color: var(--icon-hover);
   display: flex;
   gap: 16px;
   padding: 14px 0;
@@ -3572,7 +3525,7 @@ button {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--accent-color);
+  background: var(--timeline-status-color);
   flex-shrink: 0;
   margin-top: 5px;
   border: 2px solid var(--panel-bg);
@@ -3580,20 +3533,21 @@ button {
 }
 
 .dash-timeline-dot.green { background: var(--success-color); }
-.dash-timeline-dot.blue { background: #252f3d; }
-.dash-timeline-dot.amber { background: #f59e0b; }
-.dash-timeline-dot.red { background: #ef4444; }
+.dash-timeline-dot.blue { background: var(--primary-color); }
+.dash-timeline-dot.amber { background: var(--warning-color); }
+.dash-timeline-dot.red { background: var(--danger-color); }
 
 .dash-timeline-line {
   flex: 1;
   width: 2px;
-  background: var(--icon-hover);
+  background: var(--timeline-line-color);
 }
 
-.dash-timeline-content h4 {
+.dash-timeline-content h4,
+.dash-timeline-status {
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--timeline-status-color);
   margin: 0 0 2px 0;
 }
 
@@ -3647,14 +3601,15 @@ button {
 }
 
 .dash-mini-cal-day:hover {
-  background: var(--border-color);
+  background: var(--hover-bg);
+  border: 1px solid var(--calendar-border);
 }
 
 .dash-mini-cal-day.today {
   background: var(--accent-color);
   color: var(--accent-text);
   font-weight: 700;
-  border: 1px solid var(--card-outline);
+  border: 1px solid var(--calendar-border);
 }
 
 /* --- Upcoming list items --- */
@@ -3681,7 +3636,7 @@ button {
 }
 
 .dash-upcoming-icon.scissors { background: rgba(16, 185, 129, 0.12); color: var(--success-color); }
-.dash-upcoming-icon.chart { background: rgba(37, 47, 61, 0.12); color: #252f3d; }
+.dash-upcoming-icon.chart { background: rgba(255, 106, 0, 0.12); color: var(--primary-color); }
 .dash-upcoming-icon.star { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
 .dash-upcoming-icon.sparkle { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; }
 
@@ -3768,9 +3723,39 @@ button {
 }
 
 .dash-upcoming-action-btn--start {
-  color: #252f3d;
-  background: rgba(37, 47, 61, 0.12);
-  border-color: rgba(37, 47, 61, 0.35);
+  color: #93c5fd;
+  background: rgba(147, 197, 253, 0.22);
+  border: 1px solid rgba(147, 197, 253, 0.6);
+}
+
+.dash-page .dash-upcoming-action-btn--start,
+.dash-upcoming-action-btn--start svg {
+  color: #93c5fd;
+  stroke: #93c5fd;
+}
+
+.dash-upcoming-action-btn--start:hover {
+  background: rgba(147, 197, 253, 0.35);
+  border-color: #93c5fd;
+}
+
+.dash-page .dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service,
+.dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service {
+  color: #93c5fd !important;
+  background: rgba(147, 197, 253, 0.22) !important;
+  border: 1px solid rgba(147, 197, 253, 0.6) !important;
+}
+
+.dash-page .dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service:hover,
+.dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service:hover {
+  background: rgba(147, 197, 253, 0.35) !important;
+  border-color: #93c5fd !important;
+}
+
+.dash-page .dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service svg,
+.dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service svg {
+  color: #93c5fd !important;
+  stroke: #93c5fd !important;
 }
 
 .dash-upcoming-wa-btn {
@@ -3794,11 +3779,6 @@ button {
   border-color: rgba(34, 197, 94, 0.5);
 }
 
-[data-theme='dark'] .dash-upcoming-wa-btn {
-  background: rgba(34, 197, 94, 0.2);
-  border-color: rgba(74, 222, 128, 0.45);
-  color: #4ade80;
-}
 
 /* WhatsApp actions (CRM, etc.) — same palette as .dash-upcoming-wa-btn */
 .wa-btn {
@@ -3828,16 +3808,19 @@ button {
   gap: 0;
 }
 
-[data-theme='dark'] .wa-btn {
-  background: rgba(34, 197, 94, 0.2);
-  border-color: rgba(74, 222, 128, 0.45);
-  color: #4ade80;
+
+
+
+.dash-timeline-item--in-service .dash-timeline-dot {
+  background: #93c5fd !important;
 }
 
-[data-theme='dark'] .dash-upcoming-action-btn--start {
-  color: #c5cad3;
-  background: rgba(37, 47, 61, 0.35);
-  border-color: rgba(50, 63, 80, 0.55);
+.dash-timeline-item--in-service .dash-timeline-line {
+  background: rgba(147, 197, 253, 0.55) !important;
+}
+
+.dash-timeline-item--in-service .dash-timeline-status {
+  color: #93c5fd !important;
 }
 
 /* --- Quick action buttons in header --- */
@@ -3860,6 +3843,7 @@ button {
 .dash-action-btn.primary {
   background: var(--accent-color);
   color: var(--accent-text);
+  border: 1px solid #696969;
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);
 }
 
@@ -3872,7 +3856,7 @@ button {
 .dash-action-btn.secondary {
   background: var(--bg-color);
   color: var(--text-primary);
-  border: 1px solid var(--icon-hover) !important;
+  border: 1px solid #696969;
 }
 
 .dash-action-btn.secondary:hover {
@@ -4268,8 +4252,8 @@ button {
 .dash-mini-cal-col {
   padding: 8px 4px;
   border-radius: var(--card-radius);
-  border: 1px solid var(--card-outline);
-  background: #ffffff;
+  border: 1px solid var(--calendar-border);
+  background: var(--surface-color);
   box-sizing: border-box;
   min-height: 58px;
   justify-content: center;
@@ -4278,9 +4262,6 @@ button {
   flex-direction: column;
   gap: 4px;
   align-items: center;
-}
-[data-theme='dark'] .dash-mini-cal-col {
-  background: var(--panel-bg);
 }
 .dash-mini-cal-col:hover:not(.active) {
   background: var(--hover-bg);
@@ -4301,7 +4282,7 @@ button {
   background: var(--accent-color);
   color: var(--accent-text);
   box-shadow: none;
-  border: 1px solid var(--card-outline);
+  border: 1px solid var(--calendar-border);
 }
 .dash-mini-cal-col.active .dash-mini-cal-day-label,
 .dash-mini-cal-col.active .dash-mini-cal-day-num {
@@ -4314,13 +4295,17 @@ button {
   -webkit-appearance: none;
 }
 
-/* Ice White Inputs for contrast */
-input, select, textarea {
+/* Ice White Inputs for contrast (exceto login — .cl-field__input) */
+input:not(.cl-field__input),
+select,
+textarea {
   background-color: #e5e7eb !important;
   border: 1px solid rgba(0, 0, 0, 0.15) !important;
 }
 
-input:focus, select:focus, textarea:focus {
+input:not(.cl-field__input):focus,
+select:focus,
+textarea:focus {
   background-color: #ffffff !important;
   border-color: #000000 !important;
   outline: none !important;
@@ -4341,7 +4326,7 @@ input[type='date'].booking-reserve-form__field:focus {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: #f8fafc;
+  background: var(--bg-color);
   font-family: 'Open Sans', sans-serif;
 }
 
@@ -4517,7 +4502,7 @@ input[type='date'].booking-reserve-form__field:focus {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background: #f8fafc;
+  background: var(--bg-color);
 }
 
 .staff-login-card {
@@ -4750,10 +4735,6 @@ input[type='date'].booking-reserve-form__field:focus {
   padding: 12px;
   backdrop-filter: none;
 }
-[data-theme='dark'] .booking-calendar-popover {
-  background: var(--panel-bg);
-  backdrop-filter: var(--glass-blur);
-}
 
 .booking-calendar-header {
   display: flex;
@@ -4817,7 +4798,7 @@ input[type='date'].booking-reserve-form__field:focus {
   color: var(--text-primary);
   font-size: 0.82rem;
   font-weight: 700;
-  border: 1px solid transparent;
+  border: 1px solid var(--calendar-border);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4828,13 +4809,13 @@ input[type='date'].booking-reserve-form__field:focus {
 
 .booking-calendar-day:hover:not(:disabled) {
   background: var(--hover-bg);
-  border-color: var(--card-outline);
+  border-color: var(--calendar-border);
 }
 
 .booking-calendar-day.selected {
   background: var(--accent-color);
   color: var(--accent-text);
-  border: 1px solid var(--card-outline);
+  border: 1px solid var(--calendar-border);
 }
 
 .booking-calendar-day:disabled {
@@ -5021,7 +5002,7 @@ input[type='date'].booking-reserve-form__field:focus {
 @media (max-width: 768px) {
   .staff-login-page {
     min-height: 100dvh;
-    background: #f8fafc;
+    background: var(--bg-color);
   }
 
   .staff-login-side-art {
@@ -5241,9 +5222,6 @@ input[type='date'].booking-reserve-form__field:focus {
   box-shadow: 0 6px 22px rgba(15, 23, 42, 0.07);
 }
 
-[data-theme='dark'] .customer-portal-welcome {
-  box-shadow: var(--shadow-md);
-}
 
 .customer-portal-upcoming-card {
   background: var(--brand-50);
@@ -5258,23 +5236,12 @@ input[type='date'].booking-reserve-form__field:focus {
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.09);
 }
 
-[data-theme='dark'] .customer-portal-upcoming-card {
-  background: var(--surface-color);
-  border-color: var(--border-color);
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.28);
-}
 
-[data-theme='dark'] .customer-portal-upcoming-card:hover {
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
-}
 
 .customer-portal-root .customer-portal-upcoming-card {
   border-color: var(--primary-color);
 }
 
-[data-theme='dark'] .customer-portal-root .customer-portal-upcoming-card {
-  border-color: var(--primary-color);
-}
 
 .customer-portal-history-header {
   display: flex;
@@ -5401,7 +5368,7 @@ input[type='date'].booking-reserve-form__field:focus {
 }
 
 .customer-portal-appointment-card--finalizado {
-  border-left-color: var(--success-color, #10b981);
+  border-left-color: var(--success-color);
 }
 
 .customer-portal-appointment-card--cancelado {
@@ -5428,11 +5395,6 @@ input[type='date'].booking-reserve-form__field:focus {
   color: var(--accent-color);
 }
 
-[data-theme='dark'] .customer-portal-status-pill--agendado,
-[data-theme='dark'] .customer-portal-status-pill--confirmado {
-  background: var(--accent-soft);
-  color: var(--accent-color);
-}
 
 .customer-portal-status-pill--finalizado {
   background: rgba(5, 150, 105, 0.14);
@@ -5473,13 +5435,7 @@ input[type='date'].booking-reserve-form__field:focus {
   outline: none;
 }
 
-[data-theme='dark'] .customer-portal-profile-input:not(:disabled) {
-  background: var(--panel-bg);
-}
 
-[data-theme='dark'] .customer-portal-profile-input:disabled {
-  background: rgba(255, 255, 255, 0.05);
-}
 
 .customer-portal-appointment-card__main {
   min-width: 0;
@@ -6089,7 +6045,7 @@ button.inventory-action-icon-btn--danger svg {
 }
 
 .inv-mobile-kpi-chip--info {
-  background: rgba(37, 47, 61, 0.08);
+  background: rgba(255, 106, 0, 0.08);
 }
 
 .inv-mobile-kpi-chip--warn {
@@ -6450,7 +6406,7 @@ button.set-mobile-tab--active {
 }
 
 .set-mobile-card {
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--card-outline);
   border-radius: 14px;
   padding: 12px;
   background: var(--panel-bg);
@@ -6551,7 +6507,7 @@ button.set-mobile-tab--active {
   display: flex;
   gap: 8px;
   padding-top: 10px;
-  border-top: 1px solid #cbd5e1;
+  border-top: 1px solid var(--border-color);
 }
 
 button.set-mobile-action-btn {
@@ -6564,7 +6520,7 @@ button.set-mobile-action-btn {
   padding: 0 12px;
   margin: 0;
   border-radius: 12px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   background: var(--bg-color);
   color: var(--text-primary);
   font-size: 0.85rem;
@@ -6733,11 +6689,6 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   color: var(--primary-color);
 }
 
-[data-theme='dark'] .settings-barber-modal > div:first-child button.settings-barber-modal-close-btn,
-[data-theme='dark'] .settings-barber-modal > div:first-child button.settings-barber-modal-close-btn svg {
-  color: var(--text-primary);
-  stroke: var(--text-primary);
-}
 
 .settings-barber-modal .settings-barber-modal-body {
   background-color: var(--bg-color);
@@ -6750,9 +6701,6 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .settings-barber-modal .settings-barber-photo-grid > div:first-child {
-  background-color: var(--panel-bg) !important;
-}
 
 .settings-barber-modal input[type='text'],
 .settings-barber-modal input[type='email'],
@@ -6937,7 +6885,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   background: var(--accent-color);
   color: #ffffff;
   border-color: var(--accent-color);
-  box-shadow: 0 4px 12px rgba(37, 47, 61, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 106, 0, 0.3);
 }
 
 .scheduler-filter-btn__avatar {
@@ -6987,7 +6935,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   color: #ffffff;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(37, 47, 61, 0.35);
+  box-shadow: 0 4px 14px rgba(255, 106, 0, 0.35);
   transition: background 0.2s, transform 0.15s;
 }
 
@@ -7021,6 +6969,15 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 
 .scheduler-calendar-panel {
   border-radius: 20px !important;
+  border: 1px solid var(--calendar-border) !important;
+}
+
+.scheduler-desktop-week-header {
+  border-bottom: 1px solid var(--calendar-border) !important;
+}
+
+.scheduler-desktop-week-header__cell {
+  border-right: 1px solid var(--calendar-border) !important;
 }
 
 .scheduler-time-col {
@@ -7028,20 +6985,21 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   background: #fafbfc !important;
 }
 
-.scheduler-desktop-week-header {
-  border-bottom: 1px solid var(--border-color) !important;
-}
+/* Agenda — modo escuro: coluna de horários preta, números brancos */
 
-.scheduler-desktop-week-header__cell {
-  border-right: 1px solid var(--border-color) !important;
-}
+
+
+/* Em atendimento — mantém cartões azuis no modo escuro */
+
+
+
 
 .main-content .btn-primary {
   background: var(--accent-color);
   color: #ffffff;
   border: none;
   border-radius: 14px;
-  box-shadow: 0 4px 14px rgba(37, 47, 61, 0.3);
+  box-shadow: 0 4px 14px rgba(255, 106, 0, 0.3);
 }
 
 .main-content .btn-primary:hover {
@@ -7051,12 +7009,12 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 .main-content .btn-secondary {
   border-radius: 12px;
   border: 1px solid var(--border-color);
-  background: #ffffff;
+  background: var(--surface-color);
 }
 
 .dash-mini-cal-col.active {
   background: var(--accent-color);
-  border-color: var(--accent-color);
+  border-color: var(--calendar-border);
 }
 
 .dash-mini-cal-col.active .dash-mini-cal-day-label,
@@ -7066,7 +7024,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 
 .dash-action-btn.primary {
   border-radius: 14px;
-  box-shadow: 0 4px 14px rgba(37, 47, 61, 0.35);
+  box-shadow: 0 4px 14px rgba(255, 106, 0, 0.35);
 }
 
 .dash-period-selector {
@@ -7118,7 +7076,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 /* Platform admin (/admin) */
 .platform-admin-page {
   min-height: 100vh;
-  background: var(--bg-color, #f8fafc);
+  background: var(--bg-color, var(--bg-color));
   padding: 1.25rem;
 }
 
@@ -7342,7 +7300,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 
 .platform-layout {
   min-height: 100vh;
-  background: var(--bg-color, #f8fafc);
+  background: var(--bg-color, var(--bg-color));
 }
 
 .platform-main-content {

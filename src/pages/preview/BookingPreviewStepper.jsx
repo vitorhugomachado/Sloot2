@@ -25,45 +25,49 @@ export default function BookingPreviewStepper({ current = 1, mutedPast = false }
           const done = current > s.id;
           const active = current === s.id;
           const pastMuted = mutedPast && done && !active;
+
           return (
-            <li key={s.id} className="bp-stepper__item">
-              <div className="bp-stepper__node-wrap">
-                <span
-                  className={[
-                    'bp-stepper__circle',
-                    active && 'bp-stepper__circle--active',
-                    pastMuted && 'bp-stepper__circle--past',
-                    done && !active && !pastMuted && 'bp-stepper__circle--done',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                >
-                  {s.id}
-                </span>
-                <span
-                  className={[
-                    'bp-stepper__label',
-                    active && 'bp-stepper__label--active',
-                    done && !active && !pastMuted && 'bp-stepper__label--emphasis',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                >
-                  {s.label}
-                </span>
-              </div>
+            <React.Fragment key={s.id}>
+              <li className="bp-stepper__step">
+                <div className="bp-stepper__node-wrap">
+                  <span
+                    className={[
+                      'bp-stepper__circle',
+                      active && 'bp-stepper__circle--active',
+                      pastMuted && 'bp-stepper__circle--past',
+                      done && !active && !pastMuted && 'bp-stepper__circle--done',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
+                    {s.id}
+                  </span>
+                  <span
+                    className={[
+                      'bp-stepper__label',
+                      active && 'bp-stepper__label--active',
+                      done && !active && !pastMuted && 'bp-stepper__label--emphasis',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+              </li>
               {index < STEPS.length - 1 && (
-                <span
-                  className={[
-                    'bp-stepper__line',
-                    current > s.id && !mutedPast && 'bp-stepper__line--done',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  aria-hidden
-                />
+                <li className="bp-stepper__connector" aria-hidden>
+                  <span
+                    className={[
+                      'bp-stepper__line',
+                      current > s.id && !mutedPast && 'bp-stepper__line--done',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  />
+                </li>
               )}
-            </li>
+            </React.Fragment>
           );
         })}
       </ol>

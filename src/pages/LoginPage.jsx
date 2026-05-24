@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { useApp } from '../context/AppContext';
 import LoginScreenLayout from '../components/auth/LoginScreenLayout';
 import LoginFormCard from '../components/auth/LoginFormCard';
 
 const LoginPage = ({ onLogin }) => {
-  const { businessInfo } = useApp();
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -21,11 +19,10 @@ const LoginPage = ({ onLogin }) => {
   };
 
   return (
-    <LoginScreenLayout>
+    <LoginScreenLayout variant="staff">
       <LoginFormCard
         title="Bem-vindo"
-        subtitle="Acesso para barbeiros e profissionais da barbearia."
-        logoUrl={businessInfo?.logo_url || undefined}
+        logoUrl={undefined}
         emailInputType="email"
         emailPlaceholder="name@email.com"
         showEmailIcon={false}

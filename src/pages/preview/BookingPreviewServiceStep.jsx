@@ -5,23 +5,6 @@ import BookingPreviewFlowLayout from './BookingPreviewFlowLayout';
 
 const ICONS = [Scissors, Sparkles, User];
 
-function ServiceIllustration() {
-  return (
-    <svg
-      className="bp-hero__illus"
-      viewBox="0 0 120 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-    >
-      <rect x="18" y="12" width="64" height="72" rx="8" stroke="#252f3d" strokeWidth="2" fill="#f1f3f6" />
-      <path d="M30 28h40M30 40h28M30 52h32" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="88" cy="58" r="22" stroke="#252f3d" strokeWidth="2" fill="#eef2f7" />
-      <path d="M88 48v20M78 58h20" stroke="#252f3d" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function formatDuration(duration) {
   if (!duration) return '';
   const s = String(duration).trim();
@@ -55,15 +38,6 @@ export default function BookingPreviewServiceStep({
       continueDisabled={!selectedService}
       selectionId={selectedService?.id}
     >
-      <div className="bp-hero bp-hero--in-scroll">
-        <div className="bp-hero__text">
-          <h1 className="bp-hero__title">Agendamento</h1>
-          <p className="bp-hero__subtitle">
-            Escolha o serviço, profissional, data e horário que melhor atendem você.
-          </p>
-        </div>
-        <ServiceIllustration />
-      </div>
       <h2 className="bp-section-title">1. Escolha o serviço</h2>
 
       {services.length === 0 ? (

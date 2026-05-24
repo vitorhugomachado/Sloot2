@@ -79,7 +79,7 @@ export default function PlatformTenantsPage({ onLogout }) {
         <div className="platform-tenants-toolbar">
           <div>
             <h1 className="platform-page-title">Barbearias</h1>
-            <p className="platform-page-subtitle">Cadastre e gerencie os clientes da plataforma Sloot.</p>
+            <p className="platform-page-subtitle">Cadastre e gerencie os clientes da plataforma slooti.</p>
           </div>
           <button type="button" className="btn-primary" onClick={() => setModalOpen(true)}>
             <Plus size={18} aria-hidden />

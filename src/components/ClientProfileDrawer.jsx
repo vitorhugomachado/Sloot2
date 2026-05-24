@@ -24,8 +24,8 @@ const formatDate = (value) => {
 };
 
 const statusColors = {
-  Agendado: { bg: 'rgba(37, 47, 61, 0.12)', color: '#252f3d' },
-  Confirmado: { bg: 'rgba(37, 47, 61, 0.18)', color: '#252f3d' },
+  Agendado: { bg: 'rgba(255, 106, 0, 0.12)', color: '#FF6A00' },
+  Confirmado: { bg: 'rgba(255, 106, 0, 0.18)', color: '#FF6A00' },
   Finalizado: { bg: 'rgba(34,197,94,0.15)', color: '#16a34a' },
   Concluido: { bg: 'rgba(34,197,94,0.15)', color: '#16a34a' },
   Cancelado: { bg: 'rgba(220,38,38,0.12)', color: '#dc2626' },

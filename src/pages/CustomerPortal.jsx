@@ -3,6 +3,7 @@ import { User, Calendar, History, Settings, LogOut, Clock, Check, X } from 'luci
 import AppointmentRatingStars from '../components/AppointmentRatingStars';
 import { useApp } from '../context/AppContext';
 import { isValidPhone, normalizePhone, PHONE_ERROR } from '../utils/phone';
+import './customer-portal-theme.css';
 
 function parseAppointmentDateTime(a) {
   const parts = a.date?.split('-').map(Number);
@@ -168,7 +169,7 @@ const CustomerPortal = ({ onBack }) => {
   const renderOverview = () => (
     <div className="fade-in">
       <div className="glass-card customer-portal-welcome" style={{ padding: '2rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-        <div style={{ background: 'var(--accent-color)', color: 'var(--accent-text)', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 700, overflow: 'hidden' }}>
+        <div className="customer-portal-welcome__avatar">
           {currentCustomer?.name?.charAt(0).toUpperCase()}
         </div>
         <div>
@@ -406,12 +407,6 @@ const CustomerPortal = ({ onBack }) => {
     </div>
   );
 
-  const tabButtonStyle = (tab) => ({
-    background: activeTab === tab ? 'var(--accent-color)' : 'transparent',
-    color: activeTab === tab ? 'var(--accent-text)' : 'var(--text-secondary)',
-    fontWeight: activeTab === tab ? 700 : 500,
-  });
-
   return (
     <div className="customer-portal-root">
       <div className="customer-portal-inner">
@@ -471,7 +466,6 @@ const CustomerPortal = ({ onBack }) => {
                 type="button"
                 className={`customer-portal-tab ${activeTab === 'overview' ? 'customer-portal-tab--active' : ''}`}
                 onClick={() => setActiveTab('overview')}
-                style={tabButtonStyle('overview')}
               >
                 <User size={18} /> Início
               </button>
@@ -479,7 +473,6 @@ const CustomerPortal = ({ onBack }) => {
                 type="button"
                 className={`customer-portal-tab ${activeTab === 'history' ? 'customer-portal-tab--active' : ''}`}
                 onClick={() => setActiveTab('history')}
-                style={tabButtonStyle('history')}
               >
                 <Calendar size={18} /> Agendamentos
               </button>
@@ -487,7 +480,6 @@ const CustomerPortal = ({ onBack }) => {
                 type="button"
                 className={`customer-portal-tab ${activeTab === 'profile' ? 'customer-portal-tab--active' : ''}`}
                 onClick={() => setActiveTab('profile')}
-                style={tabButtonStyle('profile')}
               >
                 <Settings size={18} /> Meus Dados
               </button>

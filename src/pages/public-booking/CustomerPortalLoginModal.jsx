@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AuthLoginCard } from '../preview/BookingPreviewAuth';
 import { useCustomerAuth } from '../../hooks/useCustomerAuth';
 import { loadGoogleIdentityScript } from '../../utils/loadGoogleIdentity';
@@ -19,14 +20,20 @@ export default function CustomerPortalLoginModal({ onClose, onSuccess }) {
     };
   }, []);
 
-  return (
-    <div className="bp-auth-overlay bp-auth-overlay--desktop-center" onClick={onClose} role="presentation">
+  const modal = (
+    <div
+      className="bp-auth-overlay bp-auth-overlay--portal bp-auth-overlay--desktop-center"
+      onClick={onClose}
+      role="presentation"
+    >
       <div
         className="bp-auth-overlay__sheet bp-auth-overlay__sheet--center"
         onClick={(e) => e.stopPropagation()}
       >
         <AuthLoginCard
           {...auth}
+          onAuthSubmit={auth.onAuthSubmit}
+          onGoogleLogin={auth.onGoogleLogin}
           onClose={onClose}
           title="Entrar na sua conta"
           subtitle="Acesse sua agenda, histórico e dados do perfil."
@@ -34,4 +41,7 @@ export default function CustomerPortalLoginModal({ onClose, onSuccess }) {
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return modal;
+  return createPortal(modal, document.body);
 }

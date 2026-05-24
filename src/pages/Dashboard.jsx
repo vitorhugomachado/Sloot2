@@ -1,5 +1,5 @@
 ﻿import React, { useState, useMemo, useEffect } from 'react';
-import { Users, Calendar, Clock, X, ShoppingBag, Plus, ChevronLeft, ChevronRight, LayoutGrid, Play, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Calendar, Clock, X, ShoppingBag, Plus, ChevronLeft, ChevronRight, LayoutGrid, Play, CheckCircle, XCircle, Banknote } from 'lucide-react';
 import WhatsAppIcon from '../components/icons/WhatsAppIcon';
 import { useApp } from '../context/AppContext';
 import { API_URL } from '../config/apiUrl';
@@ -457,11 +457,13 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!(actionModal.open && actionModal.step === 'payment')) return;
-    if (paymentSplits.length !== 1) return;
-    const currentAmount = Number(paymentSplits[0]?.amount || 0);
-    if (Math.abs(currentAmount - checkoutGrandTotal) < 0.01) return;
-    setPaymentSplits([{ ...paymentSplits[0], amount: checkoutGrandTotal }]);
-  }, [actionModal.open, actionModal.step, checkoutGrandTotal, paymentSplits]);
+    setPaymentSplits((prev) => {
+      if (prev.length !== 1) return prev;
+      const currentAmount = Number(prev[0]?.amount || 0);
+      if (Math.abs(currentAmount - checkoutGrandTotal) < 0.01) return prev;
+      return [{ ...prev[0], amount: checkoutGrandTotal }];
+    });
+  }, [actionModal.open, actionModal.step, checkoutGrandTotal]);
 
   const normalizePhoneForWhatsApp = (phone) => {
     if (!phone) return null;
@@ -544,14 +546,39 @@ const Dashboard = () => {
     setCheckoutProducts([{ productId: '', quantity: 1 }]);
   };
 
+  const IN_SERVICE_COLOR = '#93C5FD';
+  const isInServiceStatus = (status) => {
+    const s = String(status || '').trim().toLowerCase();
+    return s === 'em progresso' || s === 'em atendimento';
+  };
+
   const getStatusConfig = (status) => {
-    switch (status) {
-      case 'Finalizado': return { color: '#059669', label: 'Pago' };
-      case 'Em progresso': return { color: '#252f3d', label: 'Em atendimento' };
-      case 'Agendado': return { color: 'var(--brand-400)', label: 'Agendado' };
-      case 'Confirmado': return { color: '#10b981', label: 'Confirmado' };
-      case 'Cancelado': return { color: '#ef4444', label: 'Cancelado' };
-      default: return { color: 'var(--text-secondary)', label: status };
+    const s = String(status || '').trim();
+    switch (s) {
+      case 'Finalizado':
+        return { color: '#16a34a', lineColor: 'rgba(22, 163, 74, 0.4)', label: 'Pago' };
+      case 'Em progresso':
+      case 'Em atendimento':
+        return {
+          color: IN_SERVICE_COLOR,
+          lineColor: 'rgba(147, 197, 253, 0.55)',
+          label: 'Em atendimento',
+        };
+      case 'Cancelado':
+        return { color: '#dc2626', lineColor: 'rgba(220, 38, 38, 0.4)', label: 'Cancelado' };
+      case 'Agendado':
+        return { color: '#64748b', lineColor: 'rgba(100, 116, 139, 0.35)', label: 'Agendado' };
+      case 'Confirmado':
+        return { color: '#0d9488', lineColor: 'rgba(13, 148, 136, 0.4)', label: 'Confirmado' };
+      default:
+        if (isInServiceStatus(s)) {
+          return {
+            color: IN_SERVICE_COLOR,
+            lineColor: 'rgba(147, 197, 253, 0.55)',
+            label: 'Em atendimento',
+          };
+        }
+        return { color: 'var(--text-secondary)', lineColor: 'var(--border-color)', label: s || status };
     }
   };
 
@@ -674,27 +701,41 @@ const Dashboard = () => {
               <div className="dash-timeline">
                 {recentActivity.map((app, idx) => {
                   const cfg = getStatusConfig(app.status);
-                  const dateParts = app.date.split('-');
-                  const dateStr = `${dateParts[2]}.${dateParts[1]}.${dateParts[0].slice(2)}`;
+                  const dateParts = String(app.date || '').split('-');
+                  const dateStr =
+                    dateParts.length === 3
+                      ? `${dateParts[2]}.${dateParts[1]}.${dateParts[0].slice(2)}`
+                      : String(app.date || '');
                   const barberName = barbers.find(b => b.id === app.barberId)?.name || '';
                   const isActionable = app.status !== 'Finalizado' && app.status !== 'Cancelado';
                   const isReceipt = app.status === 'Finalizado';
                   return (
                     <div
                       key={app.id}
-                      className="dash-timeline-item"
+                      className={`dash-timeline-item${isInServiceStatus(app.status) ? ' dash-timeline-item--in-service' : ''}`}
                       onClick={() => (isReceipt ? openReceiptModal(app) : (isActionable ? openActionModal(app) : null))}
-                      style={{ cursor: (isActionable || isReceipt) ? 'pointer' : 'default' }}
+                      style={{
+                        cursor: (isActionable || isReceipt) ? 'pointer' : 'default',
+                        '--timeline-status-color': cfg.color,
+                        '--timeline-line-color': cfg.lineColor,
+                      }}
                     >
                       <div className="dash-timeline-time">{dateStr}</div>
                       <div className="dash-timeline-dot-col">
-                        <div className="dash-timeline-dot" style={{ background: cfg.color }} />
-                        {idx < recentActivity.length - 1 && <div className="dash-timeline-line" />}
+                        <div
+                          className="dash-timeline-dot"
+                          style={{ background: cfg.color, borderColor: 'var(--panel-bg)' }}
+                        />
+                        {idx < recentActivity.length - 1 && (
+                          <div className="dash-timeline-line" style={{ background: cfg.lineColor }} />
+                        )}
                       </div>
                       <div className="dash-timeline-content" style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ flex: 1 }}>
-                            <h4 style={{ color: cfg.color }}>{cfg.label}</h4>
+                            <h4 className="dash-timeline-status" style={{ color: cfg.color }}>
+                              {cfg.label}
+                            </h4>
                             <p>{app.customer} — {app.service}{!isBarber ? ` (${barberName})` : ''}</p>
                           </div>
                         </div>
@@ -748,12 +789,23 @@ const Dashboard = () => {
                       <div className="dash-upcoming-actions">
                         <button
                           type="button"
-                          className="dash-upcoming-action-btn dash-upcoming-action-btn--start"
-                          title="Iniciar atendimento"
-                          aria-label={`Iniciar atendimento de ${app.customer}`}
+                          className={`dash-upcoming-action-btn dash-upcoming-action-btn--start${isInServiceStatus(app.status) ? ' dash-upcoming-action-btn--in-service' : ''}`}
+                          title={isInServiceStatus(app.status) ? 'Em atendimento' : 'Iniciar atendimento'}
+                          aria-label={
+                            isInServiceStatus(app.status)
+                              ? `${app.customer} em atendimento`
+                              : `Iniciar atendimento de ${app.customer}`
+                          }
+                          style={{
+                            color: IN_SERVICE_COLOR,
+                            background: isInServiceStatus(app.status)
+                              ? 'rgba(147, 197, 253, 0.35)'
+                              : 'rgba(147, 197, 253, 0.22)',
+                            border: '1px solid rgba(147, 197, 253, 0.6)',
+                          }}
                           onClick={(event) => handleQuickStart(app, event)}
                         >
-                          <Play size={13} />
+                          <Play size={13} strokeWidth={2.25} color="currentColor" />
                         </button>
                         <button
                           type="button"
@@ -798,7 +850,7 @@ const Dashboard = () => {
       {/* ═══════ ACTION MODAL (Pago / Cancelar / Em Progresso) ═══════ */}
       {actionModal.open && actionModal.app && (
         <div className="modal-backdrop">
-          <div className="modal-glass-panel fade-in" style={{ width: '95%', maxWidth: '480px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="modal-glass-panel scheduler-modal-panel fade-in" style={{ width: '95%', maxWidth: '480px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto' }}>
             
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -818,7 +870,7 @@ const Dashboard = () => {
             <div className="action-modal-panel">
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                 <span style={{ fontWeight: 600 }}>{actionModal.app.customer}</span>
-                <span style={{ fontWeight: 700, color: 'var(--brand-600)', fontSize: '1.1rem' }}>R$ {actionModal.app.price.toFixed(2)}</span>
+                <span style={{ fontWeight: 700, color: 'var(--brand-600)', fontSize: '1.1rem' }}>{formatCurrency(actionModal.app.price)}</span>
               </div>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 {actionModal.app.service} — {actionModal.app.time} — {actionModal.app.date}
@@ -1041,7 +1093,7 @@ const Dashboard = () => {
 
       {receiptModal.open && receiptModal.app && (
         <div className="modal-backdrop modal-backdrop--elevated">
-          <div className="modal-glass-panel fade-in" style={{ width: '95%', maxWidth: '460px', padding: '1.3rem' }}>
+          <div className="modal-glass-panel scheduler-modal-panel fade-in" style={{ width: '95%', maxWidth: '460px', padding: '1.3rem' }}>
             {(() => {
               const barberName = barbers.find(b => b.id === receiptModal.app.barberId)?.name || 'Profissional';
               const receipt = getReceiptData(receiptModal.app);

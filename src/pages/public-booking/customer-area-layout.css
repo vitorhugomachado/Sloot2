@@ -1,0 +1,22 @@
+.customer-area-layout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100dvh;
+  background: #f8fafc;
+}
+
+.customer-area-layout__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+.customer-area-layout__body > .public-booking-page,
+.customer-area-layout__body > .customer-portal-root {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}

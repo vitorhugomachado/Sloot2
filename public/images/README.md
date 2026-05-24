@@ -1,9 +1,8 @@
-# Imagem de fundo do login
+# Imagens de fundo do login
 
-O fundo do login staff/admin usa `public/fundo.webp` (servido em `/fundo.webp`).
+| Arquivo | Uso |
+|---------|-----|
+| `slooti-staff-login-bg.webp` | Login de **barbeiros** (`/barbeiros/login`) — arte slooti com fundo preto |
+| `customer-login-bg.png` | Fonte do fundo legado / cliente |
 
-Fonte editável: `src/assets/customer-login-bg.png` — após trocar, regenere o WebP:
-
-```bash
-npx sharp-cli -i src/assets/customer-login-bg.png -o public/fundo.webp -f webp
-```
+Login de clientes (preview) continua usando `public/fundo.webp` (`/fundo.webp`).

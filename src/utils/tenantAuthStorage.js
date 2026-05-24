@@ -2,6 +2,7 @@
 
 const STAFF_PREFIX = 'barberpro_token:';
 const CUSTOMER_PREFIX = 'barberpro_customer_token:';
+const PENDING_CUSTOMER_PREFIX = 'barberpro_customer_pending:';
 const LEGACY_STAFF = 'barberpro_token';
 const LEGACY_CUSTOMER = 'barberpro_customer_token';
 
@@ -21,7 +22,8 @@ export function decodeTokenTenantId(token) {
 function tokenMatchesTenant(token, tenantId) {
   if (!tenantId) return true;
   const tid = decodeTokenTenantId(token);
-  return tid != null && tid === Number(tenantId);
+  if (tid == null) return true;
+  return tid === Number(tenantId);
 }
 
 export function getStaffToken(tenantSlug, tenantId) {
@@ -84,4 +86,40 @@ export function setCustomerToken(tenantSlug, token) {
   } else {
     localStorage.removeItem(`${CUSTOMER_PREFIX}${slug}`);
   }
+}
+
+/** Perfil recém-logado enquanto o contexto/router sincroniza (evita loop no portal). */
+export function setPendingCustomer(tenantSlug, customer) {
+  const slug = String(tenantSlug || '').trim().toLowerCase();
+  if (!slug || !customer) return;
+  try {
+    sessionStorage.setItem(`${PENDING_CUSTOMER_PREFIX}${slug}`, JSON.stringify(customer));
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+export function getPendingCustomer(tenantSlug) {
+  const slug = String(tenantSlug || '').trim().toLowerCase();
+  if (!slug) return null;
+  try {
+    const raw = sessionStorage.getItem(`${PENDING_CUSTOMER_PREFIX}${slug}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingCustomer(tenantSlug) {
+  const slug = String(tenantSlug || '').trim().toLowerCase();
+  if (!slug) return;
+  sessionStorage.removeItem(`${PENDING_CUSTOMER_PREFIX}${slug}`);
+}
+
+export function isCustomerTokenForTenant(token, tenantId) {
+  if (!token) return false;
+  if (!tenantId) return true;
+  const tid = decodeTokenTenantId(token);
+  if (tid == null) return true;
+  return tid === Number(tenantId);
 }

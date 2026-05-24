@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { Store, LogOut, Menu, X } from 'lucide-react';
+import SlootiLogo from '../../components/SlootiLogo';
 
 const SIDEBAR_LEAVE_MS = 110;
 
@@ -40,9 +41,7 @@ export default function PlatformSidebar({ isCollapsed, setIsCollapsed, onLogout 
       onMouseLeave={handleMouseLeave}
     >
       <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '1.5rem' }}>
-        <span className="sloot-logo-text" style={{ fontSize: '1.8rem', paddingTop: '4px' }}>
-          {isCollapsed ? 'S' : 'SLOOT'}
-        </span>
+        <SlootiLogo size="lg" variant={isCollapsed ? 'mark' : 'full'} />
         <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
           <button
             type="button"

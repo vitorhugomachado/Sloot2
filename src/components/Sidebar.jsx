@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { LayoutDashboard, Calendar, Users, Settings, DollarSign, Shield, Menu, X, Package, LogOut } from 'lucide-react';
+import SlootiLogo from './SlootiLogo';
 
 const SIDEBAR_LEAVE_MS = 110;
 
@@ -51,9 +52,7 @@ const Sidebar = ({ activeTab, setActiveTab, user, isCollapsed, setIsCollapsed, o
     >
       <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span className="sloot-logo-text" style={{ fontSize: '1.8rem', paddingTop: '4px' }}>
-            {isCollapsed ? 'S' : 'SLOOT'}
-          </span>
+          <SlootiLogo size="lg" variant={isCollapsed ? 'mark' : 'full'} />
         </div>
         
         {/* Toggle Controls */}

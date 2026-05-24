@@ -1,0 +1,50 @@
+.slooti-brand-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem clamp(1rem, 3vw, 2rem);
+  box-sizing: border-box;
+  background: #fafafa;
+  border-bottom: 1px solid #ebebeb;
+  z-index: 60;
+}
+
+.slooti-brand-header__logo {
+  flex-shrink: 0;
+}
+
+.slooti-brand-header__credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.slooti-brand-header__credit-label {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 0.8125rem;
+  line-height: 1;
+  color: #8a8a8a;
+  white-space: nowrap;
+}
+
+.slooti-brand-header__credit-logo {
+  flex-shrink: 0;
+}
+
+@media (max-width: 380px) {
+  .slooti-brand-header {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .slooti-brand-header__credit-label {
+    font-size: 0.75rem;
+  }
+}

@@ -62,7 +62,10 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
     authData,
     setAuthData,
     authError,
+    authInfo,
     googleBusy,
+    forgotBusy,
+    openForgotPassword,
     bookingError,
     isSubmitting,
     handleAuthSubmit,
@@ -374,7 +377,10 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
               authData={authData}
               setAuthData={setAuthData}
               authError={authError}
+              authInfo={authInfo}
               googleBusy={googleBusy}
+              forgotBusy={forgotBusy}
+              openForgotPassword={openForgotPassword}
               onAuthSubmit={handleAuthSubmit}
               onGoogleLogin={handleGoogleCustomerLogin}
               onClose={closeAuthCard}

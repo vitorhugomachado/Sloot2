@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Menu, LogOut } from 'lucide-react';
+import SlootiLogo from '../../components/SlootiLogo';
 import PlatformSidebar from './PlatformSidebar';
 
 export default function PlatformLayout({ children, onLogout }) {
@@ -17,9 +18,7 @@ export default function PlatformLayout({ children, onLogout }) {
         >
           <Menu size={24} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
         </button>
-        <span className="sloot-logo-text" style={{ fontSize: '1.2rem', paddingTop: '2px' }}>
-          SLOOT
-        </span>
+        <SlootiLogo size="md" />
         <button
           type="button"
           className="sidebar-toggle-btn mobile-header-logout"
@@ -46,7 +45,7 @@ export default function PlatformLayout({ children, onLogout }) {
       <main className={`main-content platform-main-content ${isSidebarCollapsed ? 'expanded' : ''}`}>
         <header className="platform-desktop-header desktop-only">
           <div>
-            <h1 className="platform-desktop-title">Administração Sloot</h1>
+            <h1 className="platform-desktop-title">Administração slooti</h1>
             <p className="platform-desktop-subtitle">Gestão de barbearias na plataforma</p>
           </div>
         </header>

@@ -8,18 +8,22 @@ import BookingPreviewShell from './pages/preview/BookingPreviewShell';
 import LoginPreviewShell from './pages/preview/LoginPreviewShell';
 import { AppProvider, useApp } from './context/AppContext';
 import { TenantProvider, useTenant, DEFAULT_SLUG } from './context/TenantContext';
+import { getPendingCustomer } from './utils/tenantAuthStorage';
 import { isValidPhone } from './utils/phone';
 import { Menu, LogOut } from 'lucide-react';
+import SlootiLogo from './components/SlootiLogo';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Clients = lazy(() => import('./pages/Clients'));
 const Scheduler = lazy(() => import('./pages/Scheduler'));
 const PublicBookingPage = lazy(() => import('./pages/public-booking/PublicBookingPage'));
+const CustomerAreaLayout = lazy(() => import('./pages/public-booking/CustomerAreaLayout'));
 const Finance = lazy(() => import('./pages/Finance'));
 const Users = lazy(() => import('./pages/Users'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Inventory = lazy(() => import('./pages/Inventory'));
 const CustomerPortal = lazy(() => import('./pages/CustomerPortal'));
+const CustomerResetPasswordPage = lazy(() => import('./pages/public-booking/CustomerResetPasswordPage'));
 const CompleteProfileGate = lazy(() => import('./components/CompleteProfileGate'));
 
 const VALID_TABS = ['dashboard', 'clients', 'scheduler', 'finance', 'users', 'inventory', 'settings'];
@@ -49,11 +53,78 @@ const StaffRoute = ({ children }) => {
 };
 
 const CustomerRoute = ({ children }) => {
-  const { currentCustomer, bootstrapLoading } = useApp();
+  const {
+    currentCustomer,
+    bootstrapLoading,
+    isCustomerAuthenticated,
+    refreshCurrentCustomer,
+    syncNavigatedCustomer,
+  } = useApp();
+  const { slug } = useTenant();
   const base = useTenantBase();
+  const location = useLocation();
+  const navCustomer = location.state?.customer;
+  const pendingCustomer = getPendingCustomer(slug);
+  const [authResolved, setAuthResolved] = useState(false);
 
-  if (bootstrapLoading && !currentCustomer) return null;
-  if (!currentCustomer) return <Navigate to={`${base}/cliente`} replace />;
+  const transientCustomer = navCustomer || pendingCustomer;
+  const effectiveCustomer = currentCustomer || transientCustomer;
+  const hasCustomerAccess = isCustomerAuthenticated || !!transientCustomer;
+
+  useEffect(() => {
+    if (transientCustomer && !currentCustomer) {
+      syncNavigatedCustomer(transientCustomer);
+    }
+  }, [transientCustomer, currentCustomer, syncNavigatedCustomer]);
+
+  useEffect(() => {
+    setAuthResolved(false);
+    if (!hasCustomerAccess) {
+      setAuthResolved(true);
+      return undefined;
+    }
+    if (effectiveCustomer) {
+      setAuthResolved(true);
+      return undefined;
+    }
+
+    let cancelled = false;
+    (async () => {
+      await refreshCurrentCustomer();
+      if (!cancelled) setAuthResolved(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    hasCustomerAccess,
+    effectiveCustomer,
+    refreshCurrentCustomer,
+  ]);
+
+  if (bootstrapLoading) {
+    return <TabLoadingFallback />;
+  }
+  if (!hasCustomerAccess) {
+    return (
+      <Navigate
+        to={`${base}/cliente`}
+        replace
+        state={{ portalLogin: true }}
+      />
+    );
+  }
+  if (!effectiveCustomer) {
+    if (!authResolved) return <TabLoadingFallback />;
+    return (
+      <Navigate
+        to={`${base}/cliente`}
+        replace
+        state={{ portalLogin: true }}
+      />
+    );
+  }
   return children;
 };
 
@@ -88,24 +159,40 @@ const CustomerArea = () => {
     <>
       <Routes>
         <Route
-          path="/"
           element={(
             <Suspense fallback={<TabLoadingFallback />}>
-              <PublicBookingPage onOpenPortal={() => navigate(`${base}/cliente/portal`)} />
+              <CustomerAreaLayout />
             </Suspense>
           )}
-        />
-        <Route
-          path="/portal"
-          element={(
-            <CustomerRoute>
+        >
+          <Route
+            index
+            element={(
               <Suspense fallback={<TabLoadingFallback />}>
-                <CustomerPortal onBack={() => navigate(`${base}/cliente`)} />
+                <PublicBookingPage />
               </Suspense>
-            </CustomerRoute>
-          )}
-        />
-        <Route path="*" element={<Navigate to={`${base}/cliente`} replace />} />
+            )}
+          />
+          <Route
+            path="portal"
+            element={(
+              <CustomerRoute>
+                <Suspense fallback={<TabLoadingFallback />}>
+                  <CustomerPortal onBack={() => navigate(`${base}/cliente`)} />
+                </Suspense>
+              </CustomerRoute>
+            )}
+          />
+          <Route
+            path="redefinir-senha"
+            element={(
+              <Suspense fallback={<TabLoadingFallback />}>
+                <CustomerResetPasswordPage />
+              </Suspense>
+            )}
+          />
+          <Route path="*" element={<Navigate to={`${base}/cliente`} replace />} />
+        </Route>
       </Routes>
       {needsPhone && (
         <Suspense fallback={null}>
@@ -159,17 +246,12 @@ const StaffArea = () => {
   const location = useLocation();
   const base = useTenantBase();
   const staffHome = `${base}/barbeiros`;
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
   React.useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.removeItem('theme');
+  }, []);
 
   const activeTab = tab && VALID_TABS.includes(tab) ? tab : 'dashboard';
 
@@ -212,7 +294,7 @@ const StaffArea = () => {
             <Menu size={24} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
           </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="sloot-logo-text" style={{ fontSize: '1.2rem', paddingTop: '2px' }}>SLOOT</span>
+            <SlootiLogo size="md" />
           </div>
           <button
             type="button"
@@ -246,9 +328,6 @@ const StaffArea = () => {
               </div>
               <span style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'capitalize' }}>{currentUser?.name} ({currentUser?.role})</span>
             </div>
-            <button type="button" onClick={toggleTheme} className="dash-icon-btn" style={{ fontSize: '1.2rem' }} title="Alternar Tema">
-              {theme === 'light' ? '🌙' : '☀️'}
-            </button>
             <button type="button" className="btn-secondary" onClick={handleLogout} style={{ fontSize: '0.8rem' }}>Sair</button>
           </header>
           <StaffTabPanels activeTab={activeTab} />
@@ -258,7 +337,7 @@ const StaffArea = () => {
   );
 };
 
-function LoadingScreen({ message = 'Carregando Sloot...' }) {
+function LoadingScreen({ message = 'Carregando slooti...' }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px' }}>
       <div className="spinner" style={{ width: '40px', height: '40px', border: '4px solid rgba(0,0,0,0.1)', borderTop: '4px solid var(--accent-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />

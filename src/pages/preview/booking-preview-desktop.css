@@ -1,12 +1,16 @@
 /* Layout desktop — protótipo web (≥1024px) */
 @media (min-width: 1024px) {
   .booking-preview--v2.booking-preview--desktop {
-    background: #f9fafb;
-    min-height: 100dvh;
+    background: transparent;
+    min-height: 0;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    padding: clamp(0.75rem, 1.5vw, 1.25rem) clamp(1rem, 2.5vw, 2rem) 2rem;
+    padding: 0 0 2rem;
+  }
+
+  .public-booking-page--v2 .booking-preview--v2.booking-preview--desktop {
+    padding: 0 0 2rem;
   }
 
   .booking-preview--v2.booking-preview--desktop .booking-preview__banner {
@@ -114,7 +118,7 @@
     font-size: 1.05rem;
     font-weight: 700;
     margin: 0 0 1rem;
-    color: #0f172a;
+    color: #1A1A1A;
     letter-spacing: -0.02em;
   }
 
@@ -196,13 +200,29 @@
     transition: border-color 0.15s, box-shadow 0.15s;
   }
 
-  .bp-desk-pick-card:hover {
-    border-color: #c7d2fe;
+  .bp-desk-pick-card:hover:not(.bp-desk-pick-card--selected) {
+    border-color: var(--bp-ring-strong);
   }
 
   .bp-desk-pick-card--selected {
-    border-color: #252f3d;
-    box-shadow: 0 0 0 1px #252f3d;
+    border: 1.5px solid var(--bp-primary);
+    box-shadow: 0 0 0 3px var(--bp-ring);
+    background: #ffffff;
+  }
+
+  .bp-desk-pick-card--selected .bp-desk-pick-card__name {
+    color: #000000;
+  }
+
+  .bp-desk-pick-card--selected .bp-desk-pick-card__icon {
+    border-color: var(--bp-primary);
+    background: var(--bp-primary-muted);
+    color: var(--bp-primary);
+  }
+
+  .bp-desk-pick-card--selected .bp-desk-pick-card__icon svg {
+    color: var(--bp-primary);
+    stroke: var(--bp-primary);
   }
 
   .bp-desk-pick-card__icon {
@@ -215,18 +235,18 @@
     margin-bottom: 0.65rem;
     background: #eef2f7;
     border: 1px solid #dce3eb;
-    color: #64748b;
+    color: #6B7280;
   }
 
   .bp-desk-pick-card__icon svg {
-    color: #64748b;
-    stroke: #64748b;
+    color: #6B7280;
+    stroke: #6B7280;
   }
 
   .bp-desk-pick-card__name {
     font-size: 0.9rem;
     font-weight: 700;
-    color: #0f172a;
+    color: #1A1A1A;
     margin-bottom: 0.2rem;
     line-height: 1.25;
   }
@@ -261,13 +281,18 @@
     transition: border-color 0.15s, box-shadow 0.15s;
   }
 
-  .bp-desk-pro-card:hover {
-    border-color: #c7d2fe;
+  .bp-desk-pro-card:hover:not(.bp-desk-pick-card--selected) {
+    border-color: var(--bp-ring-strong);
   }
 
   .bp-desk-pro-card.bp-desk-pick-card--selected {
-    border-color: #252f3d;
-    box-shadow: 0 0 0 1px #252f3d;
+    border: 1.5px solid var(--bp-primary);
+    box-shadow: 0 0 0 3px var(--bp-ring);
+    background: #ffffff;
+  }
+
+  .bp-desk-pro-card.bp-desk-pick-card--selected .bp-desk-pick-card__name {
+    color: #000000;
   }
 
   .bp-desk-pro-card__avatar {
@@ -281,7 +306,7 @@
     justify-content: center;
     font-size: 1.25rem;
     font-weight: 700;
-    color: #252f3d;
+    color: var(--bp-primary);
     margin-bottom: 0.55rem;
   }
 
@@ -298,7 +323,7 @@
   .bp-desk-pro-card__name {
     font-size: 0.88rem;
     font-weight: 700;
-    color: #0f172a;
+    color: #1A1A1A;
     margin-bottom: 0.25rem;
   }
 
@@ -339,17 +364,18 @@
   }
 
   .bp-desk-date-chip--selected {
-    border-color: #252f3d;
-    box-shadow: 0 0 0 1px #252f3d;
+    border: 1.5px solid var(--bp-primary);
+    box-shadow: 0 0 0 3px var(--bp-ring);
   }
 
   .bp-desk-date-chip--selected .bp-desk-date-chip__wd {
-    color: #252f3d;
+    color: var(--bp-primary);
     font-weight: 600;
   }
 
   .bp-desk-date-chip--selected .bp-desk-date-chip__day {
-    color: #0f172a;
+    color: #000000;
+    font-weight: 800;
   }
 
   .bp-desk-date-chip__wd {
@@ -361,7 +387,7 @@
   .bp-desk-date-chip__day {
     font-size: 1.15rem;
     font-weight: 700;
-    color: #0f172a;
+    color: #1A1A1A;
     line-height: 1.2;
   }
 
@@ -391,16 +417,16 @@
     transition: border-color 0.15s, background 0.15s;
   }
 
-  .bp-desk-time-slot--ok:hover {
-    border-color: #c7d2fe;
-    background: #fafbff;
+  .bp-desk-time-slot--ok:hover:not(.bp-desk-time-slot--selected) {
+    border-color: var(--bp-ring-strong);
+    background: #fffdf7;
   }
 
   .bp-desk-time-slot--selected {
-    border-color: #252f3d;
+    border: 1px solid var(--bp-primary);
     background: #fff;
-    color: #252f3d;
-    box-shadow: 0 0 0 1px #252f3d;
+    color: #000000;
+    box-shadow: 0 0 0 3px var(--bp-ring);
     font-weight: 700;
   }
 
@@ -419,7 +445,7 @@
     font-size: 1.05rem;
     font-weight: 700;
     margin: 0 0 1rem;
-    color: #0f172a;
+    color: #1A1A1A;
     letter-spacing: -0.02em;
   }
 
@@ -491,12 +517,11 @@
 
   /* Sucesso desktop */
   .booking-preview--desktop .bp-success {
-    max-width: 520px;
-    margin: 3rem auto;
-    padding: 3rem 2rem;
-    background: #fff;
-    border-radius: 16px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 4px 24px rgba(17, 24, 39, 0.06);
+    padding: 2rem 1.5rem 3rem;
+    align-items: center;
+  }
+
+  .booking-preview--desktop .bp-success__card {
+    max-width: 480px;
   }
 }

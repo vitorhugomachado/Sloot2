@@ -14,7 +14,7 @@ export default function CustomerLoginPreview() {
   const portalUrl = `/${slug}/cliente/portal`;
 
   const auth = useCustomerAuth({
-    onSuccess: () => navigate(portalUrl),
+    onSuccess: (user) => navigate(portalUrl, { replace: true, state: { customer: user } }),
   });
 
   useEffect(() => {
