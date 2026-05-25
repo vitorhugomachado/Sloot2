@@ -79,9 +79,6 @@ if (serveSpa) {
       const rest = req.path.slice('/barbeiros'.length) || '';
       return res.redirect(301, `/${defaultSlug}/barbeiros${rest}`);
     }
-    if (req.path === '/barberone' || req.path.startsWith('/barberone/')) {
-      return res.redirect(301, `/${defaultSlug}/cliente`);
-    }
     next();
   });
 
