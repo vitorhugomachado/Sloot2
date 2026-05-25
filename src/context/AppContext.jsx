@@ -25,6 +25,7 @@ import {
   clearPendingCustomer,
   isCustomerTokenForTenant,
 } from '../utils/tenantAuthStorage';
+import { isStaffRoutePath as isStaffRoutePathFromRoutes } from '../constants/tenantRoutes';
 
 const AppContext = createContext();
 
@@ -32,7 +33,7 @@ const APPOINTMENTS_POLL_MS = Number(import.meta.env.VITE_APPOINTMENTS_POLL_MS) |
 const BOOTSTRAP_TIMEOUT_MS = 10000;
 
 function isStaffRoutePath(pathname) {
-  return /\/barbeiros(\/|$)/.test(pathname || '');
+  return isStaffRoutePathFromRoutes(pathname);
 }
 
 function getInitialBootstrapState(slug) {

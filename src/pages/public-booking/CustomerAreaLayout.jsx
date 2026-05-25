@@ -4,7 +4,7 @@ import SlootiBrandHeader from '../../components/brand/SlootiBrandHeader';
 import './customer-area-layout.css';
 
 /**
- * Layout das rotas /:tenant/cliente/* — barra da marca slooti + conteúdo da página.
+ * Layout das rotas públicas /:tenant — barra da marca slooti + conteúdo da página.
  */
 export default function CustomerAreaLayout() {
   return (

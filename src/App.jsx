@@ -6,10 +6,20 @@ import TabLoadingFallback from './components/TabLoadingFallback';
 import PlatformAdminApp from './pages/admin/PlatformAdminApp';
 import BookingPreviewShell from './pages/preview/BookingPreviewShell';
 import LoginPreviewShell from './pages/preview/LoginPreviewShell';
+import TenantNotFound from './pages/TenantNotFound';
 import { AppProvider, useApp } from './context/AppContext';
 import { TenantProvider, useTenant, DEFAULT_SLUG } from './context/TenantContext';
 import { getPendingCustomer } from './utils/tenantAuthStorage';
 import { isValidPhone } from './utils/phone';
+import {
+  isReservedTenantSlug,
+  isStaffRoutePath,
+  mapLegacyTenantPath,
+  tenantBookingPath,
+  tenantDashboardPath,
+  tenantLoginPath,
+  tenantPortalPath,
+} from './constants/tenantRoutes';
 import { Menu, LogOut } from 'lucide-react';
 import SlootiLogo from './components/SlootiLogo';
 
@@ -38,17 +48,30 @@ const STAFF_TAB_COMPONENTS = {
   settings: Settings,
 };
 
-function useTenantBase() {
+function LegacyClienteRedirect() {
   const { slug } = useTenant();
-  return `/${slug}`;
+  const params = useParams();
+  const splat = params['*'] || '';
+  const mapped = mapLegacyTenantPath(splat ? `cliente/${splat}` : 'cliente');
+  const to = mapped ? `${tenantBookingPath(slug)}/${mapped}` : tenantBookingPath(slug);
+  return <Navigate to={to} replace />;
+}
+
+function LegacyBarbeirosRedirect() {
+  const { slug } = useTenant();
+  const params = useParams();
+  const splat = params['*'] || '';
+  const mapped = mapLegacyTenantPath(splat ? `barbeiros/${splat}` : 'barbeiros');
+  const to = mapped ? `${tenantBookingPath(slug)}/${mapped}` : tenantDashboardPath(slug);
+  return <Navigate to={to} replace />;
 }
 
 const StaffRoute = ({ children }) => {
   const { currentUser, staffLoading } = useApp();
-  const base = useTenantBase();
+  const { slug } = useTenant();
 
   if (staffLoading && !currentUser) return null;
-  if (!currentUser) return <Navigate to={`${base}/barbeiros/login`} replace />;
+  if (!currentUser) return <Navigate to={tenantLoginPath(slug)} replace />;
   return children;
 };
 
@@ -61,7 +84,6 @@ const CustomerRoute = ({ children }) => {
     syncNavigatedCustomer,
   } = useApp();
   const { slug } = useTenant();
-  const base = useTenantBase();
   const location = useLocation();
   const navCustomer = location.state?.customer;
   const pendingCustomer = getPendingCustomer(slug);
@@ -97,11 +119,7 @@ const CustomerRoute = ({ children }) => {
     return () => {
       cancelled = true;
     };
-  }, [
-    hasCustomerAccess,
-    effectiveCustomer,
-    refreshCurrentCustomer,
-  ]);
+  }, [hasCustomerAccess, effectiveCustomer, refreshCurrentCustomer]);
 
   if (bootstrapLoading) {
     return <TabLoadingFallback />;
@@ -109,7 +127,7 @@ const CustomerRoute = ({ children }) => {
   if (!hasCustomerAccess) {
     return (
       <Navigate
-        to={`${base}/cliente`}
+        to={tenantBookingPath(slug)}
         replace
         state={{ portalLogin: true }}
       />
@@ -119,7 +137,7 @@ const CustomerRoute = ({ children }) => {
     if (!authResolved) return <TabLoadingFallback />;
     return (
       <Navigate
-        to={`${base}/cliente`}
+        to={tenantBookingPath(slug)}
         replace
         state={{ portalLogin: true }}
       />
@@ -131,10 +149,10 @@ const CustomerRoute = ({ children }) => {
 const StaffLoginPage = () => {
   const { login, currentUser } = useApp();
   const navigate = useNavigate();
-  const base = useTenantBase();
+  const { slug } = useTenant();
 
   if (currentUser) {
-    return <Navigate to={`${base}/barbeiros`} replace />;
+    return <Navigate to={tenantDashboardPath(slug)} replace />;
   }
 
   const handleLogin = async (emailToLogin, pwd) => {
@@ -142,58 +160,22 @@ const StaffLoginPage = () => {
     const perms = userData?.permissions;
     const canDashboard = Array.isArray(perms) && perms.includes('dashboard');
     const barberNoDashboard = userData?.role === 'Barbeiro' && !canDashboard;
-    if (barberNoDashboard) navigate(`${base}/barbeiros/scheduler`, { replace: true });
-    else navigate(`${base}/barbeiros`, { replace: true });
+    if (barberNoDashboard) navigate(tenantDashboardPath(slug, 'scheduler'), { replace: true });
+    else navigate(tenantDashboardPath(slug), { replace: true });
   };
 
   return <LoginPage onLogin={handleLogin} />;
 };
 
-const CustomerArea = () => {
-  const navigate = useNavigate();
-  const base = useTenantBase();
+const CustomerBookingIndex = () => {
   const { currentCustomer } = useApp();
   const needsPhone = !!currentCustomer && !isValidPhone(currentCustomer.phone);
 
   return (
     <>
-      <Routes>
-        <Route
-          element={(
-            <Suspense fallback={<TabLoadingFallback />}>
-              <CustomerAreaLayout />
-            </Suspense>
-          )}
-        >
-          <Route
-            index
-            element={(
-              <Suspense fallback={<TabLoadingFallback />}>
-                <PublicBookingPage />
-              </Suspense>
-            )}
-          />
-          <Route
-            path="portal"
-            element={(
-              <CustomerRoute>
-                <Suspense fallback={<TabLoadingFallback />}>
-                  <CustomerPortal onBack={() => navigate(`${base}/cliente`)} />
-                </Suspense>
-              </CustomerRoute>
-            )}
-          />
-          <Route
-            path="redefinir-senha"
-            element={(
-              <Suspense fallback={<TabLoadingFallback />}>
-                <CustomerResetPasswordPage />
-              </Suspense>
-            )}
-          />
-          <Route path="*" element={<Navigate to={`${base}/cliente`} replace />} />
-        </Route>
-      </Routes>
+      <Suspense fallback={<TabLoadingFallback />}>
+        <PublicBookingPage />
+      </Suspense>
       {needsPhone && (
         <Suspense fallback={null}>
           <CompleteProfileGate />
@@ -244,8 +226,8 @@ const StaffArea = () => {
   const { tab } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const base = useTenantBase();
-  const staffHome = `${base}/barbeiros`;
+  const { slug } = useTenant();
+  const staffHome = tenantDashboardPath(slug);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
   React.useEffect(() => {
@@ -257,12 +239,11 @@ const StaffArea = () => {
 
   const handleLogout = () => {
     logout();
-    navigate(`${base}/barbeiros/login`, { replace: true });
+    navigate(tenantLoginPath(slug), { replace: true });
   };
 
   const setActiveTab = (nextTab) => {
-    if (nextTab === 'dashboard') navigate(staffHome);
-    else navigate(`${staffHome}/${nextTab}`);
+    navigate(tenantDashboardPath(slug, nextTab === 'dashboard' ? undefined : nextTab));
   };
 
   React.useEffect(() => {
@@ -271,8 +252,8 @@ const StaffArea = () => {
     const perms = currentUser?.permissions;
     const canDashboard = Array.isArray(perms) && perms.includes('dashboard');
     if (canDashboard) return;
-    navigate(`${staffHome}/scheduler`, { replace: true });
-  }, [location.pathname, currentUser, navigate, staffHome]);
+    navigate(tenantDashboardPath(slug, 'scheduler'), { replace: true });
+  }, [location.pathname, currentUser, navigate, staffHome, slug]);
 
   React.useEffect(() => {
     if (tab && !VALID_TABS.includes(tab)) {
@@ -353,42 +334,71 @@ function TenantAppContent() {
   const { slug: tenantSlug, loading: tenantLoading, error: tenantError } = useTenant();
   const { bootstrapLoading } = useApp();
   const location = useLocation();
-  const isStaffRoute = /\/barbeiros(\/|$)/.test(location.pathname);
+  const isStaffRoute = isStaffRoutePath(location.pathname);
 
   if (tenantLoading) {
     return <LoadingScreen />;
+  }
+
+  if (tenantError) {
+    return <TenantNotFound slug={tenantSlug} />;
   }
 
   if (bootstrapLoading && !isStaffRoute) {
     return <LoadingScreen />;
   }
 
-  if (tenantError) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '12px', padding: '24px', textAlign: 'center' }}>
-        <p style={{ fontWeight: 600, margin: 0 }}>{tenantError}</p>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>
-          Confirma o slug na URL (ex.: /two-brothers/cliente) e que o backend está a correr.
-        </p>
-      </div>
-    );
-  }
-
-  const clienteHome = `/${tenantSlug}/cliente`;
+  const bookingHome = tenantBookingPath(tenantSlug);
 
   return (
     <Routes>
-      <Route path="cliente/*" element={<CustomerArea />} />
-      <Route path="clientes/*" element={<Navigate to={clienteHome} replace />} />
-      <Route path="barbeiros/login" element={<StaffLoginPage />} />
-      <Route path="barbeiros/:tab?" element={<StaffArea />} />
-      <Route path="*" element={<Navigate to={clienteHome} replace />} />
+      <Route
+        element={(
+          <Suspense fallback={<TabLoadingFallback />}>
+            <CustomerAreaLayout />
+          </Suspense>
+        )}
+      >
+        <Route index element={<CustomerBookingIndex />} />
+        <Route path="portal" element={<TenantPortalWrapper />} />
+        <Route
+          path="redefinir-senha"
+          element={(
+            <Suspense fallback={<TabLoadingFallback />}>
+              <CustomerResetPasswordPage />
+            </Suspense>
+          )}
+        />
+      </Route>
+      <Route path="login" element={<StaffLoginPage />} />
+      <Route path="dashboard" element={<StaffArea />} />
+      <Route path="dashboard/:tab" element={<StaffArea />} />
+      <Route path="cliente/*" element={<LegacyClienteRedirect />} />
+      <Route path="clientes/*" element={<Navigate to={bookingHome} replace />} />
+      <Route path="barbeiros/*" element={<LegacyBarbeirosRedirect />} />
+      <Route path="admin/*" element={<Navigate to={tenantDashboardPath(tenantSlug)} replace />} />
+      <Route path="*" element={<Navigate to={bookingHome} replace />} />
     </Routes>
+  );
+}
+
+function TenantPortalWrapper() {
+  const { slug } = useTenant();
+  const navigate = useNavigate();
+  return (
+    <CustomerRoute>
+      <Suspense fallback={<TabLoadingFallback />}>
+        <CustomerPortal onBack={() => navigate(tenantBookingPath(slug))} />
+      </Suspense>
+    </CustomerRoute>
   );
 }
 
 function TenantShell() {
   const { tenantSlug } = useParams();
+  if (isReservedTenantSlug(tenantSlug)) {
+    return <TenantNotFound slug={tenantSlug} />;
+  }
   return (
     <TenantProvider key={tenantSlug}>
       <AppProvider>
@@ -399,6 +409,9 @@ function TenantShell() {
 }
 
 function App() {
+  const defaultHome = tenantBookingPath(DEFAULT_SLUG);
+  const defaultLogin = tenantLoginPath(DEFAULT_SLUG);
+
   return (
     <Routes>
       <Route path="/admin/*" element={<PlatformAdminApp />} />
@@ -406,11 +419,11 @@ function App() {
       <Route path="/cadastro" element={<Navigate to="/" replace />} />
       <Route path="/telateste" element={<BookingPreviewShell />} />
       <Route path="/telaloginteste" element={<LoginPreviewShell />} />
-      <Route path="/cliente/*" element={<Navigate to={`/${DEFAULT_SLUG}/cliente`} replace />} />
-      <Route path="/barbeiros/*" element={<Navigate to={`/${DEFAULT_SLUG}/barbeiros`} replace />} />
+      <Route path="/cliente/*" element={<Navigate to={defaultHome} replace />} />
+      <Route path="/barbeiros/*" element={<Navigate to={defaultLogin} replace />} />
       <Route path="/:tenantSlug/*" element={<TenantShell />} />
-      <Route path="/" element={<Navigate to={`/${DEFAULT_SLUG}/cliente`} replace />} />
-      <Route path="*" element={<Navigate to={`/${DEFAULT_SLUG}/cliente`} replace />} />
+      <Route path="/" element={<Navigate to={defaultHome} replace />} />
+      <Route path="*" element={<Navigate to={defaultHome} replace />} />
     </Routes>
   );
 }

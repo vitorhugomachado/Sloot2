@@ -29,14 +29,7 @@ export async function platformFetch(path, options = {}) {
   return data;
 }
 
-export function tenantPublicUrls(slug) {
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  return {
-    cliente: `${origin}/${slug}/cliente`,
-    staffLogin: `${origin}/${slug}/barbeiros/login`,
-    staffPanel: `${origin}/${slug}/barbeiros`,
-  };
-}
+export { tenantPublicUrls } from '../../constants/tenantRoutes';
 
 export function slugify(text) {
   return String(text || '')

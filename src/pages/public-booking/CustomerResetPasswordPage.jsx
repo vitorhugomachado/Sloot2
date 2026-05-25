@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config/apiUrl';
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase';
 import { useTenant } from '../../context/TenantContext';
+import { tenantBookingPath } from '../../constants/tenantRoutes';
 import '../preview/booking-preview-v2.css';
 
 export default function CustomerResetPasswordPage() {
@@ -85,7 +86,7 @@ export default function CustomerResetPasswordPage() {
       await supabase.auth.signOut();
       setSuccess('Senha atualizada! Você já pode entrar com a nova senha.');
       window.setTimeout(() => {
-        navigate(`/${slug}/cliente`, { replace: true, state: { portalLogin: true } });
+        navigate(tenantBookingPath(slug), { replace: true, state: { portalLogin: true } });
       }, 2200);
     } catch (err) {
       setError(err.message || 'Não foi possível redefinir a senha.');
@@ -94,7 +95,7 @@ export default function CustomerResetPasswordPage() {
     }
   };
 
-  const bookingUrl = `/${slug}/cliente`;
+  const bookingUrl = tenantBookingPath(slug);
 
   return (
     <div className="bp-reset-page">

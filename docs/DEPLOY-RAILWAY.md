@@ -67,20 +67,28 @@ Ou só schema: `npm run db:migrate:deploy` (o arranque da app também corre `mig
 
 ## 5. Verificar
 
+Checklist rápido (na raiz do repo):
+
+```bash
+npm run railway:preflight -- https://TEU-DOMINIO
+```
+
 Substitui `TEU-DOMINIO`:
 
 | URL | Esperado |
 |-----|----------|
 | `/health` | `"dbConfigured": true`, `"dbHost"` com `railway` (não `supabase.com`) |
 | `/api/tenant/resolve/two-brothers` | JSON do tenant |
-| `/two-brothers/cliente` | Agendamento |
-| `/two-brothers/barbeiros/login` | `carlos@barberpro.com` / `123` (se usaste seed) |
+| `/two-brothers` | Agendamento |
+| `/two-brothers/login` | `carlos@barberpro.com` / `123` (se usaste seed) |
 
 Admin plataforma (uma vez):
 
 ```bash
-cd server && npm run create:platform-admin -- seu@email.com SuaSenha
+npm run create:platform-admin -- seu@email.com SuaSenha
 ```
+
+Criar barbearias (clientes): [ADMIN-NOVA-BARBEARIA.md](./ADMIN-NOVA-BARBEARIA.md).
 
 ## 6. Desligar Vercel / Supabase
 

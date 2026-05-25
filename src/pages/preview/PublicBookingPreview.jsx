@@ -24,8 +24,8 @@ export default function PublicBookingPreview({
   const navigate = useNavigate();
   const flow = usePublicBookingFlow();
   const isDesktop = useMediaQuery(BOOKING_DESKTOP_MIN_WIDTH);
-  const officialUrl = `/${slug}/cliente`;
-  const portalUrl = portalUrlProp || `/${slug}/cliente/portal`;
+  const officialUrl = `/${slug}`;
+  const portalUrl = portalUrlProp || `/${slug}/portal`;
   const openPortal = onOpenPortal || (() => navigate(portalUrl));
 
   useEffect(() => {

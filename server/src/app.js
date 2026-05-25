@@ -4,6 +4,7 @@ const cors = require('cors');
 const compression = require('compression');
 const apiRoutes = require('./routes/api');
 const { getDefaultTenantSlug } = require('./lib/tenantHelpers');
+const { resolveLegacyRedirect } = require('./lib/legacyRouteRedirects');
 
 const app = express();
 
@@ -71,14 +72,8 @@ if (serveSpa) {
   const defaultSlug = getDefaultTenantSlug();
 
   app.use((req, res, next) => {
-    if (req.path === '/cliente' || req.path.startsWith('/cliente/')) {
-      const rest = req.path.slice('/cliente'.length) || '';
-      return res.redirect(301, `/${defaultSlug}/cliente${rest}`);
-    }
-    if (req.path === '/barbeiros' || req.path.startsWith('/barbeiros/')) {
-      const rest = req.path.slice('/barbeiros'.length) || '';
-      return res.redirect(301, `/${defaultSlug}/barbeiros${rest}`);
-    }
+    const dest = resolveLegacyRedirect(req.path, defaultSlug);
+    if (dest) return res.redirect(301, dest);
     next();
   });
 

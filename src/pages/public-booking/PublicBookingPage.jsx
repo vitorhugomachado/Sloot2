@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { useTenant } from '../../context/TenantContext';
 import { loadGoogleIdentityScript } from '../../utils/loadGoogleIdentity';
 import PublicBookingCustomerHeader from './PublicBookingCustomerHeader';
+import { tenantPortalPath } from '../../constants/tenantRoutes';
 import PublicBookingPreview from '../preview/PublicBookingPreview';
 import CustomerPortalLoginModal from './CustomerPortalLoginModal';
 import '../../components/business/business-hero-header.css';
@@ -16,7 +17,7 @@ export default function PublicBookingPage() {
   const location = useLocation();
   const [showPortalLogin, setShowPortalLogin] = useState(false);
 
-  const portalUrl = `/${slug}/cliente/portal`;
+  const portalUrl = tenantPortalPath(slug);
 
   const openPortal = useCallback(() => {
     if (isCustomerAuthenticated) {

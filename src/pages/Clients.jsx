@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTenant } from '../context/TenantContext';
+import { tenantDashboardPath } from '../constants/tenantRoutes';
 import {
   Search, Plus, Filter, User, Phone, Calendar, Download, Cake, AlertTriangle,
   RefreshCw, ChevronLeft, ChevronRight, Trash2, UserPlus, Award
@@ -127,6 +129,7 @@ const ClientMobileCard = ({ client, onOpenProfile }) => {
 
 const Clients = () => {
   const { token } = useApp();
+  const { slug } = useTenant();
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -342,7 +345,7 @@ const Clients = () => {
         customer_id: client.source === 'customer' ? client.id : null
       }));
     } catch {}
-    navigate('/barbeiros/scheduler');
+    navigate(tenantDashboardPath(slug, 'scheduler'));
   };
 
   const handleExport = () => {

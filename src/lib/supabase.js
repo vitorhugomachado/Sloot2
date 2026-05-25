@@ -22,5 +22,5 @@ export function getSupabase() {
 export function getPasswordResetRedirectUrl(tenantSlug) {
   const slug = String(tenantSlug || '').trim().toLowerCase();
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${origin}/${slug}/cliente/redefinir-senha`;
+  return `${origin}/${slug}/redefinir-senha`;
 }

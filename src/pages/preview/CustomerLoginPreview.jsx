@@ -10,8 +10,8 @@ import './booking-preview.css';
 export default function CustomerLoginPreview() {
   const { slug } = useTenant();
   const navigate = useNavigate();
-  const officialUrl = `/${slug}/cliente`;
-  const portalUrl = `/${slug}/cliente/portal`;
+  const officialUrl = `/${slug}`;
+  const portalUrl = `/${slug}/portal`;
 
   const auth = useCustomerAuth({
     onSuccess: (user) => navigate(portalUrl, { replace: true, state: { customer: user } }),

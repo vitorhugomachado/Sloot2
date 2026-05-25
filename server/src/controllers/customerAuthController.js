@@ -16,7 +16,7 @@ function buildPasswordResetRedirect(req, tenantSlug) {
 
   const origin = req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:5173';
   const slug = String(tenantSlug || req.tenantSlug || '').trim().toLowerCase();
-  return `${String(origin).replace(/\/$/, '')}/${slug}/cliente/redefinir-senha`;
+  return `${String(origin).replace(/\/$/, '')}/${slug}/redefinir-senha`;
 }
 
 const FORGOT_PASSWORD_GENERIC =

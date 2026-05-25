@@ -100,7 +100,7 @@ export default function CreateTenantModal({ open, onClose, onCreated }) {
               setSlug(slugify(ev.target.value));
             }}
           />
-          <p className="booking-reserve-form__hint">/{slug || 'sua-url'}/cliente</p>
+          <p className="booking-reserve-form__hint">/{slug || 'sua-url'}</p>
           <input
             type="text"
             className="booking-reserve-form__field"

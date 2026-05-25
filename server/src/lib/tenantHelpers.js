@@ -8,6 +8,11 @@ const RESERVED_SLUGS = new Set([
   'health',
   'cliente',
   'barbeiros',
+  'login',
+  'dashboard',
+  'app',
+  'portal',
+  'configuracoes',
   'www',
 ]);
 

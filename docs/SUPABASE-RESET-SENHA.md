@@ -31,12 +31,12 @@ Reinicie Vite e o servidor após alterar o `.env`.
 | Campo | Exemplo (dev) |
 |--------|----------------|
 | Site URL | `http://localhost:5173` |
-| Redirect URLs | `http://localhost:5173/**/cliente/redefinir-senha` |
+| Redirect URLs | `http://localhost:5173/**/redefinir-senha` |
 
 Em produção, acrescente por tenant, por exemplo:
 
-- `https://seudominio.com/two-brothers/cliente/redefinir-senha`
-- `https://seudominio.com/lanotic/cliente/redefinir-senha`
+- `https://seudominio.com/two-brothers/redefinir-senha`
+- `https://seudominio.com/lanotic/redefinir-senha`
 
 Ou use um padrão que o Supabase aceite na sua região/plano.
 
@@ -54,7 +54,7 @@ Opcional: **Project Settings → Auth → SMTP** para enviar com o seu domínio 
 
 1. Cliente clica **Esqueci minha senha** no modal de login (agendamento ou portal).
 2. `POST /api/customer-auth/forgot-password` — garante utilizador no Supabase Auth **e envia o e-mail** (servidor).
-3. Link abre `/:slug/cliente/redefinir-senha`.
+3. Link abre `/:slug/redefinir-senha`.
 4. Nova senha → Supabase Auth + `POST /api/customer-auth/sync-password` → Prisma.
 
 O e-mail **só é enviado** se existir cliente com esse e-mail **nesta barbearia** (tabela `Customer`). Caso contrário a API responde a mesma mensagem genérica (segurança), mas **não manda e-mail**.
@@ -64,7 +64,7 @@ O e-mail **só é enviado** se existir cliente com esse e-mail **nesta barbearia
 1. **Supabase → Authentication → Users** — o e-mail aparece na lista após pedir recuperação?
 2. **Authentication → Logs** — há erro de envio ou de redirect URL?
 3. **Redirect URLs** — tem de incluir exatamente  
-   `http://localhost:5173/two-brothers/cliente/redefinir-senha` (troca o slug se preciso).
+   `http://localhost:5173/two-brothers/redefinir-senha` (troca o slug se preciso).
 4. **Spam / promoções** — o remetente costuma ser `noreply@mail.app.supabase.io`.
 5. **Limite do plano gratuito** — poucos e-mails por hora; espera ou configura SMTP em **Project Settings → Auth → SMTP**.
 6. Usa o **mesmo e-mail** com que te registaste na barbearia (login no agendamento).
