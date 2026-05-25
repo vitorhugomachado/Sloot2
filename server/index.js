@@ -40,9 +40,6 @@ function runMigrations() {
     console.error(
       'Railway Postgres: DATABASE_URL e DIRECT_URL = ${{Postgres.DATABASE_URL}} (mesmo valor).',
     );
-    console.error(
-      'Supabase (legado): DIRECT_URL = URI Direct (db.*.supabase.co), não pooler :5432.',
-    );
     process.exit(1);
   }
 }

@@ -1,2 +1,0 @@
-/** /api (raiz) */
-module.exports = require('../lib/vercel-express.cjs');
