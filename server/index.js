@@ -16,9 +16,16 @@ const missing = required.filter((key) => !process.env[key]?.trim());
 if (missing.length > 0) {
   console.error(`Variáveis obrigatórias em falta: ${missing.join(', ')}`);
   console.error(
-    'Railway → serviço da APP (Sloot) → Variables: DATABASE_URL e DIRECT_URL = ${{Postgres.DATABASE_URL}}',
+    '[debug] presentes no container:',
+    required.map((k) => `${k}=${process.env[k]?.trim() ? 'sim' : 'NAO'}`).join(', '),
   );
-  console.error('Depois de guardar variáveis, faz Redeploy. Não uses só server/.env na imagem Docker.');
+  console.error(
+    'Railway → serviço APP (Sloot) → Variables: olho em DATABASE_URL — se vazio, ${{Postgres.DATABASE_URL}} tem nome de serviço errado.',
+  );
+  console.error(
+    'Correção: cola URL completa em DATABASE_URL e DIRECT_URL (mesmo valor, ex. postgres.railway.internal:5432/railway).',
+  );
+  console.error('Depois de guardar, Redeploy.');
   if (process.env.RAILWAY_ENVIRONMENT) {
     console.error(`[debug] RAILWAY_ENVIRONMENT=${process.env.RAILWAY_ENVIRONMENT}`);
   }
