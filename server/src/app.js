@@ -11,6 +11,33 @@ if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
+// Vercel: path pode chegar sem prefixo /api ou como /api/index após rewrite
+if (process.env.VERCEL) {
+  app.use((req, res, next) => {
+    const original = req.headers['x-vercel-original-url'] || req.headers['x-original-url'];
+    if (original) {
+      try {
+        const pathname = original.startsWith('http')
+          ? new URL(original).pathname
+          : String(original).split('?')[0];
+        if (pathname) req.url = pathname + (req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');
+      } catch {
+        /* mantém req.url */
+      }
+    }
+
+    const [pathOnly, query = ''] = (req.url || '/').split('?');
+    const q = query ? `?${query}` : '';
+
+    if (pathOnly === '/api/index' || pathOnly.startsWith('/api/index/')) {
+      req.url = `/api${pathOnly.slice('/api/index'.length) || ''}${q}`;
+    } else if (!pathOnly.startsWith('/api') && pathOnly !== '/health') {
+      req.url = `/api${pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`}${q}`;
+    }
+    next();
+  });
+}
+
 app.use(compression());
 app.use(cors());
 // Fotos em base64 no cadastro de barbeiro podem passar de 10mb; limite maior evita 500 genérico do body-parser
@@ -39,17 +66,26 @@ app.use((err, req, res, next) => {
 });
 
 // Health Check for diagnostics
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    gitSha:
-      process.env.APP_GIT_SHA ||
-      process.env.VERCEL_GIT_COMMIT_SHA ||
-      process.env.RAILWAY_GIT_COMMIT_SHA ||
-      null,
-  });
+const healthPayload = () => ({
+  status: 'ok',
+  timestamp: new Date().toISOString(),
+  gitSha:
+    process.env.APP_GIT_SHA ||
+    process.env.VERCEL_GIT_COMMIT_SHA ||
+    process.env.RAILWAY_GIT_COMMIT_SHA ||
+    null,
+  dbConfigured: Boolean(process.env.DATABASE_URL?.trim()),
+  runtime: process.env.VERCEL ? 'vercel' : 'node',
 });
+
+const healthHandler = (req, res) => {
+  res.json(healthPayload());
+};
+
+app.get('/health', healthHandler);
+if (process.env.VERCEL) {
+  app.get('/api/health', healthHandler);
+}
 
 // Railway/Docker: SERVE_SPA=true. Vercel serve o dist/ via CDN — só API aqui.
 const serveSpa =

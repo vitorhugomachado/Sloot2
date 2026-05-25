@@ -51,11 +51,15 @@ Após alterar variáveis `VITE_*`, faz **Redeploy** (entram só no build).
 
 ## 4. Verificar
 
-1. `GET https://TEU-PROJETO.vercel.app/health` → `{ "status": "ok", ... }`
-2. `GET https://TEU-PROJETO.vercel.app/api/tenant/resolve/two-brothers` → JSON do tenant
-3. `https://TEU-PROJETO.vercel.app/two-brothers/cliente` → agendamento sem 404 no console
+1. `GET https://TEU-PROJETO.vercel.app/health` → `{ "status": "ok", "dbConfigured": true, "runtime": "vercel" }`
+2. `GET https://TEU-PROJETO.vercel.app/api/tenant/resolve/two-brothers` → JSON do tenant (não HTML 404)
+3. `https://TEU-PROJETO.vercel.app/two-brothers/cliente` → agendamento sem erro no console
 
-Se `/api/...` responder 404 JSON `Barbearia não encontrada`, a API funciona mas o slug não existe na BD — confirma dados no Supabase ou corre seed **uma vez** num ambiente seguro.
+| Sintoma | Causa provável |
+|---------|----------------|
+| "Barbearia não encontrada" **sem** ponto final | Pedido `/api/...` não chega ao Express (404 da Vercel) — confirma deploy com `api/[...path].js` |
+| `dbConfigured: false` em `/health` | Falta `DATABASE_URL` nas env vars **Runtime** da Vercel |
+| JSON `Barbearia não encontrada.` **com** ponto | API OK; falta tenant na BD — `npm run db:migrate:deploy` + dados no Supabase |
 
 ## 5. Limitações
 
