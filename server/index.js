@@ -1,15 +1,26 @@
 // Entry point — load env before any module that touches Prisma
+const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+const envPath = path.join(__dirname, '.env');
+// Produção (Railway): variáveis vêm do dashboard — não depender de server/.env no Docker
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({ path: envPath, quiet: true });
+} else if (!process.env.DATABASE_URL?.trim() && fs.existsSync(envPath)) {
+  require('dotenv').config({ path: envPath, quiet: true });
+}
 
 const required = ['DATABASE_URL', 'DIRECT_URL', 'JWT_SECRET'];
 const missing = required.filter((key) => !process.env[key]?.trim());
 if (missing.length > 0) {
   console.error(`Variáveis obrigatórias em falta: ${missing.join(', ')}`);
-  if (missing.includes('DIRECT_URL')) {
-    console.error('Railway: DIRECT_URL = mesmo valor que DATABASE_URL (${{Postgres.DATABASE_URL}}).');
+  console.error(
+    'Railway → serviço da APP (Sloot) → Variables: DATABASE_URL e DIRECT_URL = ${{Postgres.DATABASE_URL}}',
+  );
+  console.error('Depois de guardar variáveis, faz Redeploy. Não uses só server/.env na imagem Docker.');
+  if (process.env.RAILWAY_ENVIRONMENT) {
+    console.error(`[debug] RAILWAY_ENVIRONMENT=${process.env.RAILWAY_ENVIRONMENT}`);
   }
   process.exit(1);
 }

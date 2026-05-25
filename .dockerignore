@@ -3,6 +3,8 @@ dist
 .git
 .env
 .env.*
+server/.env
+server/.env.*
 !server/.env.example
 !.env.example
 docs/railway-variables.env
