@@ -1,5 +1,5 @@
 /**
- * Vercel serverless entry (CommonJS — raiz do projeto é "type": "module").
+ * Vercel serverless entry — CommonJS (api/package.json), Express em server/src/app.
  */
 const path = require('path');
 const serverless = require('serverless-http');

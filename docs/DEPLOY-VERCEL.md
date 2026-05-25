@@ -1,6 +1,6 @@
 # Deploy na Vercel (frontend + API serverless)
 
-Frontend estático (`dist/`) + API Express em [`api/index.cjs`](../api/index.cjs) na mesma origem (`/api`).
+Frontend estático (`dist/`) + API Express em [`api/index.js`](../api/index.js) na mesma origem (`/api`).
 
 ## Porque dava 404
 
