@@ -27,7 +27,7 @@ A Vercel **não** executa `server/index.js` sozinha. Sem a pasta `api/`, pedidos
 
 **Não** definir `SERVE_SPA` na Vercel (só Railway/Docker).
 
-## 2. Build
+## 2. Build e migrations
 
 O [`vercel.json`](../vercel.json) corre:
 
@@ -35,7 +35,15 @@ O [`vercel.json`](../vercel.json) corre:
 npm run vercel-build
 ```
 
-Isto faz `prisma generate`, `prisma migrate deploy` e `vite build`. As migrations precisam de `DATABASE_URL` e `DIRECT_URL` **antes** do deploy.
+Isto faz só `prisma generate` + `vite build` (sem `migrate deploy` — evita falha P1012 se `DIRECT_URL` não estiver no ambiente de **build**).
+
+**Migrations (uma vez por ambiente), no PC ou CI**, com `server/.env` ou variáveis de produção:
+
+```bash
+npm run db:migrate:deploy
+```
+
+Requer `DATABASE_URL` e `DIRECT_URL` (Supabase: pooler `6543` + direct `5432`).
 
 ## 3. Redeploy
 
