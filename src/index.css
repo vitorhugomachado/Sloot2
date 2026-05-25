@@ -32,10 +32,12 @@
   --sidebar-border: #696969;
   --sidebar-nav-hover-bg: rgba(255, 255, 255, 0.06);
 
-  --bg-color: #FFFDF7;
+  --bg-color: #F6F5F3;
   --surface-color: #FFFFFF;
   --card-bg: #FFFFFF;
-  --border-color: #696969;
+  --card-outline: #E7E4DF;
+  --card-border: 1px solid #E7E4DF;
+  --border-color: #E7E4DF;
   --text-primary: #1A1A1A;
   --text-secondary: #6B7280;
 
@@ -45,7 +47,7 @@
   --warning-color: #F59E0B;
   --info-color: #3B82F6;
 
-  --brand-50: #FFFDF7;
+  --brand-50: #F6F5F3;
   --brand-100: #FFE0CC;
   --brand-200: #FFD4B8;
   --brand-300: #FF8533;
@@ -68,12 +70,11 @@
   --shadow-md: 0 4px 6px -1px rgba(26, 26, 26, 0.08), 0 2px 4px -1px rgba(26, 26, 26, 0.04);
   --shadow-lg: 0 10px 15px -3px rgba(26, 26, 26, 0.1), 0 4px 6px -2px rgba(26, 26, 26, 0.05);
   --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-border: #696969;
+  --glass-border: #E7E4DF;
   --glass-blur: blur(12px);
-  --card-outline: #696969;
-  --calendar-border: #696969;
+  --calendar-border: #E7E4DF;
   --card-radius: 16px;
-  --card-shadow: 0 4px 24px rgba(255, 106, 0, 0.06);
+  --card-shadow: 0 1px 3px rgba(26, 26, 26, 0.04);
   --modal-backdrop-bg: rgba(26, 26, 26, 0.5);
   --modal-backdrop-filter: blur(8px);
   --modal-z-backdrop: 1100;
@@ -82,7 +83,7 @@
   --hover-bg: rgba(255, 106, 0, 0.06);
   --icon-bg: rgba(255, 106, 0, 0.08);
   --icon-hover: rgba(255, 106, 0, 0.14);
-  --line-color: rgba(105, 105, 105, 0.45);
+  --line-color: rgba(231, 228, 223, 0.9);
   --dash-card-bg: #FFFFFF;
   --dash-panel-bg: #FFFFFF;
   --selection-bg: rgba(255, 106, 0, 0.22);
@@ -221,7 +222,7 @@ h1, h2, h3, h4, .brand-font {
 .glass-card {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--card-outline);
+  border: var(--card-border);
   border-radius: var(--card-radius);
   box-shadow: none;
   padding: 1.5rem;
@@ -244,7 +245,7 @@ h1, h2, h3, h4, .brand-font {
 }
 
 .finance-page .glass-card {
-  border: 2px solid var(--card-outline);
+  border: var(--card-border);
 }
 
 .finance-time-range-btn {
@@ -254,7 +255,7 @@ h1, h2, h3, h4, .brand-font {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-  border: 2px solid var(--card-outline);
+  border: var(--card-border);
   background: var(--panel-bg);
   color: var(--text-secondary);
 }
@@ -340,7 +341,7 @@ h1, h2, h3, h4, .brand-font {
   display: grid;
   grid-template-columns: 1fr 180px 100px;
   padding: 0 15px 10px;
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--text-secondary);
@@ -955,7 +956,7 @@ h1, h2, h3, h4, .brand-font {
 
 /* Agenda (Scheduler) — cards brancos com borda suave */
 .scheduler-page .glass-card {
-  border: 1px solid var(--card-outline);
+  border: var(--card-border);
   border-radius: 20px;
   box-shadow: var(--card-shadow);
   box-sizing: border-box;
@@ -1342,7 +1343,7 @@ h1, h2, h3, h4, .brand-font {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--card-outline);
+  border: var(--card-border);
   border-radius: var(--card-radius);
   box-shadow: none;
   padding: 1.5rem;
@@ -3150,7 +3151,7 @@ button {
 
 .dash-kpi-card {
   background: var(--dash-card-bg);
-  border: 1px solid var(--dash-card-border);
+  border: var(--card-border);
   border-radius: 12px;
   padding: 1.25rem 1.375rem;
   display: flex;
@@ -3307,7 +3308,7 @@ button {
 /* --- Occupancy Gauge Card --- */
 .dash-gauge-card {
   background: var(--dash-card-bg);
-  border: 1px solid var(--dash-card-border);
+  border: var(--card-border);
   border-radius: 12px;
   padding: 1.25rem 1.375rem;
   display: flex;
@@ -3366,7 +3367,7 @@ button {
 
 .dash-panel {
   background: var(--dash-panel-bg);
-  border: 1px solid var(--dash-card-border);
+  border: var(--card-border);
   border-radius: 12px;
   box-shadow: var(--card-shadow);
   display: flex;
@@ -3843,7 +3844,7 @@ button {
 .dash-action-btn.primary {
   background: var(--accent-color);
   color: var(--accent-text);
-  border: 1px solid #696969;
+  border: var(--card-border);
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);
 }
 
@@ -3856,7 +3857,7 @@ button {
 .dash-action-btn.secondary {
   background: var(--bg-color);
   color: var(--text-primary);
-  border: 1px solid #696969;
+  border: var(--card-border);
 }
 
 .dash-action-btn.secondary:hover {

@@ -27,7 +27,7 @@ export default function PublicCustomerLinkField({ className = '', compact = fals
       style={{
         padding: compact ? '12px' : '14px',
         borderRadius: '10px',
-        border: '1px solid #0a0a0a',
+        border: '1px solid var(--card-outline)',
         background: 'var(--panel-bg)',
       }}
     >
@@ -58,7 +58,7 @@ export default function PublicCustomerLinkField({ className = '', compact = fals
             minWidth: 0,
             padding: '10px 12px',
             borderRadius: '8px',
-            border: '1px solid #0a0a0a',
+            border: '1px solid var(--card-outline)',
             background: '#fff',
             color: 'var(--text-primary)',
             fontSize: '0.85rem',
@@ -75,7 +75,7 @@ export default function PublicCustomerLinkField({ className = '', compact = fals
             gap: '6px',
             padding: '0 14px',
             borderRadius: '9999px',
-            border: '1px solid #0a0a0a',
+            border: '1px solid var(--card-outline)',
             background: copied ? 'var(--accent-color)' : '#fff',
             color: '#0a0a0a',
             fontWeight: 600,
@@ -99,7 +99,7 @@ export default function PublicCustomerLinkField({ className = '', compact = fals
             width: '42px',
             flexShrink: 0,
             borderRadius: '9999px',
-            border: '1px solid #0a0a0a',
+            border: '1px solid var(--card-outline)',
             background: '#fff',
             color: '#0a0a0a',
           }}

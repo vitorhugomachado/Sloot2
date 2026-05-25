@@ -9,7 +9,7 @@
   padding: 0.5rem clamp(1rem, 3vw, 2rem);
   box-sizing: border-box;
   background: #fafafa;
-  border-bottom: 1px solid #ebebeb;
+  border-bottom: 1px solid #E7E4DF;
   z-index: 60;
 }
 

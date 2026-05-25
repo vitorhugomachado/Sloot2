@@ -271,7 +271,7 @@ const PublicBooking = ({ onOpenPortal }) => {
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>O que vamos fazer hoje?</h2>
             <div style={{ display: 'grid', gap: '1rem' }}>
               {services.length === 0 ? (
-                <div style={{ padding: '2rem', textAlign: 'center', background: 'var(--panel-bg)', borderRadius: '12px', border: '1px solid #0a0a0a', boxSizing: 'border-box' }}>
+                <div style={{ padding: '2rem', textAlign: 'center', background: 'var(--panel-bg)', borderRadius: '12px', border: '1px solid var(--card-outline)', boxSizing: 'border-box' }}>
                   Nenhum serviço disponível no momento.
                 </div>
               ) : (
@@ -314,7 +314,7 @@ const PublicBooking = ({ onOpenPortal }) => {
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Escolha seu barbeiro</h2>
             <div style={{ display: 'grid', gap: '1rem' }}>
               {barbers.filter(b => b.role === 'Barbeiro' && b.status === 'Ativo').length === 0 ? (
-                <div style={{ padding: '2rem', textAlign: 'center', background: 'var(--panel-bg)', borderRadius: '12px', border: '1px solid #0a0a0a', boxSizing: 'border-box' }}>
+                <div style={{ padding: '2rem', textAlign: 'center', background: 'var(--panel-bg)', borderRadius: '12px', border: '1px solid var(--card-outline)', boxSizing: 'border-box' }}>
                   Não há barbeiros disponíveis para agendamento online hoje.
                 </div>
               ) : (
@@ -335,7 +335,7 @@ const PublicBooking = ({ onOpenPortal }) => {
                       setStep(3); 
                     }}
                   >
-                    <div style={{ width: '60px', height: '60px', background: 'var(--icon-bg)', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 700, overflow: 'hidden', border: '1px solid #0a0a0a', boxSizing: 'border-box' }}>
+                    <div style={{ width: '60px', height: '60px', background: 'var(--icon-bg)', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 700, overflow: 'hidden', border: '1px solid var(--card-outline)', boxSizing: 'border-box' }}>
                       {b.foto_perfil ? (
                         <img src={b.foto_perfil} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
@@ -370,7 +370,7 @@ const PublicBooking = ({ onOpenPortal }) => {
             <div className="glass-card" style={{ padding: '2rem', background: 'var(--surface-color)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'var(--icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '1px solid #0a0a0a', flexShrink: 0, boxSizing: 'border-box' }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'var(--icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '1px solid var(--card-outline)', flexShrink: 0, boxSizing: 'border-box' }}>
                     {selectedBarber?.foto_perfil ? (
                       <img src={selectedBarber.foto_perfil} alt={selectedBarber.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (

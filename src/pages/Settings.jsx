@@ -407,7 +407,7 @@ const Settings = () => {
               <div className="settings-barber-photo-grid" style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '2rem', marginBottom: '2.5rem' }}>
                 <div 
                   onClick={() => document.getElementById('barberPhoto').click()}
-                  style={{ width: '150px', height: '150px', borderRadius: '16px', border: '2px solid #0a0a0a', background: '#ffffff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', transition: 'all 0.2s' }}
+                  style={{ width: '150px', height: '150px', borderRadius: '16px', border: '1px solid var(--card-outline)', background: '#ffffff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', transition: 'all 0.2s' }}
                 >
                   {newBarber.foto_perfil ? (
                     <img
@@ -442,7 +442,7 @@ const Settings = () => {
                 <div style={{ display: 'grid', gap: '1.25rem' }}>
                   <div style={{ position: 'relative' }}>
                     <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>Nome completo *</label>
-                    <input type="text" placeholder="Ex: Roberto Silva" value={newBarber.name} onChange={e => setNewBarber({...newBarber, name: e.target.value})} style={{ width: '100%', padding: '14px', background: 'var(--panel-bg)', border: '1px solid #0a0a0a', borderRadius: '12px', color: 'var(--text-primary)', outline: 'none', transition: 'all 0.2s' }} />
+                    <input type="text" placeholder="Ex: Roberto Silva" value={newBarber.name} onChange={e => setNewBarber({...newBarber, name: e.target.value})} style={{ width: '100%', padding: '14px', background: 'var(--panel-bg)', border: '1px solid var(--card-outline)', borderRadius: '12px', color: 'var(--text-primary)', outline: 'none', transition: 'all 0.2s' }} />
                   </div>
                   <div>
                     <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>WhatsApp</label>
@@ -513,7 +513,7 @@ const Settings = () => {
                       className="settings-weekday-btn"
                       onClick={() => toggleDay(idx)}
                       style={{
-                        border: '1px solid #0a0a0a',
+                        border: '1px solid var(--card-outline)',
                         background: newBarber.shifts.some(s => s.dia_semana === idx) ? 'var(--accent-color)' : 'var(--panel-bg)',
                         color: newBarber.shifts.some(s => s.dia_semana === idx) ? 'var(--accent-text)' : 'var(--text-secondary)'
                       }}
@@ -532,7 +532,7 @@ const Settings = () => {
                         style={{
                           padding: '14px',
                           borderRadius: '12px',
-                          border: '1px solid #0a0a0a',
+                          border: '1px solid var(--card-outline)',
                           background: 'var(--panel-bg)',
                         }}
                       >
@@ -544,7 +544,7 @@ const Settings = () => {
                             style={{
                               padding: '6px 12px',
                               borderRadius: '9999px',
-                              border: '1px solid #0a0a0a',
+                              border: '1px solid var(--card-outline)',
                               background: '#fff',
                               fontSize: '0.72rem',
                               fontWeight: 600,
@@ -567,7 +567,7 @@ const Settings = () => {
                                 type="time"
                                 value={shift[field] || ''}
                                 onChange={(e) => updateShiftTime(idx, field, e.target.value)}
-                                style={{ width: '100%', padding: '8px', background: 'var(--bg-color)', border: '1px solid #0a0a0a', borderRadius: '8px', fontWeight: 600 }}
+                                style={{ width: '100%', padding: '8px', background: 'var(--bg-color)', border: '1px solid var(--card-outline)', borderRadius: '8px', fontWeight: 600 }}
                               />
                             </div>
                           ))}
@@ -579,7 +579,7 @@ const Settings = () => {
               </div>
 
               {editingBarberId && (
-                <div style={{ marginBottom: '2.5rem', padding: '1.25rem', borderRadius: '16px', border: '1px solid #0a0a0a', background: 'var(--panel-bg)' }}>
+                <div style={{ marginBottom: '2.5rem', padding: '1.25rem', borderRadius: '16px', border: '1px solid var(--card-outline)', background: 'var(--panel-bg)' }}>
                   <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     <Ban size={14} /> Horários fechados (datas específicas)
                   </label>
@@ -624,7 +624,7 @@ const Settings = () => {
                         type="date"
                         value={blockForm.date}
                         onChange={(e) => setBlockForm((f) => ({ ...f, date: e.target.value }))}
-                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #0a0a0a' }}
+                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--card-outline)' }}
                       />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-end' }}>
@@ -646,7 +646,7 @@ const Settings = () => {
                           type="time"
                           value={blockForm.startTime}
                           onChange={(e) => setBlockForm((f) => ({ ...f, startTime: e.target.value }))}
-                          style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #0a0a0a' }}
+                          style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--card-outline)' }}
                         />
                       </div>
                       <div>
@@ -655,7 +655,7 @@ const Settings = () => {
                           type="time"
                           value={blockForm.endTime}
                           onChange={(e) => setBlockForm((f) => ({ ...f, endTime: e.target.value }))}
-                          style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #0a0a0a' }}
+                          style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--card-outline)' }}
                         />
                       </div>
                     </div>
@@ -665,7 +665,7 @@ const Settings = () => {
                     placeholder="Motivo (opcional)"
                     value={blockForm.reason}
                     onChange={(e) => setBlockForm((f) => ({ ...f, reason: e.target.value }))}
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #0a0a0a', marginBottom: '10px' }}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--card-outline)', marginBottom: '10px' }}
                   />
                   <button
                     type="button"
@@ -674,7 +674,7 @@ const Settings = () => {
                     style={{
                       padding: '12px 18px',
                       borderRadius: '9999px',
-                      border: '1px solid #0a0a0a',
+                      border: '1px solid var(--card-outline)',
                       background: 'var(--accent-color)',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -700,7 +700,7 @@ const Settings = () => {
                  </div>
               </div>
               {/* Status Toggle */}
-              <div className="settings-barber-status-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', background: 'var(--panel-bg)', borderRadius: '16px', border: '1px solid #0a0a0a', marginBottom: '3rem' }}>
+              <div className="settings-barber-status-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', background: 'var(--panel-bg)', borderRadius: '16px', border: '1px solid var(--card-outline)', marginBottom: '3rem' }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Status do Profissional</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{newBarber.status === 'Ativo' ? 'Disponível para novos agendamentos' : 'Temporariamente indisponível'}</div>
@@ -716,7 +716,7 @@ const Settings = () => {
               <div className="settings-barber-modal-footer" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', paddingTop: '1rem' }}>
                 <button 
                   onClick={closeBarberModal}
-                  style={{ padding: '18px', borderRadius: '9999px', border: '1px solid #0a0a0a', background: '#fff', color: '#000', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                  style={{ padding: '18px', borderRadius: '9999px', border: '1px solid var(--card-outline)', background: '#fff', color: '#000', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
                   onMouseEnter={e => e.currentTarget.style.background = 'var(--panel-bg)'}
                   onMouseLeave={e => e.currentTarget.style.background = '#fff'}
                 >
@@ -724,7 +724,7 @@ const Settings = () => {
                 </button>
                 <button 
                   onClick={handleAddBarber}
-                  style={{ padding: '18px', borderRadius: '9999px', border: '1px solid #0a0a0a', background: 'var(--accent-color)', color: 'var(--accent-text)', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  style={{ padding: '18px', borderRadius: '9999px', border: '1px solid var(--card-outline)', background: 'var(--accent-color)', color: 'var(--accent-text)', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                   onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
                   onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                 >
