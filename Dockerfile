@@ -21,6 +21,7 @@ ARG RAILWAY_GIT_COMMIT_SHA=unknown
 RUN apk add --no-cache openssl
 WORKDIR /app
 ENV NODE_ENV=production
+ENV SERVE_SPA=true
 ENV APP_GIT_SHA=$RAILWAY_GIT_COMMIT_SHA
 
 COPY --from=build /app/dist ./dist

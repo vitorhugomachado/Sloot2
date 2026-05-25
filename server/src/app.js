@@ -43,12 +43,20 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    gitSha: process.env.APP_GIT_SHA || process.env.RAILWAY_GIT_COMMIT_SHA || null,
+    gitSha:
+      process.env.APP_GIT_SHA ||
+      process.env.VERCEL_GIT_COMMIT_SHA ||
+      process.env.RAILWAY_GIT_COMMIT_SHA ||
+      null,
   });
 });
 
-// Serve static files from the React app in production
-if (process.env.NODE_ENV === 'production') {
+// Railway/Docker: SERVE_SPA=true. Vercel serve o dist/ via CDN — só API aqui.
+const serveSpa =
+  process.env.SERVE_SPA === 'true' ||
+  (process.env.NODE_ENV === 'production' && !process.env.VERCEL);
+
+if (serveSpa) {
   const distDir = path.join(__dirname, '../../dist');
   const indexHtml = path.resolve(distDir, 'index.html');
 

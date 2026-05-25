@@ -1,5 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient();
+const globalForPrisma = globalThis;
 
-module.exports = prisma;
+if (!globalForPrisma.__slootPrisma) {
+  globalForPrisma.__slootPrisma = new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  });
+}
+
+module.exports = globalForPrisma.__slootPrisma;

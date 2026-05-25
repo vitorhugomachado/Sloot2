@@ -1,0 +1,19 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run vercel-build",
+  "installCommand": "npm install && cd server && npm install",
+  "outputDirectory": "dist",
+  "framework": null,
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api" },
+    { "source": "/health", "destination": "/api" },
+    { "source": "/((?!api)(?!health)(?!assets)(?!.*\\..*).*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/index.cjs": {
+      "memory": 1024,
+      "maxDuration": 30,
+      "includeFiles": "server/**"
+    }
+  }
+}
