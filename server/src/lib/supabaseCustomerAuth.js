@@ -29,23 +29,29 @@ async function findAuthUserByEmail(admin, email) {
 }
 
 /**
- * Garante utilizador no Supabase Auth (necessário para resetPasswordForEmail).
+ * Garante utilizador no Supabase Auth com identidade de e-mail (necessário para resetPasswordForEmail).
+ * Clientes que entraram só com Google no app muitas vezes não tinham utilizador Auth — ou só OAuth no Supabase.
  */
 async function ensureSupabaseAuthUser(email, metadata = {}) {
   const admin = getSupabaseAdmin();
   if (!admin) return null;
 
-  const existing = await findAuthUserByEmail(admin, email);
+  const normalized = String(email).trim().toLowerCase();
+  const tempPassword = crypto.randomBytes(24).toString('base64url');
+
+  let existing = await findAuthUserByEmail(admin, normalized);
   if (existing) {
-    await admin.auth.admin.updateUserById(existing.id, {
+    const { error } = await admin.auth.admin.updateUserById(existing.id, {
+      email_confirm: true,
+      password: tempPassword,
       user_metadata: { ...existing.user_metadata, ...metadata },
     });
+    if (error) throw error;
     return existing;
   }
 
-  const tempPassword = crypto.randomBytes(24).toString('base64url');
   const { data, error } = await admin.auth.admin.createUser({
-    email,
+    email: normalized,
     password: tempPassword,
     email_confirm: true,
     user_metadata: metadata,
@@ -53,7 +59,16 @@ async function ensureSupabaseAuthUser(email, metadata = {}) {
 
   if (error) {
     if (isDuplicateAuthUserError(error)) {
-      return findAuthUserByEmail(admin, email);
+      existing = await findAuthUserByEmail(admin, normalized);
+      if (existing) {
+        const { error: updateErr } = await admin.auth.admin.updateUserById(existing.id, {
+          email_confirm: true,
+          password: tempPassword,
+          user_metadata: { ...existing.user_metadata, ...metadata },
+        });
+        if (updateErr) throw updateErr;
+        return existing;
+      }
     }
     throw error;
   }

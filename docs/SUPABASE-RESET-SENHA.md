@@ -69,11 +69,13 @@ O e-mail **só é enviado** se existir cliente com esse e-mail **nesta barbearia
 5. **Limite do plano gratuito** — poucos e-mails por hora; espera ou configura SMTP em **Project Settings → Auth → SMTP**.
 6. Usa o **mesmo e-mail** com que te registaste na barbearia (login no agendamento).
 
-## 5. Contas antigas
+## 5. Contas antigas e login Google
 
 Clientes criados **antes** desta funcionalidade recebem um utilizador no Supabase Auth no primeiro “esqueci a senha” (se o e-mail existir na barbearia).
 
 Novos cadastros já sincronizam o Auth no registo.
+
+Quem entrou só com **Entrar com Google** passa a ser sincronizado no Supabase Auth no login e no “esqueci a senha” (identidade de e-mail para o link de recuperação). Clientes Google antigos: pedir recuperação outra vez após deploy.
 
 ## 6. Verificar no DevTools
 

@@ -165,6 +165,18 @@ const googleLogin = async (req, res) => {
       });
     }
 
+    if (isSupabaseAuthConfigured()) {
+      try {
+        await ensureSupabaseAuthUser(email, {
+          tenant_id: tenantId,
+          customer_id: customer.id,
+          auth_provider: 'google',
+        });
+      } catch (syncErr) {
+        console.error('Supabase Auth sync on Google login:', syncErr);
+      }
+    }
+
     const token = generateToken(customerTokenPayload(customer));
     const { password: _, ...customerData } = customer;
     return res.json({ token, user: customerData });
