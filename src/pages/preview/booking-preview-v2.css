@@ -411,10 +411,6 @@
   color: #000000;
 }
 
-.bp-pro-card--selected .bp-pro-card__role {
-  color: #1a1a1a;
-}
-
 .bp-pro-card--selected .bp-pro-card__avatar {
   border-color: var(--bp-primary);
   background: var(--bp-primary-muted);
@@ -455,11 +451,6 @@
   font-weight: 700;
   font-size: 0.95rem;
   color: var(--bp-text);
-}
-
-.bp-pro-card__role {
-  font-size: 0.8rem;
-  color: var(--bp-text-muted);
 }
 
 .bp-btn-select {

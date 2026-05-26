@@ -324,22 +324,6 @@
     font-size: 0.88rem;
     font-weight: 700;
     color: #1A1A1A;
-    margin-bottom: 0.25rem;
-  }
-
-  .bp-desk-pro-card__rating {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.2rem;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 0.15rem;
-  }
-
-  .bp-desk-pro-card__role {
-    font-size: 0.72rem;
-    color: #9ca3af;
   }
 
   /* Data */

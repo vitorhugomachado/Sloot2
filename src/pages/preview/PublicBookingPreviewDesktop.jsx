@@ -7,7 +7,6 @@ import {
   Scissors,
   ShieldCheck,
   Sparkles,
-  Star,
   User,
 } from 'lucide-react';
 import BookingPreviewStepper from './BookingPreviewStepper';
@@ -224,11 +223,6 @@ export default function PublicBookingPreviewDesktop({ flow, previewBanner, login
                           )}
                         </span>
                         <span className="bp-desk-pro-card__name">{b.name}</span>
-                        <span className="bp-desk-pro-card__rating">
-                          <Star size={14} fill="#facc15" color="#facc15" aria-hidden />
-                          4,9 (120)
-                        </span>
-                        <span className="bp-desk-pro-card__role">Especialista</span>
                       </button>
                     );
                   })}

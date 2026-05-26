@@ -35,7 +35,6 @@ export default function BookingPreviewBarberStep({
               </div>
               <div className="bp-pro-card__body">
                 <span className="bp-pro-card__name">{b.name}</span>
-                <span className="bp-pro-card__role">{b.role || 'Barbeiro'}</span>
               </div>
               <button
                 type="button"
