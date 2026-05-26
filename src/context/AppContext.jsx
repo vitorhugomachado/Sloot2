@@ -87,7 +87,10 @@ export const AppProvider = ({ children }) => {
     [token, customerToken, tenantSlug, tenant?.id],
   );
 
-  const apiFetch = async (url, options = {}) => {
+  const staffLogoutRef = useRef(() => {});
+  const customerLogoutRef = useRef(() => {});
+
+  const apiFetch = useCallback(async (url, options = {}) => {
     const headers = {
       'Content-Type': 'application/json',
       ...tenantHeaders,
@@ -106,15 +109,15 @@ export const AppProvider = ({ children }) => {
 
     if (!options.skipLogout) {
       if (res.status === 401) {
-        if (authScope === 'customer' && activeToken) customerLogout();
-        if (authScope === 'staff' && activeToken) logout();
+        if (authScope === 'customer' && activeToken) customerLogoutRef.current();
+        if (authScope === 'staff' && activeToken) staffLogoutRef.current();
       }
       if (res.status === 403 && authScope === 'staff' && activeToken) {
-        logout();
+        staffLogoutRef.current();
       }
     }
     return res;
-  };
+  }, [tenantHeaders, resolveAuthToken]);
 
   const applyBootstrapData = useCallback((data) => {
     if (!data || typeof data !== 'object') return;
@@ -513,6 +516,9 @@ export const AppProvider = ({ children }) => {
     setCurrentUser(null);
     void loadPublicBootstrap();
   };
+
+  staffLogoutRef.current = logout;
+  customerLogoutRef.current = customerLogout;
 
   const updateBusinessInfo = async (newData) => {
     try {
@@ -1080,7 +1086,7 @@ export const AppProvider = ({ children }) => {
       sellProduct, updateBusinessInfo,
       getFinancialStats, getBarberRanking,
       addExpense, removeExpense, updateExpense, refreshMonthClosings, createMonthClosing, refreshPeriodClosings, createPeriodClosing,
-      login, logout, currentUser, token, loading, bootstrapLoading, staffLoading,
+      login, logout, currentUser, token, apiFetch, loading, bootstrapLoading, staffLoading,
       currentCustomer, isCustomerAuthenticated: customerSessionActive, customerLogin, customerGoogleLogin, customerRegister, customerLogout, refreshCurrentCustomer, syncNavigatedCustomer,
       getCustomerAppointments, updateCustomerProfile,
       customerUpdateAppointmentStatus, customerCancelAppointment,

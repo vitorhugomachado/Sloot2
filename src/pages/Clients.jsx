@@ -128,7 +128,7 @@ const ClientMobileCard = ({ client, onOpenProfile }) => {
 };
 
 const Clients = () => {
-  const { token } = useApp();
+  const { token, apiFetch } = useApp();
   const { slug } = useTenant();
   const navigate = useNavigate();
 
@@ -161,11 +161,6 @@ const Clients = () => {
   const debouncedSearch = useDebounce(searchTerm, 300);
   const fetchSeqRef = useRef(0);
 
-  const authHeaders = useMemo(() => ({
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
-  }), [token]);
-
   const fetchClients = useCallback(async () => {
     if (!token) return;
     const seq = ++fetchSeqRef.current;
@@ -179,7 +174,7 @@ const Clients = () => {
       if (status && status !== 'todos') params.set('status', status);
       if (tagFilter) params.set('tag', tagFilter);
 
-      const res = await fetch(`${API_URL}/clients?${params.toString()}`, { headers: authHeaders });
+      const res = await apiFetch(`${API_URL}/clients?${params.toString()}`, { authScope: 'staff' });
       if (!res.ok) throw new Error((await res.json()).message || 'Erro ao carregar clientes');
       const data = await res.json();
       if (seq !== fetchSeqRef.current) return;
@@ -191,20 +186,20 @@ const Clients = () => {
     } finally {
       if (seq === fetchSeqRef.current) setLoading(false);
     }
-  }, [authHeaders, debouncedSearch, page, status, tagFilter, token]);
+  }, [debouncedSearch, page, status, tagFilter, token, slug]);
 
   const fetchStats = useCallback(async () => {
     if (!token) return;
     setStatsLoading(true);
     try {
-      const res = await fetch(`${API_URL}/clients/stats`, { headers: authHeaders });
+      const res = await apiFetch(`${API_URL}/clients/stats`, { authScope: 'staff' });
       if (res.ok) setStats(await res.json());
     } catch (err) {
       console.error('Erro stats:', err);
     } finally {
       setStatsLoading(false);
     }
-  }, [authHeaders, token]);
+  }, [token, slug]);
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
   useEffect(() => { fetchStats(); }, [fetchStats]);
@@ -247,10 +242,10 @@ const Clients = () => {
   const submitForm = async (payload) => {
     const isEdit = formMode === 'edit' && formInitial?.source === 'customer';
     const url = isEdit ? `${API_URL}/clients/${formInitial.id}` : `${API_URL}/clients`;
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method: isEdit ? 'PATCH' : 'POST',
-      headers: authHeaders,
-      body: JSON.stringify(payload)
+      authScope: 'staff',
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       const err = await res.json();
@@ -271,7 +266,7 @@ const Clients = () => {
       const params = new URLSearchParams();
       if (client.source === 'guest' && client.guestKey) params.set('guestKey', client.guestKey);
       const id = client.source === 'customer' ? client.id : 'guest';
-      const res = await fetch(`${API_URL}/clients/${id}?${params.toString()}`, { headers: authHeaders });
+      const res = await apiFetch(`${API_URL}/clients/${id}?${params.toString()}`, { authScope: 'staff' });
       if (res.ok) {
         const data = await res.json();
         setActiveProfile((prev) => prev ? { ...prev, ...data } : data);
@@ -288,10 +283,10 @@ const Clients = () => {
     if (!activeProfile || activeProfile.source !== 'customer') return;
     setSavingProfile(true);
     try {
-      const res = await fetch(`${API_URL}/clients/${activeProfile.id}`, {
+      const res = await apiFetch(`${API_URL}/clients/${activeProfile.id}`, {
         method: 'PATCH',
-        headers: authHeaders,
-        body: JSON.stringify({ notes, tags })
+        authScope: 'staff',
+        body: JSON.stringify({ notes, tags }),
       });
       if (res.ok) {
         const updated = await res.json();
@@ -306,9 +301,9 @@ const Clients = () => {
   const handleProfileDelete = async (client) => {
     if (!client || client.source !== 'customer') return;
     if (!window.confirm(`Excluir o cliente ${client.name}? Os agendamentos serão preservados, mas o vínculo será removido.`)) return;
-    const res = await fetch(`${API_URL}/clients/${client.id}`, {
+    const res = await apiFetch(`${API_URL}/clients/${client.id}`, {
       method: 'DELETE',
-      headers: authHeaders
+      authScope: 'staff',
     });
     if (res.ok) {
       setActiveProfile(null);
@@ -321,10 +316,10 @@ const Clients = () => {
   const handlePromote = async (client) => {
     if (!client || client.source !== 'guest') return;
     if (!window.confirm(`Cadastrar ${client.name} (${formatPhone(client.phone)}) como cliente oficial?`)) return;
-    const res = await fetch(`${API_URL}/clients/promote`, {
+    const res = await apiFetch(`${API_URL}/clients/promote`, {
       method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify({ name: client.name, phone: client.phone, email: client.email })
+      authScope: 'staff',
+      body: JSON.stringify({ name: client.name, phone: client.phone, email: client.email }),
     });
     if (res.ok) {
       const data = await res.json();
@@ -351,7 +346,7 @@ const Clients = () => {
   const handleExport = () => {
     if (!token) return;
     const url = `${API_URL}/clients/export`;
-    fetch(url, { headers: authHeaders })
+    apiFetch(url, { authScope: 'staff' })
       .then((r) => r.blob())
       .then((blob) => {
         const link = document.createElement('a');

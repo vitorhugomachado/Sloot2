@@ -2,6 +2,7 @@
 import { Users, Calendar, Clock, X, ShoppingBag, Plus, ChevronLeft, ChevronRight, LayoutGrid, Play, CheckCircle, XCircle, Banknote } from 'lucide-react';
 import WhatsAppIcon from '../components/icons/WhatsAppIcon';
 import { useApp } from '../context/AppContext';
+import { useTenant } from '../context/TenantContext';
 import { API_URL } from '../config/apiUrl';
 
 const EMPTY_DIRECT_SALE = {
@@ -78,9 +79,10 @@ const Dashboard = () => {
   const {
     barbers, appointments, services, products,
     addAppointment, sellProduct, getFinancialStats, getBarberRanking,
-    updateAppointmentStatus, cancelAppointment, currentUser, token
+    updateAppointmentStatus, cancelAppointment, currentUser, token, apiFetch
   } = useApp();
-  
+  const { slug } = useTenant();
+
   const todayStr = new Date().toISOString().split('T')[0];
   const [focusDate, setFocusDate] = useState(todayStr);
   const [performancePeriodDays, setPerformancePeriodDays] = useState(7);
@@ -178,9 +180,7 @@ const Dashboard = () => {
     if (!isSaleModalOpen || !token) return;
     let cancelled = false;
     setSaleClientsLoading(true);
-    fetch(`${API_URL}/clients?pageSize=100`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch(`${API_URL}/clients?pageSize=100`, { authScope: 'staff' })
       .then((res) => (res.ok ? res.json() : { items: [] }))
       .then((body) => {
         if (!cancelled) setSaleClients(Array.isArray(body.items) ? body.items : []);
@@ -194,7 +194,7 @@ const Dashboard = () => {
     return () => {
       cancelled = true;
     };
-  }, [isSaleModalOpen, token]);
+  }, [isSaleModalOpen, token, slug, apiFetch]);
 
   const saleLineItems = useMemo(
     () =>
