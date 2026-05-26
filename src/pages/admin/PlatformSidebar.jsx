@@ -42,24 +42,14 @@ export default function PlatformSidebar({ isCollapsed, setIsCollapsed, onLogout 
     >
       <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '1.5rem' }}>
         <SlootiLogo size="lg" variant={isCollapsed ? 'mark' : 'full'} />
-        <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-          <button
-            type="button"
-            className="sidebar-toggle-btn sidebar-toggle-btn--bars desktop-only"
-            onClick={handleToggleClick}
-            aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
-          >
-            <Menu size={22} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
-          </button>
-          <button
-            type="button"
-            className="sidebar-toggle-btn sidebar-toggle-btn--bars mobile-only"
-            onClick={() => setIsCollapsed(true)}
-            aria-label="Fechar menu"
-          >
-            <Menu size={22} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
-          </button>
-        </div>
+        <button
+          type="button"
+          className="sidebar-toggle-btn sidebar-toggle-btn--bars"
+          onClick={handleToggleClick}
+          aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
+        >
+          <Menu size={22} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
+        </button>
       </div>
 
       <p className={`platform-sidebar-subtitle ${isCollapsed ? 'platform-sidebar-subtitle--hidden' : ''}`}>

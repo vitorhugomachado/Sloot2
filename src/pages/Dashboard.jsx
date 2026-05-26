@@ -2,11 +2,8 @@
 import { Users, Calendar, Clock, X, ShoppingBag, Plus, ChevronLeft, ChevronRight, LayoutGrid, Play, CheckCircle, XCircle, Banknote } from 'lucide-react';
 import WhatsAppIcon from '../components/icons/WhatsAppIcon';
 import { useApp } from '../context/AppContext';
-import { useTenant } from '../context/TenantContext';
-import { API_URL } from '../config/apiUrl';
 
 const EMPTY_DIRECT_SALE = {
-  customerId: '',
   customerName: '',
   barberId: '',
   items: [{ productId: '', quantity: 1 }],
@@ -93,9 +90,8 @@ const Dashboard = () => {
   const {
     barbers, appointments, services, products,
     addAppointment, sellProduct, getFinancialStats, getBarberRanking,
-    updateAppointmentStatus, cancelAppointment, currentUser, token, apiFetch
+    updateAppointmentStatus, cancelAppointment, currentUser
   } = useApp();
-  const { slug } = useTenant();
 
   const todayStr = toIsoLocal(new Date());
   const [focusDate, setFocusDate] = useState(todayStr);
@@ -130,8 +126,6 @@ const Dashboard = () => {
     customer: '', phone: '', serviceId: '', barberId: '', time: '09:00', date: focusDate
   });
   const [saleForm, setSaleForm] = useState(EMPTY_DIRECT_SALE);
-  const [saleClients, setSaleClients] = useState([]);
-  const [saleClientsLoading, setSaleClientsLoading] = useState(false);
 
   const activeBarbers = useMemo(
     () => barbers.filter(b => b.role === 'Barbeiro' && b.status === 'Ativo'),
@@ -195,26 +189,6 @@ const Dashboard = () => {
       : 0;
     return { rate, cancelledCount, total: periodApps.length };
   }, [appointments, dashboardPeriodDates.start, dashboardPeriodDates.end]);
-
-  useEffect(() => {
-    if (!isSaleModalOpen || !token) return;
-    let cancelled = false;
-    setSaleClientsLoading(true);
-    apiFetch(`${API_URL}/clients?pageSize=100`, { authScope: 'staff' })
-      .then((res) => (res.ok ? res.json() : { items: [] }))
-      .then((body) => {
-        if (!cancelled) setSaleClients(Array.isArray(body.items) ? body.items : []);
-      })
-      .catch(() => {
-        if (!cancelled) setSaleClients([]);
-      })
-      .finally(() => {
-        if (!cancelled) setSaleClientsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [isSaleModalOpen, token, slug, apiFetch]);
 
   const saleLineItems = useMemo(
     () =>
@@ -280,11 +254,8 @@ const Dashboard = () => {
 
     const barberId = saleForm.barberId ? parseInt(saleForm.barberId, 10) : null;
     const saleMeta = {
-      customerId: saleForm.customerId ? Number(saleForm.customerId) : null,
-      customerName:
-        !saleForm.customerId && saleForm.customerName.trim()
-          ? saleForm.customerName.trim()
-          : null,
+      customerId: null,
+      customerName: saleForm.customerName.trim() ? saleForm.customerName.trim() : null,
     };
 
     for (const item of saleLineItems) {
@@ -1243,39 +1214,14 @@ const Dashboard = () => {
               <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
                 Cliente (opcional)
               </label>
-              <select
+              <input
+                type="text"
                 className="booking-reserve-form__field"
-                value={saleForm.customerId}
-                onChange={(e) =>
-                  setSaleForm((prev) => ({
-                    ...prev,
-                    customerId: e.target.value,
-                    customerName: e.target.value ? '' : prev.customerName,
-                  }))
-                }
-                disabled={saleClientsLoading}
-              >
-                <option value="">Sem cliente / avulso</option>
-                {saleClients
-                  .filter((c) => c.id)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                      {c.phone ? ` — ${c.phone}` : ''}
-                    </option>
-                  ))}
-              </select>
-
-              {!saleForm.customerId && (
-                <input
-                  type="text"
-                  className="booking-reserve-form__field"
-                  placeholder="Nome do cliente (opcional)"
-                  autoComplete="name"
-                  value={saleForm.customerName}
-                  onChange={(e) => setSaleForm((prev) => ({ ...prev, customerName: e.target.value }))}
-                />
-              )}
+                placeholder="Nome do cliente (opcional)"
+                autoComplete="name"
+                value={saleForm.customerName}
+                onChange={(e) => setSaleForm((prev) => ({ ...prev, customerName: e.target.value }))}
+              />
 
               <select
                 className="booking-reserve-form__field"

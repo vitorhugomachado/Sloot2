@@ -56,26 +56,16 @@ const Sidebar = ({ activeTab, setActiveTab, user, isCollapsed, setIsCollapsed, o
         </div>
         
         {/* Toggle Controls */}
-        <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-          <button
-            type="button"
-            className="sidebar-toggle-btn sidebar-toggle-btn--bars desktop-only"
-            onClick={handleToggleClick}
-            title={isCollapsed ? "Expandir menu" : "Recolher menu"}
-            aria-expanded={!isCollapsed}
-            aria-label={isCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
-          >
-            <Menu size={22} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
-          </button>
-          <button
-            type="button"
-            className="sidebar-toggle-btn sidebar-toggle-btn--bars mobile-only"
-            onClick={() => setIsCollapsed(true)}
-            aria-label="Fechar menu"
-          >
-            <Menu size={22} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
-          </button>
-        </div>
+        <button
+          type="button"
+          className="sidebar-toggle-btn sidebar-toggle-btn--bars"
+          onClick={handleToggleClick}
+          title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
+          aria-expanded={!isCollapsed}
+          aria-label={isCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
+        >
+          <Menu size={22} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
+        </button>
       </div>
 
       <nav style={{ flex: 1 }}>
