@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { Store, LogOut, Menu, X } from 'lucide-react';
+import { Store, LogOut, Menu } from 'lucide-react';
 import SlootiLogo from '../../components/SlootiLogo';
 
 const SIDEBAR_LEAVE_MS = 110;
@@ -51,8 +51,13 @@ export default function PlatformSidebar({ isCollapsed, setIsCollapsed, onLogout 
           >
             <Menu size={22} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
           </button>
-          <button type="button" className="sidebar-toggle-btn mobile-only" onClick={() => setIsCollapsed(true)} aria-label="Fechar menu">
-            <X size={20} />
+          <button
+            type="button"
+            className="sidebar-toggle-btn sidebar-toggle-btn--bars mobile-only"
+            onClick={() => setIsCollapsed(true)}
+            aria-label="Fechar menu"
+          >
+            <Menu size={22} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
           </button>
         </div>
       </div>

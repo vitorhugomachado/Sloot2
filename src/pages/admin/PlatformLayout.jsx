@@ -18,7 +18,7 @@ export default function PlatformLayout({ children, onLogout }) {
         >
           <Menu size={24} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
         </button>
-        <SlootiLogo size="md" />
+        <SlootiLogo size="md" onDark={false} />
         <button
           type="button"
           className="sidebar-toggle-btn mobile-header-logout"

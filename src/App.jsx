@@ -275,7 +275,7 @@ const StaffArea = () => {
             <Menu size={24} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
           </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <SlootiLogo size="md" />
+            <SlootiLogo size="md" onDark={false} />
           </div>
           <button
             type="button"

@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { LayoutDashboard, Calendar, Users, Settings, DollarSign, Shield, Menu, X, Package, LogOut } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, Settings, DollarSign, Shield, Menu, Package, LogOut } from 'lucide-react';
 import SlootiLogo from './SlootiLogo';
 
 const SIDEBAR_LEAVE_MS = 110;
@@ -67,8 +67,13 @@ const Sidebar = ({ activeTab, setActiveTab, user, isCollapsed, setIsCollapsed, o
           >
             <Menu size={22} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
           </button>
-          <button type="button" className="sidebar-toggle-btn mobile-only" onClick={() => setIsCollapsed(true)} aria-label="Fechar menu">
-            <X size={20} />
+          <button
+            type="button"
+            className="sidebar-toggle-btn sidebar-toggle-btn--bars mobile-only"
+            onClick={() => setIsCollapsed(true)}
+            aria-label="Fechar menu"
+          >
+            <Menu size={22} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
           </button>
         </div>
       </div>

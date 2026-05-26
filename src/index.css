@@ -2746,9 +2746,9 @@ button {
   transform: scale(0.94);
 }
 
-/* Três barras horizontais pretas (ícone menu); claro no tema escuro */
+/* Ícone menu (3 barras) — escuro no header claro; branco no sidebar preto */
 .sidebar-toggle-btn--bars {
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .sidebar-toggle-btn--bars svg,
@@ -2758,6 +2758,13 @@ button {
   color: inherit;
   display: block;
   flex-shrink: 0;
+}
+
+.sidebar .sidebar-toggle-btn--bars,
+.sidebar .sidebar-toggle-btn--bars svg,
+.sidebar .sidebar-toggle-btn--bars .sidebar-menu-icon {
+  color: var(--sidebar-text);
+  stroke: var(--sidebar-text);
 }
 
 .sidebar-toggle-btn--bars svg.sidebar-menu-icon {
@@ -4152,6 +4159,14 @@ button {
     display: none !important;
   }
 
+  .sidebar .sidebar-toggle-btn,
+  .sidebar .sidebar-toggle-btn--bars,
+  .sidebar .sidebar-toggle-btn svg,
+  .sidebar .sidebar-toggle-btn .sidebar-menu-icon {
+    color: var(--sidebar-text) !important;
+    stroke: var(--sidebar-text) !important;
+  }
+
   /* Mobile: cards e modais brancos sólidos (evita vidro/cinza translúcido) */
   .glass-card,
   .modal-glass-panel {
@@ -4230,10 +4245,29 @@ button {
 
 .mobile-header .sidebar-toggle-btn {
   background: transparent;
+  color: var(--text-primary);
+}
+
+.mobile-header .sidebar-toggle-btn--bars,
+.mobile-header .sidebar-toggle-btn--bars svg,
+.mobile-header .sidebar-toggle-btn--bars .sidebar-menu-icon {
+  color: var(--text-primary);
+  stroke: var(--text-primary);
 }
 
 .mobile-header .sidebar-toggle-btn:hover {
   background: var(--icon-hover);
+}
+
+.mobile-header .slooti-logo,
+.mobile-header .slooti-logo--on-light {
+  color: var(--text-primary);
+}
+
+.mobile-header .slooti-logo__i-stem,
+.mobile-header .slooti-logo--on-light .slooti-logo__i-stem,
+.mobile-header .slooti-logo__mark-char {
+  color: var(--text-primary);
 }
 
 @media (max-width: 768px) {
