@@ -3,7 +3,7 @@ import { ChevronRight } from 'lucide-react';
 
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
-const OccupancyGauge = ({ value = 0, stagger = 2 }) => {
+const OccupancyGauge = ({ value = 0, label = 'Ocupação', subtitle, stagger = 2 }) => {
   const safeValue = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
 
   const [animatedPct, setAnimatedPct] = useState(0);
@@ -40,13 +40,14 @@ const OccupancyGauge = ({ value = 0, stagger = 2 }) => {
   return (
     <div className={`dash-gauge-card stagger-${stagger}`}>
       <div className="dash-kpi-top">
-        <span className="dash-kpi-label">Ocupação</span>
+        <span className="dash-kpi-label">{label}</span>
         <div className="dash-kpi-arrow"><ChevronRight size={14} /></div>
       </div>
 
       <div className="dash-kpi-main dash-occ-layout">
         <div className="dash-kpi-data">
           <div className="dash-kpi-value">{Math.round(displayValue)}%</div>
+          {subtitle && <div className="dash-kpi-subtitle">{subtitle}</div>}
           <div className="dash-occ-bar-track" role="progressbar" aria-valuenow={Math.round(displayValue)} aria-valuemin={0} aria-valuemax={100} aria-label="Taxa de ocupação">
             <div
               className="dash-occ-bar-fill"

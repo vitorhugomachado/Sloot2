@@ -13,11 +13,12 @@ const EMPTY_DIRECT_SALE = {
 };
 import { filterAvailableBookingTimes, isBookingSlotTaken } from '../utils/bookingAvailability';
 import { toIsoLocal } from '../utils/dateLocal';
+import { computeOccupancyForPeriod } from '../utils/occupancyStats';
 import OccupancyGauge from '../components/OccupancyGauge';
 import DashUpcomingEmpty from '../components/dashboard/DashUpcomingEmpty';
 
 /* ─────────── KPI Card ─────────── */
-const KpiCard = ({ label, value, stagger }) => (
+const KpiCard = ({ label, value, subtitle, stagger }) => (
   <div className={`dash-kpi-card stagger-${stagger}`}>
     <div className="dash-kpi-top">
       <span className="dash-kpi-label">{label}</span>
@@ -26,6 +27,7 @@ const KpiCard = ({ label, value, stagger }) => (
     <div className="dash-kpi-main">
       <div className="dash-kpi-data">
         <div className="dash-kpi-value">{value}</div>
+        {subtitle && <div className="dash-kpi-subtitle">{subtitle}</div>}
       </div>
     </div>
   </div>
@@ -73,7 +75,18 @@ const MiniCalendar = ({ focusDate, onDateSelect }) => {
 };
 
 const DASHBOARD_TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
-const KPI_PERIOD_DAYS = 7;
+
+const PERIOD_OPTIONS = [
+  { d: 0, l: 'Hoje' },
+  { d: 7, l: '7 dias' },
+  { d: 15, l: '15 dias' },
+  { d: 30, l: '30 dias' },
+];
+
+const getPeriodLabel = (days) => {
+  const match = PERIOD_OPTIONS.find((p) => p.d === days);
+  return match ? match.l : `${days} dias`;
+};
 
 /* ─────────── Main Dashboard ─────────── */
 const Dashboard = () => {
@@ -86,31 +99,23 @@ const Dashboard = () => {
 
   const todayStr = toIsoLocal(new Date());
   const [focusDate, setFocusDate] = useState(todayStr);
-  const [performancePeriodDays, setPerformancePeriodDays] = useState(7);
+  const [dashboardPeriodDays, setDashboardPeriodDays] = useState(7);
   const isBarber = currentUser?.role === 'Barbeiro';
 
-  const kpiPeriodDates = useMemo(() => {
-    const end = new Date(todayStr);
-    const start = new Date(todayStr);
-    start.setDate(start.getDate() - Math.max(KPI_PERIOD_DAYS - 1, 0));
-    return {
-      start: toIsoLocal(start),
-      end: toIsoLocal(end)
-    };
-  }, [todayStr]);
-
-  const performancePeriodDates = useMemo(() => {
-    if (performancePeriodDays === 0) {
+  const dashboardPeriodDates = useMemo(() => {
+    if (dashboardPeriodDays === 0) {
       return { start: todayStr, end: todayStr };
     }
     const end = new Date(todayStr);
     const start = new Date(todayStr);
-    start.setDate(start.getDate() - Math.max(performancePeriodDays - 1, 0));
+    start.setDate(start.getDate() - Math.max(dashboardPeriodDays - 1, 0));
     return {
       start: toIsoLocal(start),
       end: toIsoLocal(end)
     };
-  }, [todayStr, performancePeriodDays]);
+  }, [todayStr, dashboardPeriodDays]);
+
+  const periodLabel = getPeriodLabel(dashboardPeriodDays);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
@@ -133,12 +138,12 @@ const Dashboard = () => {
     [barbers]
   );
   const stats = useMemo(
-    () => getFinancialStats(kpiPeriodDates.start, kpiPeriodDates.end),
-    [getFinancialStats, kpiPeriodDates.start, kpiPeriodDates.end]
+    () => getFinancialStats(dashboardPeriodDates.start, dashboardPeriodDates.end),
+    [getFinancialStats, dashboardPeriodDates.start, dashboardPeriodDates.end]
   );
   const ranking = useMemo(
-    () => getBarberRanking(performancePeriodDates.start, performancePeriodDates.end),
-    [getBarberRanking, performancePeriodDates.start, performancePeriodDates.end]
+    () => getBarberRanking(dashboardPeriodDates.start, dashboardPeriodDates.end),
+    [getBarberRanking, dashboardPeriodDates.start, dashboardPeriodDates.end]
   );
 
   // Recent activity — already filtered by backend for barbers
@@ -161,21 +166,35 @@ const Dashboard = () => {
       .slice(0, 50);
   }, [appointments, focusDate]);
 
-  // Stats
-  const totalAppointments = appointments.filter(a => a.date >= kpiPeriodDates.start && a.date <= kpiPeriodDates.end).length;
-  const barberCount = isBarber ? 1 : activeBarbers.length;
-  const capacity = barberCount * 9 * KPI_PERIOD_DAYS || 1;
-  const occupancyRate = Math.min(100, Math.round((totalAppointments / capacity) * 100));
+  const occupancyBarbers = useMemo(() => {
+    if (isBarber) {
+      const self = activeBarbers.find((b) => b.id === currentUser.id);
+      return self ? [self] : [];
+    }
+    return activeBarbers;
+  }, [activeBarbers, isBarber, currentUser?.id]);
 
-  const cancelRate = useMemo(() => {
+  const occupancyStats = useMemo(
+    () =>
+      computeOccupancyForPeriod({
+        startDate: dashboardPeriodDates.start,
+        endDate: dashboardPeriodDates.end,
+        barbers: occupancyBarbers,
+        appointments,
+      }),
+    [dashboardPeriodDates.start, dashboardPeriodDates.end, occupancyBarbers, appointments]
+  );
+
+  const cancelStats = useMemo(() => {
     const periodApps = appointments.filter(
-      a => a.date >= kpiPeriodDates.start && a.date <= kpiPeriodDates.end
+      (a) => a.date >= dashboardPeriodDates.start && a.date <= dashboardPeriodDates.end
     );
-    const cancelledCount = periodApps.filter(a => a.status === 'Cancelado').length;
-    return periodApps.length > 0
+    const cancelledCount = periodApps.filter((a) => a.status === 'Cancelado').length;
+    const rate = periodApps.length > 0
       ? Math.round((cancelledCount / periodApps.length) * 100)
       : 0;
-  }, [appointments, kpiPeriodDates.start, kpiPeriodDates.end]);
+    return { rate, cancelledCount, total: periodApps.length };
+  }, [appointments, dashboardPeriodDates.start, dashboardPeriodDates.end]);
 
   useEffect(() => {
     if (!isSaleModalOpen || !token) return;
@@ -603,11 +622,52 @@ const Dashboard = () => {
       </div>
 
       {/* ═══════ KPI ROW ═══════ */}
-      <div className="dash-kpi-row">
-        <KpiCard label="Receita Total" value={`R$${stats.revenue.toLocaleString('pt-BR')}`} stagger={1} />
-        <OccupancyGauge value={occupancyRate} stagger={2} />
-        <KpiCard label="Taxa de Cancelamento" value={`${cancelRate}%`} stagger={3} />
-        <KpiCard label="Ticket Médio" value={`R$${stats.averageTicket.toFixed(0)}`} stagger={4} />
+      <div className="dash-kpi-section">
+        <div className="dash-kpi-section-header">
+          <span className="dash-kpi-section-title">Indicadores</span>
+          <div className="dash-toggle-group">
+            {PERIOD_OPTIONS.map((p) => (
+              <button
+                key={p.d}
+                type="button"
+                className={`dash-toggle-btn ${dashboardPeriodDays === p.d ? 'active' : ''}`}
+                onClick={() => setDashboardPeriodDays(p.d)}
+              >
+                {p.l}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="dash-kpi-row">
+          <KpiCard
+            label={isBarber ? 'Meu faturamento' : 'Faturamento'}
+            value={`R$${stats.revenue.toLocaleString('pt-BR')}`}
+            subtitle={`Serviços finalizados + produtos · ${periodLabel}`}
+            stagger={1}
+          />
+          <OccupancyGauge
+            value={occupancyStats.rate}
+            label={isBarber ? 'Minha ocupação' : 'Ocupação'}
+            subtitle={`${occupancyStats.occupied} de ${occupancyStats.capacity} vagas · ${periodLabel}`}
+            stagger={2}
+          />
+          <KpiCard
+            label="Taxa de Cancelamento"
+            value={`${cancelStats.rate}%`}
+            subtitle={
+              cancelStats.total > 0
+                ? `${cancelStats.cancelledCount} de ${cancelStats.total} agendamentos · ${periodLabel}`
+                : `Nenhum agendamento · ${periodLabel}`
+            }
+            stagger={3}
+          />
+          <KpiCard
+            label={isBarber ? 'Meu ticket médio' : 'Ticket Médio'}
+            value={`R$${stats.averageTicket.toFixed(0)}`}
+            subtitle={`Média por atendimento/venda finalizada · ${periodLabel}`}
+            stagger={4}
+          />
+        </div>
       </div>
 
       {/* ═══════ BOTTOM 3-COLUMN GRID ═══════ */}
@@ -617,13 +677,7 @@ const Dashboard = () => {
         <div className="dash-panel dash-panel-performance">
           <div className="dash-panel-header">
             <h3>{isBarber ? 'Minha Performance' : 'Performance por Profissional'}</h3>
-            <div className="dash-toggle-group">
-              {[{ d: 0, l: 'Hoje' }, { d: 7, l: '7 dias' }, { d: 15, l: '15 dias' }, { d: 30, l: '30 dias' }].map(p => (
-                <button key={p.d} className={`dash-toggle-btn ${performancePeriodDays === p.d ? 'active' : ''}`} onClick={() => setPerformancePeriodDays(p.d)}>
-                  {p.l}
-                </button>
-              ))}
-            </div>
+            <span className="dash-panel-period-label">{periodLabel}</span>
           </div>
           <div className="dash-panel-body">
             {ranking.length === 0 ? (
