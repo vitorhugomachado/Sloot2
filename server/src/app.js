@@ -5,6 +5,7 @@ const compression = require('compression');
 const apiRoutes = require('./routes/api');
 const { getDefaultTenantSlug } = require('./lib/tenantHelpers');
 const { resolveLegacyRedirect } = require('./lib/legacyRouteRedirects');
+const { isSupabaseAuthConfigured } = require('./lib/supabaseAdmin');
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.get('/health', (req, res) => {
     gitSha: process.env.APP_GIT_SHA || process.env.RAILWAY_GIT_COMMIT_SHA || null,
     dbConfigured: Boolean(process.env.DATABASE_URL?.trim()),
     dbHost: getDbHostHint(),
+    supabaseAuthConfigured: isSupabaseAuthConfigured(),
     runtime: process.env.RAILWAY_ENVIRONMENT ? 'railway' : 'node',
   });
 });

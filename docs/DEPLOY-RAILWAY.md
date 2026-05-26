@@ -34,6 +34,10 @@ FRONTEND_URL=https://TEU-DOMINIO.up.railway.app
 VITE_DEFAULT_TENANT_SLUG=two-brothers
 GOOGLE_CLIENT_ID=
 VITE_GOOGLE_CLIENT_ID=
+SUPABASE_URL=https://SEU_PROJECT_REF.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=
+VITE_SUPABASE_URL=https://SEU_PROJECT_REF.supabase.co
+VITE_SUPABASE_ANON_KEY=
 ```
 
 | Regra | Detalhe |
@@ -41,7 +45,8 @@ VITE_GOOGLE_CLIENT_ID=
 | `DATABASE_URL` / `DIRECT_URL` | **Sempre** referência `${{Postgres.DATABASE_URL}}` — nunca URL Supabase |
 | `PORT` | **Não definir** |
 | `VITE_API_URL` | **Não definir** |
-| `SUPABASE_*` / `VITE_SUPABASE_*` | **Não definir** (reset de senha por e-mail fica desactivado) |
+| `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` | **Backend** — recuperação de senha (ver [SUPABASE-RESET-SENHA.md](./SUPABASE-RESET-SENHA.md)) |
+| `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` | **Frontend** — página `/:slug/redefinir-senha` |
 | `VITE_*` | Entram no **build** Docker — após alterar, **Redeploy** |
 
 ## 3. Banco novo (primeira vez)
@@ -77,7 +82,7 @@ Substitui `TEU-DOMINIO`:
 
 | URL | Esperado |
 |-----|----------|
-| `/health` | `"dbConfigured": true`, `"dbHost"` com `railway` (não `supabase.com`) |
+| `/health` | `"dbConfigured": true`, `"supabaseAuthConfigured": true`, `"dbHost"` com `railway` (não `supabase.com`) |
 | `/api/tenant/resolve/two-brothers` | JSON do tenant |
 | `/two-brothers` | Agendamento |
 | `/two-brothers/login` | `carlos@barberpro.com` / `123` (se usaste seed) |
@@ -106,6 +111,7 @@ Criar barbearias (clientes): [ADMIN-NOVA-BARBEARIA.md](./ADMIN-NOVA-BARBEARIA.md
 | `dbConfigured: false` | Falta `DATABASE_URL` no serviço app |
 | `relation "Tenant" does not exist` | Migrations não correram — vê logs do start; `db:railway:setup` |
 | Healthcheck falha | Não defines `PORT`; confirma `JWT_SECRET` |
+| Recuperação de senha não configurada | Falta `SUPABASE_URL` e/ou `SUPABASE_SERVICE_ROLE_KEY` no serviço app; confirma `/health` → `supabaseAuthConfigured: true` |
 | Build Nix / sem espaço | Usa **Dockerfile** ([`railway.toml`](../railway.toml)) |
 
 Ver também: [MIGRATE-POSTGRES-RAILWAY.md](./MIGRATE-POSTGRES-RAILWAY.md) (detalhe histórico Supabase → Railway).
