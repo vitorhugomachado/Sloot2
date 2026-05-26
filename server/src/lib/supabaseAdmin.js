@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const WebSocket = require('ws');
 
 let adminClient = null;
 
@@ -18,6 +19,7 @@ function getSupabaseAdmin() {
   if (!adminClient) {
     adminClient = createClient(process.env.SUPABASE_URL.trim(), getSupabaseServiceRoleKey(), {
       auth: { autoRefreshToken: false, persistSession: false },
+      realtime: { transport: WebSocket },
     });
   }
   return adminClient;
