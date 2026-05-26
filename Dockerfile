@@ -3,6 +3,11 @@ FROM node:20-alpine AS build
 # Railway injeta RAILWAY_GIT_COMMIT_SHA no build — usado em /health para confirmar versão
 ARG RAILWAY_GIT_COMMIT_SHA=unknown
 ENV APP_GIT_SHA=$RAILWAY_GIT_COMMIT_SHA
+
+# Vite envs must exist at build-time (VITE_* are baked into the bundle)
+ARG VITE_GOOGLE_CLIENT_ID
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+
 RUN apk add --no-cache openssl
 WORKDIR /app
 
