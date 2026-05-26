@@ -7,6 +7,7 @@ import BusinessSocialLinks from '../components/BusinessSocialLinks';
 import { isValidPhone, normalizePhone, PHONE_ERROR } from '../utils/phone';
 import { getPublicBookingSlotsForDay, hasBarberShiftOnDate } from '../utils/publicBookingSlots';
 import { normalizeBookingTime } from '../utils/bookingAvailability';
+import { toIsoLocal } from '../utils/dateLocal';
 
 const INITIAL_VISIBLE_BOOKING_DAYS = 5;
 const LOAD_MORE_BOOKING_DAYS = 5;
@@ -16,7 +17,7 @@ const PublicBooking = ({ onOpenPortal }) => {
   const { barbers, services, appointments, addAppointment, businessInfo, 
     currentCustomer, customerLogin, customerGoogleLogin, customerRegister, customerLogout } = useApp();
   const [step, setStep] = useState(1);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(() => toIsoLocal(new Date()));
   const [selectedService, setSelectedService] = useState(null);
   const [selectedBarber, setSelectedBarber] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
@@ -80,13 +81,6 @@ const PublicBooking = ({ onOpenPortal }) => {
     while (days.length % 7 !== 0) days.push(null);
 
     return days;
-  };
-
-  const toIsoLocal = (date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
   };
 
   const { allWorkingDayIsosInHorizon, visibleBookingDateIsos } = useMemo(() => {

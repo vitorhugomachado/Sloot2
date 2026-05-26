@@ -5,17 +5,13 @@ import { isValidPhone, normalizePhone, PHONE_ERROR } from '../utils/phone';
 import { requestCustomerPasswordReset } from '../utils/customerPasswordReset';
 import { getPublicBookingSlotsForDay, hasBarberShiftOnDate } from '../utils/publicBookingSlots';
 import { normalizeBookingTime } from '../utils/bookingAvailability';
+import { toIsoLocal } from '../utils/dateLocal';
+
+export { toIsoLocal } from '../utils/dateLocal';
 
 export const INITIAL_VISIBLE_BOOKING_DAYS = 5;
 export const LOAD_MORE_BOOKING_DAYS = 5;
 export const MAX_BOOKING_HORIZON_DAYS = 60;
-
-export function toIsoLocal(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
 
 export function scrollBookingFlowToTop() {
   if (typeof window === 'undefined') return;

@@ -1,3 +1,5 @@
+const { getLocalDateIso, addDaysToDateIso } = require('../utils/appointmentTime');
+
 /** Alinhado com MAX_BOOKING_HORIZON_DAYS no PublicBooking.jsx */
 const PUBLIC_BOOKING_HORIZON_DAYS = 60;
 
@@ -7,10 +9,6 @@ const STAFF_APPOINTMENTS_FUTURE_DAYS = 60;
 const MAX_STAFF_APPOINTMENTS_RANGE_DAYS = 366;
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-function fmtDate(d) {
-  return d.toISOString().slice(0, 10);
-}
 
 function parseDateRangeFromQuery(query = {}) {
   const defaults = publicBookingDateRange();
@@ -23,18 +21,16 @@ function parseDateRangeFromQuery(query = {}) {
 }
 
 function publicBookingDateRange() {
-  const from = new Date();
-  const to = new Date();
-  to.setDate(to.getDate() + PUBLIC_BOOKING_HORIZON_DAYS);
-  return { from: fmtDate(from), to: fmtDate(to) };
+  const from = getLocalDateIso();
+  const to = addDaysToDateIso(from, PUBLIC_BOOKING_HORIZON_DAYS);
+  return { from, to };
 }
 
 function staffAppointmentDateRange() {
-  const from = new Date();
-  from.setDate(from.getDate() - STAFF_APPOINTMENTS_PAST_DAYS);
-  const to = new Date();
-  to.setDate(to.getDate() + STAFF_APPOINTMENTS_FUTURE_DAYS);
-  return { from: fmtDate(from), to: fmtDate(to) };
+  const today = getLocalDateIso();
+  const from = addDaysToDateIso(today, -STAFF_APPOINTMENTS_PAST_DAYS);
+  const to = addDaysToDateIso(today, STAFF_APPOINTMENTS_FUTURE_DAYS);
+  return { from, to };
 }
 
 function parseStaffDateRangeFromQuery(query = {}) {

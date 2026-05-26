@@ -12,6 +12,7 @@ const EMPTY_DIRECT_SALE = {
   items: [{ productId: '', quantity: 1 }],
 };
 import { filterAvailableBookingTimes, isBookingSlotTaken } from '../utils/bookingAvailability';
+import { toIsoLocal } from '../utils/dateLocal';
 import OccupancyGauge from '../components/OccupancyGauge';
 import DashUpcomingEmpty from '../components/dashboard/DashUpcomingEmpty';
 
@@ -50,7 +51,7 @@ const MiniCalendar = ({ focusDate, onDateSelect }) => {
     <div className="dash-mini-cal">
       <div className="dash-mini-cal-grid">
         {days.map((dd, i) => {
-          const ddStr = dd.toISOString().split('T')[0];
+          const ddStr = toIsoLocal(dd);
           const isActive = ddStr === focusDate;
           const isToday = dd.getDate() === today.getDate() && dd.getMonth() === today.getMonth() && dd.getFullYear() === today.getFullYear();
           
@@ -83,7 +84,7 @@ const Dashboard = () => {
   } = useApp();
   const { slug } = useTenant();
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = toIsoLocal(new Date());
   const [focusDate, setFocusDate] = useState(todayStr);
   const [performancePeriodDays, setPerformancePeriodDays] = useState(7);
   const isBarber = currentUser?.role === 'Barbeiro';
@@ -93,8 +94,8 @@ const Dashboard = () => {
     const start = new Date(todayStr);
     start.setDate(start.getDate() - Math.max(KPI_PERIOD_DAYS - 1, 0));
     return {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0]
+      start: toIsoLocal(start),
+      end: toIsoLocal(end)
     };
   }, [todayStr]);
 
@@ -106,8 +107,8 @@ const Dashboard = () => {
     const start = new Date(todayStr);
     start.setDate(start.getDate() - Math.max(performancePeriodDays - 1, 0));
     return {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0]
+      start: toIsoLocal(start),
+      end: toIsoLocal(end)
     };
   }, [todayStr, performancePeriodDays]);
 
@@ -1361,6 +1362,7 @@ const Dashboard = () => {
               <div className="booking-reserve-form__row">
                 <input
                   type="date"
+                  lang="pt-BR"
                   className="booking-reserve-form__field"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}

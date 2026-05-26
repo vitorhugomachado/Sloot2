@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Plus, Clock, User, Scissors, X, Calendar as 
 import { useApp } from '../context/AppContext';
 import { BOOKING_BLOCKING_STATUSES, filterAvailableBookingTimes, isBookingSlotTaken, normalizeBookingTime } from '../utils/bookingAvailability';
 import { isBarberScheduleOpen, parseDurationMinutes } from '../utils/barberAvailability';
+import { toIsoLocal } from '../utils/dateLocal';
 
 const SCHEDULER_TIME_SLOTS = [
   '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
@@ -55,13 +56,6 @@ function isSchedulerInServiceStatus(status) {
   return s === 'em progresso' || s === 'em atendimento';
 }
 
-function schedulerToIsoLocal(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
 function buildSchedulerMonthGrid(monthDate) {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
@@ -83,7 +77,7 @@ function formatSchedulerDatePt(iso) {
 
 const Scheduler = () => {
   const { appointments, barbers, services, addAppointment, updateAppointmentStatus, cancelAppointment, currentUser } = useApp();
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(() => toIsoLocal(new Date()));
   const isBarber = currentUser?.role === 'Barbeiro';
   
   // Pre-select current user's agenda if they are a barber (locked)
@@ -398,13 +392,13 @@ const Scheduler = () => {
   const getDayDate = (colIndex) => {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + colIndex);
-    return d.toISOString().split('T')[0];
+    return toIsoLocal(d);
   };
 
-  const startStr = startOfWeek.toISOString().split('T')[0];
+  const startStr = toIsoLocal(startOfWeek);
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 6);
-  const endStr = endOfWeek.toISOString().split('T')[0];
+  const endStr = toIsoLocal(endOfWeek);
 
   const filteredAppointments = useMemo(() => {
     return appointments.filter(app => {
@@ -417,7 +411,7 @@ const Scheduler = () => {
   const shiftDate = (daysCount) => {
     const d = new Date(selectedDate + "T12:00:00");
     d.setDate(d.getDate() + daysCount);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(toIsoLocal(d));
   };
 
   const getAppointmentsForCell = (dateString, timeString) => {
@@ -429,7 +423,7 @@ const Scheduler = () => {
     const weekDates = Array.from({ length: 7 }, (_, col) => {
       const d = new Date(weekBase);
       d.setDate(weekBase.getDate() + col);
-      return d.toISOString().split('T')[0];
+      return toIsoLocal(d);
     });
 
     return SCHEDULER_TIME_SLOTS.map((time) => {
@@ -584,7 +578,7 @@ const Scheduler = () => {
                       ))}
                       {buildSchedulerMonthGrid(schedulerCalendarMonth).map((day, idx) => {
                         if (!day) return <span key={`empty-${idx}`} className="booking-calendar-day empty" />;
-                        const iso = schedulerToIsoLocal(day);
+                        const iso = toIsoLocal(day);
                         const isSelected = iso === selectedDate;
                         return (
                           <button
@@ -606,7 +600,7 @@ const Scheduler = () => {
                         type="button"
                         className="scheduler-week-picker-popover-footer-btn"
                         onClick={() => {
-                          setSelectedDate(schedulerToIsoLocal(new Date()));
+                          setSelectedDate(toIsoLocal(new Date()));
                           setShowSchedulerMonthPicker(false);
                         }}
                       >
@@ -1306,6 +1300,7 @@ const Scheduler = () => {
               <div className="booking-reserve-form__row">
                 <input
                   type="date"
+                  lang="pt-BR"
                   className="booking-reserve-form__field"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}

@@ -1,3 +1,5 @@
+const APP_TIMEZONE = process.env.APP_TIMEZONE || 'America/Sao_Paulo';
+
 /** Normaliza horário para HH:mm (grade e conflitos de slot). */
 function normalizeBookingTime(time) {
   const m = String(time ?? '').trim().match(/^(\d{1,2}):(\d{2})/);
@@ -14,22 +16,50 @@ function timeToMinutes(hhmm) {
   return h * 60 + m;
 }
 
-function getLocalDateIso(now = new Date()) {
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+function getZonedDateParts(now = new Date(), timeZone = APP_TIMEZONE) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(now);
+  return Object.fromEntries(
+    parts.filter((p) => p.type !== 'literal').map((p) => [p.type, p.value]),
+  );
 }
 
-function isBookingSlotInPast(dateIso, time, now = new Date()) {
+/** Data YYYY-MM-DD no fuso da aplicação (padrão America/Sao_Paulo). */
+function getLocalDateIso(now = new Date(), timeZone = APP_TIMEZONE) {
+  const p = getZonedDateParts(now, timeZone);
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+function isBookingSlotInPast(dateIso, time, now = new Date(), timeZone = APP_TIMEZONE) {
   if (!dateIso) return false;
-  const today = getLocalDateIso(now);
+  const today = getLocalDateIso(now, timeZone);
   if (dateIso < today) return true;
   if (dateIso > today) return false;
   const slotMin = timeToMinutes(time);
   if (slotMin == null) return true;
-  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const p = getZonedDateParts(now, timeZone);
+  const nowMin = parseInt(p.hour, 10) * 60 + parseInt(p.minute, 10);
   return slotMin < nowMin;
 }
 
-module.exports = { normalizeBookingTime, isBookingSlotInPast };
+/** Soma dias a uma data YYYY-MM-DD (aritmética de calendário, sem fuso). */
+function addDaysToDateIso(dateIso, days) {
+  const [y, mo, d] = dateIso.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, mo - 1, d + days));
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(dt.getUTCDate()).padStart(2, '0')}`;
+}
+
+module.exports = {
+  APP_TIMEZONE,
+  normalizeBookingTime,
+  getLocalDateIso,
+  isBookingSlotInPast,
+  addDaysToDateIso,
+};
