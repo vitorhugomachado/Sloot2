@@ -33,12 +33,17 @@ Reinicie Vite e o servidor após alterar o `.env`.
 | Site URL | `http://localhost:5173` |
 | Redirect URLs | `http://localhost:5173/**/redefinir-senha` |
 
-Em produção, acrescente por tenant, por exemplo:
+Em produção (`slooti.com.br`), acrescente **por tenant** (URL exata, sem barra no final):
 
-- `https://seudominio.com/two-brothers/redefinir-senha`
-- `https://seudominio.com/lanotic/redefinir-senha`
+- `https://slooti.com.br/two-brothers/redefinir-senha`
+- `https://slooti.com.br/lanotic/redefinir-senha`
+- `https://slooti.com.br/barberone/redefinir-senha`
 
-Ou use um padrão que o Supabase aceite na sua região/plano.
+Se o site abrir com `www`, acrescente também as mesmas URLs com `https://www.slooti.com.br/...`.
+
+No Railway (serviço app), defina `FRONTEND_URL=https://slooti.com.br` (sem barra final) — o backend usa esta URL canónica no e-mail de recuperação.
+
+Opcional (se o painel aceitar wildcard): `https://slooti.com.br/**/redefinir-senha`
 
 ## 3. E-mail no Supabase
 

@@ -11,12 +11,20 @@ const {
 } = require('../lib/supabaseCustomerAuth');
 
 function buildPasswordResetRedirect(req, tenantSlug) {
+  const slug = String(tenantSlug || req.tenantSlug || '').trim().toLowerCase();
+  const path = slug ? `/${slug}/redefinir-senha` : '/redefinir-senha';
+  const frontendUrl = process.env.FRONTEND_URL?.trim().replace(/\/$/, '');
+
+  // Produção: URL canónica (evita Origin www vs sem-www ou domínio Railway no link)
+  if (process.env.NODE_ENV === 'production' && frontendUrl) {
+    return `${frontendUrl}${path}`;
+  }
+
   const fromBody = typeof req.body?.redirectTo === 'string' ? req.body.redirectTo.trim() : '';
   if (fromBody && /^https?:\/\//i.test(fromBody)) return fromBody;
 
-  const origin = req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:5173';
-  const slug = String(tenantSlug || req.tenantSlug || '').trim().toLowerCase();
-  return `${String(origin).replace(/\/$/, '')}/${slug}/redefinir-senha`;
+  const origin = req.headers.origin || frontendUrl || 'http://localhost:5173';
+  return `${String(origin).replace(/\/$/, '')}${path}`;
 }
 
 const FORGOT_PASSWORD_GENERIC =
@@ -264,6 +272,7 @@ const forgotPassword = async (req, res) => {
     });
   }
 
+  let redirectTo;
   try {
     const customer = await findCustomerByEmail(tenantId, normalizedEmail);
     if (!customer) {
@@ -275,17 +284,20 @@ const forgotPassword = async (req, res) => {
       customer_id: customer.id,
     });
 
-    const redirectTo = buildPasswordResetRedirect(req, req.tenantSlug);
+    redirectTo = buildPasswordResetRedirect(req, req.tenantSlug);
+    console.log(`[auth] password recovery redirectTo=${redirectTo}`);
     await sendPasswordRecoveryEmail(normalizedEmail, redirectTo);
 
     return res.json({ message: FORGOT_PASSWORD_GENERIC });
   } catch (error) {
-    console.error('Customer forgot password error:', error?.cause || error);
+    console.error('Customer forgot password error:', error?.cause || error, redirectTo ? { redirectTo } : {});
     const msg = String(error?.message || '');
     if (/redirect|url/i.test(msg) || error?.code === 'unexpected_failure') {
       return res.status(400).json({
-        message:
-          'URL de redirecionamento não autorizada no Supabase. Adicione em Authentication → URL Configuration o endereço da página redefinir-senha (ver docs/SUPABASE-RESET-SENHA.md).',
+        message: redirectTo
+          ? `URL de redirecionamento não autorizada no Supabase. Em Authentication → URL Configuration, adicione exatamente: ${redirectTo}`
+          : 'URL de redirecionamento não autorizada no Supabase. Adicione em Authentication → URL Configuration o endereço da página redefinir-senha (ver docs/SUPABASE-RESET-SENHA.md).',
+        redirectTo: redirectTo || undefined,
         details: msg,
       });
     }
