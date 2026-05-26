@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
 
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
@@ -41,7 +40,6 @@ const OccupancyGauge = ({ value = 0, label = 'Ocupação', subtitle, stagger = 2
     <div className={`dash-gauge-card stagger-${stagger}`}>
       <div className="dash-kpi-top">
         <span className="dash-kpi-label">{label}</span>
-        <div className="dash-kpi-arrow"><ChevronRight size={14} /></div>
       </div>
 
       <div className="dash-kpi-main dash-occ-layout">

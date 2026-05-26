@@ -1,5 +1,5 @@
 ﻿import React, { useState, useMemo, useEffect } from 'react';
-import { Users, Calendar, Clock, X, ShoppingBag, Plus, ChevronLeft, ChevronRight, LayoutGrid, Play, CheckCircle, XCircle, Banknote } from 'lucide-react';
+import { Users, Calendar, Clock, X, ShoppingBag, Plus, LayoutGrid, Play, CheckCircle, XCircle, Banknote } from 'lucide-react';
 import WhatsAppIcon from '../components/icons/WhatsAppIcon';
 import { useApp } from '../context/AppContext';
 
@@ -19,7 +19,6 @@ const KpiCard = ({ label, value, subtitle, stagger }) => (
   <div className={`dash-kpi-card stagger-${stagger}`}>
     <div className="dash-kpi-top">
       <span className="dash-kpi-label">{label}</span>
-      <div className="dash-kpi-arrow"><ChevronRight size={14} /></div>
     </div>
     <div className="dash-kpi-main">
       <div className="dash-kpi-data">
@@ -143,6 +142,9 @@ const Dashboard = () => {
   // Recent activity — already filtered by backend for barbers
   const recentActivity = useMemo(() => {
     return [...appointments]
+      .filter(
+        (a) => a.date >= dashboardPeriodDates.start && a.date <= dashboardPeriodDates.end
+      )
       .sort((a, b) => {
         const aTouched = Number(a._updatedAtLocal || 0);
         const bTouched = Number(b._updatedAtLocal || 0);
@@ -150,7 +152,7 @@ const Dashboard = () => {
         return `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`);
       })
       .slice(0, 6);
-  }, [appointments]);
+  }, [appointments, dashboardPeriodDates.start, dashboardPeriodDates.end]);
 
   // Upcoming — already filtered by backend for barbers
   const upcoming = useMemo(() => {
@@ -721,7 +723,7 @@ const Dashboard = () => {
           <div className="dash-panel-body">
             {recentActivity.length === 0 ? (
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'center', padding: '2rem 0' }}>
-                Nenhuma atividade recente.
+                Nenhuma atividade neste período ({periodLabel}).
               </p>
             ) : (
               <div className="dash-timeline">
