@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Clock, User, Scissors, X, Calendar as CalendarIcon, Users, CheckCircle, XCircle, Play } from 'lucide-react';
-import WhatsAppIcon from '../components/icons/WhatsAppIcon';
+import { ChevronLeft, ChevronRight, Plus, Clock, User, Scissors, X, Calendar as CalendarIcon, Users } from 'lucide-react';
 import AppointmentActionModal from '../components/appointments/AppointmentActionModal';
 import { useApp } from '../context/AppContext';
 import { useAppointmentActions } from '../hooks/useAppointmentActions';
@@ -12,8 +11,7 @@ import {
   normalizeBookingTime,
 } from '../utils/bookingAvailability';
 import { isBarberScheduleOpen, parseDurationMinutes } from '../utils/barberAvailability';
-import { getAppointmentStatusStyle, IN_SERVICE_COLOR, isInServiceStatus } from '../utils/appointmentStatus';
-import { normalizePhoneForWhatsApp, openWhatsAppConfirm } from '../utils/appointmentWhatsApp';
+import { getAppointmentStatusStyle, isInServiceStatus } from '../utils/appointmentStatus';
 import { STAFF_SCHEDULER_TIME_SLOTS } from '../utils/publicBookingSlots';
 import { toIsoLocal } from '../utils/dateLocal';
 import { API_URL } from '../config/apiUrl';
@@ -132,8 +130,6 @@ const Scheduler = () => {
     sellProduct,
   });
 
-  const [appointmentDetailModal, setAppointmentDetailModal] = useState({ open: false, app: null });
-  
   const schedulerWeekPickerRef = useRef(null);
   const appointmentHoverTimerRef = useRef(null);
   const pendingAppointmentHoverIdRef = useRef(null);
@@ -184,15 +180,6 @@ const Scheduler = () => {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [appointmentHoverTip]);
-
-  useEffect(() => {
-    if (!appointmentDetailModal.open) return;
-    const onKey = (e) => {
-      if (e.key === 'Escape') setAppointmentDetailModal({ open: false, app: null });
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [appointmentDetailModal.open]);
 
   useEffect(() => () => {
     if (appointmentHoverTimerRef.current) {
@@ -424,22 +411,6 @@ const Scheduler = () => {
     appointmentActions.openActionModal(app);
   };
 
-  const openAppointmentDetailModal = (app, e) => {
-    clearAppointmentHoverTip();
-    e?.stopPropagation();
-    if (!app) return;
-    setAppointmentDetailModal({ open: true, app });
-  };
-
-  const closeAppointmentDetailModal = () => setAppointmentDetailModal({ open: false, app: null });
-
-  const openActionsFromAppointmentDetail = () => {
-    const app = appointmentDetailModal.app;
-    if (!app || app.status === 'Finalizado' || app.status === 'Cancelado') return;
-    setAppointmentDetailModal({ open: false, app: null });
-    appointmentActions.openActionModal(app);
-  };
-
   const getDayDate = (colIndex) => {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + colIndex);
@@ -518,13 +489,6 @@ const Scheduler = () => {
     `scheduler-cell-appts--count-${Math.min(Math.max(count, 0), 9)}`;
 
   const getStatusStyle = getAppointmentStatusStyle;
-
-  const ad = appointmentDetailModal.open ? appointmentDetailModal.app : null;
-  const detailBarber = ad ? barbers.find((b) => b.id === ad.barberId) : null;
-  const detailSs = ad ? getStatusStyle(ad.status) : null;
-  const detailActionable = ad && ad.status !== 'Finalizado' && ad.status !== 'Cancelado';
-  const detailPhoneOk = ad && String(ad.phone || '').replace(/\D/g, '').length >= 8;
-  const detailWaPhone = ad ? normalizePhoneForWhatsApp(ad.phone) : null;
 
   return (
     <div className="fade-in scheduler-page" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 4rem)' }}>
@@ -783,12 +747,16 @@ const Scheduler = () => {
                               barbers.find((x) => x.id === app.barberId)?.name
                             )}
                             onMouseLeave={clearAppointmentHoverTip}
-                            onClick={(e) => openAppointmentDetailModal(app, e)}
+                            onClick={(e) => openActionModal(app, e)}
+                            disabled={app.status === 'Finalizado' || app.status === 'Cancelado'}
                             style={{
                               background: ss.bg,
                               border: `1px solid ${ss.border}`,
                               opacity: app.status === 'Cancelado' ? 0.5 : 1,
-                              cursor: 'pointer',
+                              cursor:
+                                app.status === 'Finalizado' || app.status === 'Cancelado'
+                                  ? 'default'
+                                  : 'pointer',
                             }}
                           >
                             <div style={{ fontWeight: 700, textAlign: 'left' }}>{app.customer}</div>
@@ -971,16 +939,19 @@ const Scheduler = () => {
                     {/* SINGLE BARBER view */}
                     {selectedBarberId !== 'all' && cellApps.map(app => {
                         const ss = getStatusStyle(app.status);
+                        const actionable = app.status !== 'Finalizado' && app.status !== 'Cancelado';
                         return (
                           <div 
                             key={app.id}
+                            role="button"
+                            tabIndex={actionable ? 0 : -1}
                             className={`fade-in scheduler-cell-appts__single${isInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
                             onMouseEnter={onAppointmentHoverEnter(
                               app,
                               barbers.find((x) => x.id === app.barberId)?.name
                             )}
                             onMouseLeave={clearAppointmentHoverTip}
-                            onClick={(e) => openAppointmentDetailModal(app, e)}
+                            onClick={(e) => actionable && openActionModal(app, e)}
                             style={{
                               flex: 1,
                               pointerEvents: 'auto',
@@ -994,7 +965,7 @@ const Scheduler = () => {
                               flexDirection: 'column',
                               justifyContent: 'space-between',
                               border: `1px solid ${ss.border}`,
-                              cursor: 'pointer',
+                              cursor: actionable ? 'pointer' : 'default',
                               opacity: app.status === 'Cancelado' ? 0.5 : 1,
                             }}
                           >
@@ -1019,141 +990,6 @@ const Scheduler = () => {
           </div>
         </div>
       </div>
-      )}
-
-      {/* ═══════ DETALHES DO AGENDAMENTO (agenda individual) ═══════ */}
-      {appointmentDetailModal.open && ad && (
-        <div className="modal-backdrop" onClick={closeAppointmentDetailModal}>
-          <div
-            className="modal-glass-panel fade-in scheduler-modal-panel"
-            style={{ width: '95%', maxWidth: '420px', padding: '1.75rem' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="booking-reserve-form__title-row">
-              <h2 className="booking-reserve-form__title">Detalhes do agendamento</h2>
-              <button
-                type="button"
-                className="booking-reserve-form__close"
-                onClick={closeAppointmentDetailModal}
-                aria-label="Fechar"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="scheduler-appointment-detail-body" style={{ marginTop: '1rem' }}>
-              <div className="action-modal-panel">
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '6px' }}>
-                  <span style={{ fontWeight: 700, fontSize: '1.05rem' }}>{ad.customer}</span>
-                  <span style={{ fontWeight: 700, color: 'var(--brand-600)', fontSize: '1.05rem', flexShrink: 0 }}>
-                    R$ {Number(ad.price).toFixed(2)}
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  <div>{ad.service}</div>
-                  <div style={{ marginTop: '4px' }}>
-                    {formatSchedulerDatePt(ad.date)} · {ad.time}
-                    {detailBarber?.name ? ` · ${detailBarber.name}` : ''}
-                  </div>
-                  {detailPhoneOk && (
-                    <div style={{ marginTop: '4px' }}>Tel. {ad.phone}</div>
-                  )}
-                </div>
-                <div style={{ marginTop: '10px' }}>
-                  <span
-                    className="action-modal-status-pill"
-                    style={{
-                      background: detailSs.bg,
-                      color: ad.status === 'Agendado' ? 'var(--text-secondary)' : detailSs.badge,
-                    }}
-                  >
-                    {ad.status}
-                  </span>
-                  <span
-                    style={{
-                      marginLeft: '8px',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      color: 'var(--text-secondary)',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {detailSs.label}
-                  </span>
-                </div>
-              </div>
-
-              {detailActionable && (
-                <div className="dash-upcoming-actions" style={{ marginTop: '1rem', justifyContent: 'flex-start' }}>
-                  <button
-                    type="button"
-                    className={`dash-upcoming-action-btn dash-upcoming-action-btn--start${isInServiceStatus(ad.status) ? ' dash-upcoming-action-btn--in-service' : ''}`}
-                    title={isInServiceStatus(ad.status) ? 'Em atendimento' : 'Iniciar atendimento'}
-                    style={{
-                      color: IN_SERVICE_COLOR,
-                      background: isInServiceStatus(ad.status)
-                        ? 'rgba(147, 197, 253, 0.35)'
-                        : 'rgba(147, 197, 253, 0.22)',
-                      border: '1px solid rgba(147, 197, 253, 0.6)',
-                    }}
-                    onClick={(e) => {
-                      closeAppointmentDetailModal();
-                      appointmentActions.handleQuickStart(ad, e);
-                    }}
-                  >
-                    <Play size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    className="sloot-circle-action sloot-circle-action--confirm sloot-circle-action--sm"
-                    title="Finalizar pagamento"
-                    onClick={(e) => {
-                      closeAppointmentDetailModal();
-                      appointmentActions.handleQuickConfirm(ad, e);
-                    }}
-                  >
-                    <CheckCircle size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    className="sloot-circle-action sloot-circle-action--cancel-outline sloot-circle-action--sm"
-                    title="Cancelar agendamento"
-                    onClick={(e) => {
-                      closeAppointmentDetailModal();
-                      appointmentActions.handleQuickCancel(ad, e);
-                    }}
-                  >
-                    <XCircle size={16} />
-                  </button>
-                  {detailWaPhone && (
-                    <button
-                      type="button"
-                      className="dash-upcoming-wa-btn"
-                      title="Confirmar horário por WhatsApp"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openWhatsAppConfirm(ad);
-                      }}
-                    >
-                      <WhatsAppIcon size={18} />
-                    </button>
-                  )}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '1.25rem' }}>
-                {detailActionable && (
-                  <button type="button" className="btn-primary" style={{ padding: '12px 16px' }} onClick={openActionsFromAppointmentDetail}>
-                    Ações (iniciar, pagar, cancelar)
-                  </button>
-                )}
-                <button type="button" className="btn-secondary" style={{ padding: '12px 16px' }} onClick={closeAppointmentDetailModal}>
-                  Fechar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
 
       <AppointmentActionModal
