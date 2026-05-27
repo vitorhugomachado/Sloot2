@@ -138,6 +138,9 @@ const createAppointment = async (req, res) => {
     let customer_id = null;
     if (req.user?.role === 'customer') {
       customer_id = Number(req.user.id);
+    } else if (req.body.customerId != null && req.body.customerId !== '') {
+      const linked = Number(req.body.customerId);
+      if (Number.isFinite(linked) && linked > 0) customer_id = linked;
     }
 
     const data = {

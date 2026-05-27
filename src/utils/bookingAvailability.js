@@ -19,6 +19,17 @@ function timeToMinutes(hhmm) {
   return h * 60 + m;
 }
 
+function minutesToTime(totalMinutes) {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h > 23) return null;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function rangesOverlap(aStart, aEnd, bStart, bEnd) {
+  return aStart < bEnd && bStart < aEnd;
+}
+
 /** Data local YYYY-MM-DD */
 export function getLocalDateIso(now = new Date()) {
   const y = now.getFullYear();
@@ -40,19 +51,67 @@ export function isBookingSlotInPast(dateStr, timeStr, now = new Date()) {
 }
 
 /**
+ * Duração em minutos de um agendamento (serviço cadastrado ou fallback 30).
+ * @param {object} app
+ * @param {Array<{ name: string, duration?: string|number }>} [services]
+ */
+export function getAppointmentDurationMinutes(app, services = []) {
+  if (app?.durationMinutes != null) {
+    return parseDurationMinutes(app.durationMinutes);
+  }
+  const svc = services.find((s) => s.name === app?.service);
+  return parseDurationMinutes(svc?.duration ?? 30);
+}
+
+/**
+ * Intervalo [início, fim) em minutos para um agendamento bloqueante.
+ * @returns {{ start: number, end: number } | null}
+ */
+export function getAppointmentInterval(app, services = []) {
+  if (!app || !BOOKING_BLOCKING_STATUSES.includes(app.status)) return null;
+  const start = timeToMinutes(app.time);
+  if (start == null) return null;
+  const dur = getAppointmentDurationMinutes(app, services);
+  return { start, end: start + dur };
+}
+
+/**
+ * true se o slot (início HH:mm) está dentro do intervalo ocupado pelo agendamento.
+ */
+export function appointmentOccupiesSlot(app, slotTime, services = []) {
+  const interval = getAppointmentInterval(app, services);
+  const slot = timeToMinutes(slotTime);
+  if (!interval || slot == null) return false;
+  return slot >= interval.start && slot < interval.end;
+}
+
+/**
  * @param {Array<{ date: string, time: string, barberId: number|string, status: string }>} appointments
  * @param {string} dateStr YYYY-MM-DD
  * @param {string|number} barberId
- * @returns {Set<string>} horários HH:mm ocupados
+ * @param {Array} [services]
+ * @param {number} [slotStepMinutes]
+ * @returns {Set<string>} horários HH:mm ocupados (todos os slots no intervalo)
  */
-export function getTakenTimesForBarber(appointments, dateStr, barberId) {
+export function getTakenTimesForBarber(
+  appointments,
+  dateStr,
+  barberId,
+  services = [],
+  slotStepMinutes = 30
+) {
   const taken = new Set();
   if (!dateStr || barberId === undefined || barberId === null || barberId === '') return taken;
   const b = String(barberId);
+  const step = Math.max(1, Number(slotStepMinutes) || 30);
+
   for (const a of appointments) {
     if (a.date !== dateStr || String(a.barberId) !== b) continue;
-    if (BOOKING_BLOCKING_STATUSES.includes(a.status)) {
-      const t = normalizeBookingTime(a.time);
+    if (!BOOKING_BLOCKING_STATUSES.includes(a.status)) continue;
+    const interval = getAppointmentInterval(a, services);
+    if (!interval) continue;
+    for (let m = interval.start; m < interval.end; m += step) {
+      const t = minutesToTime(m);
       if (t) taken.add(t);
     }
   }
@@ -60,9 +119,41 @@ export function getTakenTimesForBarber(appointments, dateStr, barberId) {
 }
 
 /**
+ * Verifica se um novo agendamento [time, time+duration) conflita com existentes.
+ */
+export function isBookingIntervalFree(
+  appointments,
+  dateStr,
+  timeStr,
+  barberId,
+  opts = {}
+) {
+  if (!dateStr || !timeStr) return false;
+  if (barberId === undefined || barberId === null || barberId === '') return false;
+  const slot = normalizeBookingTime(timeStr);
+  if (!slot) return false;
+  const start = timeToMinutes(slot);
+  if (start == null) return false;
+  const dur = parseDurationMinutes(opts.durationMinutes ?? 30);
+  const end = start + dur;
+  const b = String(barberId);
+  const services = opts.services || [];
+
+  for (const a of appointments) {
+    if (a.date !== dateStr || String(a.barberId) !== b) continue;
+    if (!BOOKING_BLOCKING_STATUSES.includes(a.status)) continue;
+    const interval = getAppointmentInterval(a, services);
+    if (!interval) continue;
+    if (rangesOverlap(start, end, interval.start, interval.end)) return false;
+  }
+  return true;
+}
+
+/**
  * @param {object} [opts]
  * @param {object|null} [opts.barber] barbeiro com shifts e scheduleBlocks
  * @param {number} [opts.durationMinutes] duração do serviço para validar turno/almoco
+ * @param {Array} [opts.services] lista de serviços para cálculo de ocupação
  */
 export function filterAvailableBookingTimes(
   timeSlotsAll,
@@ -73,13 +164,14 @@ export function filterAvailableBookingTimes(
 ) {
   if (!dateStr) return [...timeSlotsAll];
   if (barberId === undefined || barberId === null || barberId === '') return [...timeSlotsAll];
-  const taken = getTakenTimesForBarber(appointments, dateStr, barberId);
-  const { barber, durationMinutes } = opts;
+  const { barber, durationMinutes, services } = opts;
   const dur = parseDurationMinutes(durationMinutes);
 
   return timeSlotsAll.filter((t) => {
     if (isBookingSlotInPast(dateStr, t)) return false;
-    if (taken.has(t)) return false;
+    if (!isBookingIntervalFree(appointments, dateStr, t, barberId, { durationMinutes: dur, services })) {
+      return false;
+    }
     if (!barber) return true;
     return isBarberScheduleOpen({
       barber,
@@ -90,10 +182,10 @@ export function filterAvailableBookingTimes(
   });
 }
 
-export function isBookingSlotTaken(appointments, dateStr, timeStr, barberId) {
+export function isBookingSlotTaken(appointments, dateStr, timeStr, barberId, opts = {}) {
   if (!dateStr || !timeStr) return false;
   if (barberId === undefined || barberId === null || barberId === '') return false;
   const slot = normalizeBookingTime(timeStr);
   if (!slot) return false;
-  return getTakenTimesForBarber(appointments, dateStr, barberId).has(slot);
+  return !isBookingIntervalFree(appointments, dateStr, slot, barberId, opts);
 }

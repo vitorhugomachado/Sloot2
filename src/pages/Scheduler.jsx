@@ -1,15 +1,22 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Clock, User, Scissors, X, Calendar as CalendarIcon, Users, CheckCircle, XCircle, Play, Banknote } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { ChevronLeft, ChevronRight, Plus, Clock, User, Scissors, X, Calendar as CalendarIcon, Users, CheckCircle, XCircle, Play } from 'lucide-react';
+import WhatsAppIcon from '../components/icons/WhatsAppIcon';
+import AppointmentActionModal from '../components/appointments/AppointmentActionModal';
 import { useApp } from '../context/AppContext';
-import { BOOKING_BLOCKING_STATUSES, filterAvailableBookingTimes, isBookingSlotTaken, normalizeBookingTime } from '../utils/bookingAvailability';
+import { useAppointmentActions } from '../hooks/useAppointmentActions';
+import {
+  appointmentOccupiesSlot,
+  filterAvailableBookingTimes,
+  isBookingSlotInPast,
+  isBookingSlotTaken,
+  normalizeBookingTime,
+} from '../utils/bookingAvailability';
 import { isBarberScheduleOpen, parseDurationMinutes } from '../utils/barberAvailability';
+import { getAppointmentStatusStyle, IN_SERVICE_COLOR, isInServiceStatus } from '../utils/appointmentStatus';
+import { normalizePhoneForWhatsApp, openWhatsAppConfirm } from '../utils/appointmentWhatsApp';
+import { STAFF_SCHEDULER_TIME_SLOTS } from '../utils/publicBookingSlots';
 import { toIsoLocal } from '../utils/dateLocal';
-
-const SCHEDULER_TIME_SLOTS = [
-  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
-  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
-  '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00',
-];
+import { API_URL } from '../config/apiUrl';
 
 /** Altura dinâmica das linhas da grade conforme agendamentos no horário (semana visível). */
 const SCHEDULER_CELL_PAD = 8;
@@ -51,9 +58,13 @@ function softDayHaptic() {
   }
 }
 
-function isSchedulerInServiceStatus(status) {
-  const s = String(status || '').trim().toLowerCase();
-  return s === 'em progresso' || s === 'em atendimento';
+function useDebounce(value, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
 }
 
 function buildSchedulerMonthGrid(monthDate) {
@@ -76,7 +87,19 @@ function formatSchedulerDatePt(iso) {
 }
 
 const Scheduler = () => {
-  const { appointments, barbers, services, addAppointment, updateAppointmentStatus, cancelAppointment, currentUser } = useApp();
+  const {
+    appointments,
+    barbers,
+    services,
+    products,
+    addAppointment,
+    updateAppointmentStatus,
+    cancelAppointment,
+    sellProduct,
+    currentUser,
+    apiFetch,
+    token,
+  } = useApp();
   const [selectedDate, setSelectedDate] = useState(() => toIsoLocal(new Date()));
   const isBarber = currentUser?.role === 'Barbeiro';
   
@@ -88,12 +111,27 @@ const Scheduler = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
-    customer: '', phone: '', serviceId: '', barberId: '', time: '09:00', date: ''
+    customer: '',
+    phone: '',
+    serviceId: '',
+    barberId: '',
+    time: '09:00',
+    date: '',
+    customerId: null,
+  });
+  const [clientSearchQuery, setClientSearchQuery] = useState('');
+  const [clientSearchResults, setClientSearchResults] = useState([]);
+  const [clientSearchLoading, setClientSearchLoading] = useState(false);
+  const debouncedClientSearch = useDebounce(clientSearchQuery, 300);
+
+  const appointmentActions = useAppointmentActions({
+    services,
+    products,
+    updateAppointmentStatus,
+    cancelAppointment,
+    sellProduct,
   });
 
-  // ─── Action Modal State ───
-  const [actionModal, setActionModal] = useState({ open: false, app: null, step: 'choose' }); // step: 'choose' | 'payment' | 'confirm-start' | 'confirm-cancel'
-  const [paymentSplits, setPaymentSplits] = useState([{ method: 'Pix', amount: 0 }]);
   const [appointmentDetailModal, setAppointmentDetailModal] = useState({ open: false, app: null });
   
   const schedulerWeekPickerRef = useRef(null);
@@ -220,18 +258,25 @@ const Scheduler = () => {
   
   const days = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 
-  const activeBarbers = barbers.filter(b => b.status === 'Ativo');
+  const activeBarbers = useMemo(
+    () => barbers.filter((b) => b.role === 'Barbeiro' && b.status === 'Ativo'),
+    [barbers]
+  );
   const dayHeaderHeight = 64;
 
   const handleOpenModal = (date, time) => {
+    if (isBookingSlotInPast(date || selectedDate, time)) return;
     clearAppointmentHoverTip();
+    setClientSearchQuery('');
+    setClientSearchResults([]);
     setFormData({
       customer: '',
       phone: '',
       serviceId: '',
-      barberId: isBarber ? String(currentUser.id) : (selectedBarberId !== 'all' ? selectedBarberId : ''),
+      barberId: isBarber ? String(currentUser.id) : selectedBarberId !== 'all' ? selectedBarberId : '',
       time: time || '09:00',
-      date: date || selectedDate
+      date: date || selectedDate,
+      customerId: null,
     });
     setIsModalOpen(true);
   };
@@ -247,14 +292,18 @@ const Scheduler = () => {
   }, [services, formData.serviceId]);
 
   const slotAvailabilityOpts = useMemo(
-    () => ({ barber: bookingFormBarber, durationMinutes: bookingDurationMinutes }),
-    [bookingFormBarber, bookingDurationMinutes]
+    () => ({
+      barber: bookingFormBarber,
+      durationMinutes: bookingDurationMinutes,
+      services,
+    }),
+    [bookingFormBarber, bookingDurationMinutes, services]
   );
 
   const availableBookingTimes = useMemo(
     () =>
       filterAvailableBookingTimes(
-        SCHEDULER_TIME_SLOTS,
+        STAFF_SCHEDULER_TIME_SLOTS,
         appointments,
         formData.date,
         bookingFormBarberId,
@@ -264,9 +313,50 @@ const Scheduler = () => {
   );
 
   useEffect(() => {
+    if (!isModalOpen || !token) {
+      setClientSearchResults([]);
+      return;
+    }
+    const q = debouncedClientSearch.trim();
+    if (q.length < 2) {
+      setClientSearchResults([]);
+      return;
+    }
+    let cancelled = false;
+    setClientSearchLoading(true);
+    const params = new URLSearchParams({ page: '1', pageSize: '8', search: q });
+    apiFetch(`${API_URL}/clients?${params.toString()}`, { authScope: 'staff' })
+      .then(async (res) => {
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!cancelled) setClientSearchResults(data.items || []);
+      })
+      .catch(() => {
+        if (!cancelled) setClientSearchResults([]);
+      })
+      .finally(() => {
+        if (!cancelled) setClientSearchLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedClientSearch, isModalOpen, token, apiFetch]);
+
+  const selectCrmClient = (client) => {
+    setFormData((prev) => ({
+      ...prev,
+      customer: client.name || prev.customer,
+      phone: client.phone || prev.phone,
+      customerId: client.source === 'customer' && client.id ? Number(client.id) : null,
+    }));
+    setClientSearchQuery('');
+    setClientSearchResults([]);
+  };
+
+  useEffect(() => {
     if (!isModalOpen) return;
     const list = filterAvailableBookingTimes(
-      SCHEDULER_TIME_SLOTS,
+      STAFF_SCHEDULER_TIME_SLOTS,
       appointments,
       formData.date,
       bookingFormBarberId,
@@ -295,13 +385,18 @@ const Scheduler = () => {
       window.alert('Não há horário disponível para concluir a reserva.');
       return;
     }
-    if (isBookingSlotTaken(appointments, formData.date, normalizedTime, formData.barberId)) {
+    if (
+      isBookingSlotTaken(appointments, formData.date, normalizedTime, formData.barberId, {
+        durationMinutes: bookingDurationMinutes,
+        services,
+      })
+    ) {
       window.alert(
         'Este horário já está reservado para o profissional selecionado. Escolha outro horário disponível na lista.'
       );
       return;
     }
-    const selectedService = services.find(s => String(s.id) === String(formData.serviceId));
+    const selectedService = services.find((s) => String(s.id) === String(formData.serviceId));
 
     const result = await addAppointment({
       customer: formData.customer,
@@ -312,6 +407,8 @@ const Scheduler = () => {
       time: normalizedTime,
       status: 'Agendado',
       price: selectedService?.price || 0,
+      durationMinutes: bookingDurationMinutes,
+      ...(formData.customerId ? { customerId: formData.customerId } : {}),
     });
 
     if (result?.ok) {
@@ -321,13 +418,10 @@ const Scheduler = () => {
     }
   };
 
-  // ─── Action Modal handlers ───
   const openActionModal = (app, e) => {
     clearAppointmentHoverTip();
     e?.stopPropagation();
-    if (!app || app.status === 'Finalizado' || app.status === 'Cancelado') return;
-    setActionModal({ open: true, app, step: 'choose' });
-    setPaymentSplits([{ method: 'Pix', amount: app.price }]);
+    appointmentActions.openActionModal(app);
   };
 
   const openAppointmentDetailModal = (app, e) => {
@@ -343,50 +437,7 @@ const Scheduler = () => {
     const app = appointmentDetailModal.app;
     if (!app || app.status === 'Finalizado' || app.status === 'Cancelado') return;
     setAppointmentDetailModal({ open: false, app: null });
-    setActionModal({ open: true, app, step: 'choose' });
-    setPaymentSplits([{ method: 'Pix', amount: app.price }]);
-  };
-
-  const closeActionModal = () => setActionModal({ open: false, app: null, step: 'choose' });
-
-  const handleMarkInProgress = async () => {
-    await updateAppointmentStatus(actionModal.app.id, 'Em progresso');
-    closeActionModal();
-  };
-
-  const handleCancelAppointment = async () => {
-    await cancelAppointment(actionModal.app.id);
-    closeActionModal();
-  };
-
-  const handleFinalizePayment = async () => {
-    const totalPaid = paymentSplits.reduce((acc, curr) => acc + Number(curr.amount), 0);
-    if (Math.abs(totalPaid - actionModal.app.price) > 0.01) {
-      alert(`O valor total pago (R$ ${totalPaid.toFixed(2)}) deve ser igual ao valor do serviço (R$ ${actionModal.app.price.toFixed(2)})`);
-      return;
-    }
-    await updateAppointmentStatus(actionModal.app.id, 'Finalizado', { payments: paymentSplits });
-    closeActionModal();
-  };
-
-  const handleAddSplit = () => setPaymentSplits([...paymentSplits, { method: 'Pix', amount: 0 }]);
-  
-  const handleChangeService = async (newServiceId) => {
-    const s = services.find(sv => String(sv.id) === String(newServiceId));
-    if (!s) return;
-    await updateAppointmentStatus(actionModal.app.id, actionModal.app.status, {
-      service: s.name,
-      price: s.price
-    });
-    setActionModal({
-      ...actionModal,
-      app: { ...actionModal.app, service: s.name, price: s.price }
-    });
-  };
-  const handleSplitChange = (index, field, value) => {
-    const newSplits = [...paymentSplits];
-    newSplits[index][field] = value;
-    setPaymentSplits(newSplits);
+    appointmentActions.openActionModal(app);
   };
 
   const getDayDate = (colIndex) => {
@@ -414,9 +465,25 @@ const Scheduler = () => {
     setSelectedDate(toIsoLocal(d));
   };
 
-  const getAppointmentsForCell = (dateString, timeString) => {
-    return filteredAppointments.filter(app => app.date === dateString && app.time === timeString);
-  };
+  const getAppointmentsForCell = useCallback(
+    (dateString, timeString) => {
+      const slot = normalizeBookingTime(timeString);
+      return filteredAppointments.filter(
+        (app) => app.date === dateString && normalizeBookingTime(app.time) === slot
+      );
+    },
+    [filteredAppointments]
+  );
+
+  const cellHasBlockingAppointment = useCallback(
+    (dateString, timeString, barberId = null) =>
+      filteredAppointments.some((app) => {
+        if (app.date !== dateString) return false;
+        if (barberId != null && String(app.barberId) !== String(barberId)) return false;
+        return appointmentOccupiesSlot(app, timeString, services);
+      }),
+    [filteredAppointments, services]
+  );
 
   const rowHeightsBySlot = useMemo(() => {
     const weekBase = new Date(`${startStr}T12:00:00`);
@@ -426,10 +493,12 @@ const Scheduler = () => {
       return toIsoLocal(d);
     });
 
-    return SCHEDULER_TIME_SLOTS.map((time) => {
+    return STAFF_SCHEDULER_TIME_SLOTS.map((time) => {
       let maxCount = 0;
       for (const date of weekDates) {
-        const n = filteredAppointments.filter((a) => a.date === date && a.time === time).length;
+        const n = filteredAppointments.filter(
+          (a) => a.date === date && normalizeBookingTime(a.time) === normalizeBookingTime(time)
+        ).length;
         if (n > maxCount) maxCount = n;
       }
 
@@ -443,46 +512,19 @@ const Scheduler = () => {
       const inner = maxCount * SCHEDULER_APPT_MIN_H + (maxCount - 1) * SCHEDULER_APPT_GAP;
       return Math.min(SCHEDULER_ROW_MAX_ALL, SCHEDULER_CELL_PAD + inner);
     });
-  }, [filteredAppointments, selectedBarberId, startStr]);
+  }, [filteredAppointments, selectedBarberId, startStr, services]);
 
   const apptCountClass = (count) =>
     `scheduler-cell-appts--count-${Math.min(Math.max(count, 0), 9)}`;
 
-  // Status color helper
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case 'Finalizado': return { 
-        bg: 'rgba(5, 150, 105, 0.1)', 
-        border: 'rgba(5, 150, 105, 0.3)', 
-        badge: '#059669', 
-        label: 'Pago' 
-      };
-      case 'Em progresso': return { 
-        bg: '#DBEAFE',
-        border: '#93C5FD',
-        badge: '#3B82F6',
-        label: 'Atd.' 
-      };
-      case 'Cancelado': return { 
-        bg: 'rgba(239, 68, 68, 0.08)', 
-        border: 'rgba(239, 68, 68, 0.3)', 
-        badge: '#ef4444', 
-        label: 'Canc.' 
-      };
-      default: return { 
-        bg: 'var(--panel-bg)', 
-        border: 'var(--border-color)', 
-        badge: 'var(--brand-400)', 
-        label: 'Ag' 
-      };
-    }
-  };
+  const getStatusStyle = getAppointmentStatusStyle;
 
   const ad = appointmentDetailModal.open ? appointmentDetailModal.app : null;
   const detailBarber = ad ? barbers.find((b) => b.id === ad.barberId) : null;
   const detailSs = ad ? getStatusStyle(ad.status) : null;
   const detailActionable = ad && ad.status !== 'Finalizado' && ad.status !== 'Cancelado';
   const detailPhoneOk = ad && String(ad.phone || '').replace(/\D/g, '').length >= 8;
+  const detailWaPhone = ad ? normalizePhoneForWhatsApp(ad.phone) : null;
 
   return (
     <div className="fade-in scheduler-page" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 4rem)' }}>
@@ -675,8 +717,9 @@ const Scheduler = () => {
       {isSchedulerNarrow && (
         <div className="scheduler-mobile-layout">
           <div className="scheduler-mobile-list-scroll hide-scrollbar">
-            {SCHEDULER_TIME_SLOTS.map((time) => {
+            {STAFF_SCHEDULER_TIME_SLOTS.map((time) => {
               const cellApps = getAppointmentsForCell(selectedDate, time);
+              const slotPast = isBookingSlotInPast(selectedDate, time);
               return (
                 <div key={time} className="scheduler-mobile-slot">
                   <div className="scheduler-mobile-slot__time">{time}</div>
@@ -685,7 +728,9 @@ const Scheduler = () => {
                       <button
                         type="button"
                         className="scheduler-mobile-slot__free"
+                        disabled={slotPast}
                         onClick={() => handleOpenModal(selectedDate, time)}
+                        style={slotPast ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
                       >
                         Livre — toque para agendar
                       </button>
@@ -698,7 +743,7 @@ const Scheduler = () => {
                             <button
                               key={app.id}
                               type="button"
-                              className={`scheduler-mobile-macro-card scheduler-appt-bar scheduler-appt-bar--interactive${isSchedulerInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
+                              className={`scheduler-mobile-macro-card scheduler-appt-bar scheduler-appt-bar--interactive${isInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
                               onMouseEnter={onAppointmentHoverEnter(app, b?.name)}
                               onMouseLeave={clearAppointmentHoverTip}
                               onClick={(e) => openActionModal(app, e)}
@@ -732,7 +777,7 @@ const Scheduler = () => {
                           <button
                             key={app.id}
                             type="button"
-                            className={`scheduler-mobile-single-card fade-in${isSchedulerInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
+                            className={`scheduler-mobile-single-card fade-in${isInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
                             onMouseEnter={onAppointmentHoverEnter(
                               app,
                               barbers.find((x) => x.id === app.barberId)?.name
@@ -782,7 +827,7 @@ const Scheduler = () => {
         
         {/* Time Column */}
         <div className="hide-scrollbar glass-card scheduler-time-col" style={{ padding: '0', display: 'flex', flexDirection: 'column', paddingTop: `${dayHeaderHeight}px`, background: 'rgba(0,0,0,0.02)', boxSizing: 'border-box', position: 'sticky', left: 0, zIndex: 20 }}>
-          {SCHEDULER_TIME_SLOTS.map((time, slotIdx) => (
+          {STAFF_SCHEDULER_TIME_SLOTS.map((time, slotIdx) => (
             <div key={time} style={{ height: `${rowHeightsBySlot[slotIdx]}px`, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', transition: 'height 0.25s ease', boxSizing: 'border-box' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{time}</span>
             </div>
@@ -822,56 +867,55 @@ const Scheduler = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gridTemplateRows: rowHeightsBySlot.map((h) => `${h}px`).join(' '), gap: 0, width: '100%', position: 'relative', transition: 'grid-template-rows 0.25s ease' }}>
             
-            {Array.from({ length: SCHEDULER_TIME_SLOTS.length * 7 }).map((_, i) => {
+            {Array.from({ length: STAFF_SCHEDULER_TIME_SLOTS.length * 7 }).map((_, i) => {
               const col = i % 7;
               const rowIdx = Math.floor(i / 7);
-              const time = SCHEDULER_TIME_SLOTS[rowIdx];
+              const time = STAFF_SCHEDULER_TIME_SLOTS[rowIdx];
               const date = getDayDate(col);
               const cellApps = getAppointmentsForCell(date, time);
               const gridRow = rowIdx + 1;
               const gridCol = col + 1;
-              const slotOpenForBarber = (b) =>
+              const slotPast = isBookingSlotInPast(date, time);
+              const slotOpenForBarber = (b, durationMinutes = 30) =>
                 isBarberScheduleOpen({
                   barber: b,
                   dateIso: date,
                   time,
-                  durationMinutes: 30,
+                  durationMinutes,
                 });
               /** Individual: só mostra "+" se o slot estiver livre e dentro da carga horária. */
               const showScheduleSlotPlus =
-                selectedBarberId === 'all'
+                !slotPast &&
+                (selectedBarberId === 'all'
                   ? activeBarbers.some((b) => {
                       const bid = String(b.id);
-                      const notTaken = !cellApps.some(
-                        (a) => String(a.barberId) === bid && BOOKING_BLOCKING_STATUSES.includes(a.status)
-                      );
+                      const notTaken = !cellHasBlockingAppointment(date, time, bid);
                       return notTaken && slotOpenForBarber(b);
                     })
                   : (() => {
                       const b = barbers.find((x) => String(x.id) === String(selectedBarberId));
                       if (!b) return false;
-                      const free = !cellApps.some((a) => a.status !== 'Cancelado');
+                      const free = !cellHasBlockingAppointment(date, time, selectedBarberId);
                       return free && slotOpenForBarber(b);
-                    })();
+                    })());
+              const cellBlocked =
+                slotPast ||
+                (selectedBarberId !== 'all' &&
+                  cellHasBlockingAppointment(date, time, selectedBarberId));
               
               return (
                 <div 
                   key={i} 
                   className="hover-trigger"
                   onClick={() => {
-                    if (
-                      selectedBarberId !== 'all' &&
-                      cellApps.some((a) => BOOKING_BLOCKING_STATUSES.includes(a.status))
-                    ) {
-                      return;
-                    }
+                    if (cellBlocked) return;
                     handleOpenModal(date, time);
                   }}
                   style={{ 
                     borderRight: '1px solid var(--border-color)', 
                     boxShadow: 'inset 0 -1px 0 var(--border-color)',
                     position: 'relative',
-                    cursor: 'pointer',
+                    cursor: cellBlocked ? 'default' : 'pointer',
                     background: 'transparent',
                     gridColumn: gridCol,
                     gridRow: gridRow,
@@ -899,7 +943,7 @@ const Scheduler = () => {
                            key={app.id}
                            role="button"
                            tabIndex={actionable ? 0 : -1}
-                           className={`scheduler-appt-bar fade-in${actionable ? ' scheduler-appt-bar--interactive' : ' scheduler-appt-bar--muted'}${isSchedulerInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
+                           className={`scheduler-appt-bar fade-in${actionable ? ' scheduler-appt-bar--interactive' : ' scheduler-appt-bar--muted'}${isInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
                            onMouseEnter={onAppointmentHoverEnter(app, b?.name)}
                            onMouseLeave={clearAppointmentHoverTip}
                            onClick={(e) => actionable && openActionModal(app, e)}
@@ -930,7 +974,7 @@ const Scheduler = () => {
                         return (
                           <div 
                             key={app.id}
-                            className={`fade-in scheduler-cell-appts__single${isSchedulerInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
+                            className={`fade-in scheduler-cell-appts__single${isInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
                             onMouseEnter={onAppointmentHoverEnter(
                               app,
                               barbers.find((x) => x.id === app.barberId)?.name
@@ -1039,6 +1083,64 @@ const Scheduler = () => {
                 </div>
               </div>
 
+              {detailActionable && (
+                <div className="dash-upcoming-actions" style={{ marginTop: '1rem', justifyContent: 'flex-start' }}>
+                  <button
+                    type="button"
+                    className={`dash-upcoming-action-btn dash-upcoming-action-btn--start${isInServiceStatus(ad.status) ? ' dash-upcoming-action-btn--in-service' : ''}`}
+                    title={isInServiceStatus(ad.status) ? 'Em atendimento' : 'Iniciar atendimento'}
+                    style={{
+                      color: IN_SERVICE_COLOR,
+                      background: isInServiceStatus(ad.status)
+                        ? 'rgba(147, 197, 253, 0.35)'
+                        : 'rgba(147, 197, 253, 0.22)',
+                      border: '1px solid rgba(147, 197, 253, 0.6)',
+                    }}
+                    onClick={(e) => {
+                      closeAppointmentDetailModal();
+                      appointmentActions.handleQuickStart(ad, e);
+                    }}
+                  >
+                    <Play size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="sloot-circle-action sloot-circle-action--confirm sloot-circle-action--sm"
+                    title="Finalizar pagamento"
+                    onClick={(e) => {
+                      closeAppointmentDetailModal();
+                      appointmentActions.handleQuickConfirm(ad, e);
+                    }}
+                  >
+                    <CheckCircle size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="sloot-circle-action sloot-circle-action--cancel-outline sloot-circle-action--sm"
+                    title="Cancelar agendamento"
+                    onClick={(e) => {
+                      closeAppointmentDetailModal();
+                      appointmentActions.handleQuickCancel(ad, e);
+                    }}
+                  >
+                    <XCircle size={16} />
+                  </button>
+                  {detailWaPhone && (
+                    <button
+                      type="button"
+                      className="dash-upcoming-wa-btn"
+                      title="Confirmar horário por WhatsApp"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openWhatsAppConfirm(ad);
+                      }}
+                    >
+                      <WhatsAppIcon size={18} />
+                    </button>
+                  )}
+                </div>
+              )}
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '1.25rem' }}>
                 {detailActionable && (
                   <button type="button" className="btn-primary" style={{ padding: '12px 16px' }} onClick={openActionsFromAppointmentDetail}>
@@ -1054,188 +1156,11 @@ const Scheduler = () => {
         </div>
       )}
 
-      {/* ═══════ ACTION MODAL ═══════ */}
-      {actionModal.open && actionModal.app && (
-        <div className="modal-backdrop">
-          <div className="modal-glass-panel fade-in scheduler-modal-panel" style={{ width: '95%', maxWidth: '480px', padding: '2rem' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.2rem', margin: 0 }}>
-                {actionModal.step === 'choose'
-                  ? 'Ação do Agendamento'
-                  : actionModal.step === 'payment'
-                    ? 'Check-out — Pagamento'
-                    : actionModal.step === 'confirm-start'
-                      ? 'Confirmar Início'
-                      : 'Confirmar Cancelamento'}
-              </h2>
-              <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={closeActionModal}><X size={20} /></button>
-            </div>
-
-            {/* Appointment Info */}
-            <div className="action-modal-panel">
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontWeight: 600 }}>{actionModal.app.customer}</span>
-                <span style={{ fontWeight: 700, color: 'var(--brand-600)', fontSize: '1.1rem' }}>R$ {actionModal.app.price.toFixed(2)}</span>
-              </div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                {actionModal.app.service} — {actionModal.app.time} — {actionModal.app.date}
-              </div>
-              <div style={{ marginTop: '6px' }}>
-                <span
-                  className="action-modal-status-pill"
-                  style={{
-                    background: getStatusStyle(actionModal.app.status).bg,
-                    color: actionModal.app.status === 'Agendado' ? 'var(--text-secondary)' : getStatusStyle(actionModal.app.status).badge,
-                  }}
-                >
-                  {actionModal.app.status}
-                </span>
-              </div>
-            </div>
-
-            {/* Change Service Section */}
-            {actionModal.step === 'choose' && (
-              <div className="action-modal-panel action-modal-panel--dashed">
-                <span className="action-modal-panel__title action-modal-panel__title--stack">Trocar Serviço</span>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <select
-                    className="action-modal-field"
-                    onChange={(e) => {
-                      if (e.target.value) handleChangeService(e.target.value);
-                    }}
-                    value=""
-                  >
-                    <option value="">Selecione para trocar...</option>
-                    {services.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} - R$ {s.price}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-
-            {/* Step: Choose */}
-            {actionModal.step === 'choose' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {actionModal.app.status === 'Agendado' && (
-                  <button
-                    type="button"
-                    className="action-modal-choice-btn action-modal-choice-btn--start"
-                    onClick={() => setActionModal({ ...actionModal, step: 'confirm-start' })}
-                  >
-                    <Play size={18} /> Iniciar Atendimento
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="action-modal-choice-btn action-modal-choice-btn--pay"
-                  onClick={() => setActionModal({ ...actionModal, step: 'payment' })}
-                >
-                  <CheckCircle size={18} aria-hidden /> Marcar como Pago
-                </button>
-                <button
-                  type="button"
-                  className="action-modal-choice-btn action-modal-choice-btn--cancel"
-                  onClick={() => setActionModal({ ...actionModal, step: 'confirm-cancel' })}
-                >
-                  <XCircle size={18} aria-hidden /> Cancelar Agendamento
-                </button>
-              </div>
-            )}
-
-            {/* Step: Confirm Start */}
-            {actionModal.step === 'confirm-start' && (
-              <div>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-                  Deseja realmente iniciar o atendimento de <strong>{actionModal.app.customer}</strong>?
-                </p>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setActionModal({ ...actionModal, step: 'choose' })} className="btn-secondary" style={{ flex: 1, padding: '14px' }}>
-                    ← Voltar
-                  </button>
-                  <button type="button" onClick={handleMarkInProgress} className="action-modal-cta-btn action-modal-cta-btn--start-blue" style={{ flex: 2, padding: '14px' }}>
-                    <Play size={18} /> Confirmar Início
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step: Payment */}
-            {actionModal.step === 'payment' && (
-              <div>
-                <div className="action-modal-panel">
-                  <div className="action-modal-panel__head">
-                    <span className="action-modal-panel__title">Composição de Pagamento</span>
-                    <button type="button" className="action-modal-panel__chip-btn" onClick={handleAddSplit}>
-                      <Plus size={14} aria-hidden /> Dividir
-                    </button>
-                  </div>
-                  <div className="action-modal-panel__stack">
-                    {paymentSplits.map((split, index) => (
-                      <div key={index} className="fade-in action-modal-panel__split-row">
-                        <select className="action-modal-field" value={split.method} onChange={e => handleSplitChange(index, 'method', e.target.value)}>
-                          <option value="Pix">Pix</option>
-                          <option value="Cartão de Crédito">Cartão de Crédito</option>
-                          <option value="Cartão de Débito">Cartão de Débito</option>
-                          <option value="Dinheiro">Dinheiro</option>
-                        </select>
-                        <div className="action-modal-field--amount-wrap">
-                          <span className="action-modal-field__currency">R$</span>
-                          <input
-                            type="number"
-                            className="action-modal-field action-modal-field--with-currency"
-                            min="0"
-                            step="0.01"
-                            value={split.amount}
-                            onChange={e => handleSplitChange(index, 'amount', e.target.value)}
-                          />
-                        </div>
-                        {paymentSplits.length > 1 && (
-                          <button
-                            type="button"
-                            className="action-modal-remove-row"
-                            onClick={() => setPaymentSplits(paymentSplits.filter((_, i) => i !== index))}
-                            aria-label="Remover forma de pagamento"
-                          >
-                            <X size={18} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setActionModal({ ...actionModal, step: 'choose' })} className="btn-secondary" style={{ flex: 1, padding: '14px' }}>
-                    ← Voltar
-                  </button>
-                  <button className="btn-primary" style={{ flex: 2, padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }} onClick={handleFinalizePayment}>
-                    <Banknote size={18} /> Finalizar Recebimento
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step: Confirm Cancel */}
-            {actionModal.step === 'confirm-cancel' && (
-              <div>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-                  Tem certeza que deseja cancelar o agendamento de <strong>{actionModal.app.customer}</strong>?
-                  Esta ação não pode ser desfeita.
-                </p>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setActionModal({ ...actionModal, step: 'choose' })} className="btn-secondary" style={{ flex: 1, padding: '14px' }}>
-                    ← Voltar
-                  </button>
-                  <button type="button" onClick={handleCancelAppointment} className="action-modal-cta-btn action-modal-cta-btn--danger" style={{ flex: 2, padding: '14px' }}>
-                    <XCircle size={18} /> Confirmar Cancelamento
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <AppointmentActionModal
+        {...appointmentActions}
+        services={services}
+        products={products}
+      />
 
       {/* ═══════ AGENDAMENTO MODAL ═══════ */}
       {isModalOpen && (
@@ -1252,10 +1177,63 @@ const Scheduler = () => {
               <input
                 type="text"
                 className="booking-reserve-form__field"
+                placeholder="Buscar cliente cadastrado (nome ou telefone)"
+                value={clientSearchQuery}
+                onChange={(e) => {
+                  setClientSearchQuery(e.target.value);
+                  if (!e.target.value.trim()) {
+                    setFormData((prev) => ({ ...prev, customerId: null }));
+                  }
+                }}
+              />
+              {clientSearchLoading && (
+                <p className="booking-reserve-form__hint">Buscando clientes…</p>
+              )}
+              {!clientSearchLoading && clientSearchResults.length > 0 && (
+                <ul
+                  className="booking-reserve-form__client-suggestions"
+                  style={{
+                    listStyle: 'none',
+                    margin: '0 0 8px',
+                    padding: 0,
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {clientSearchResults.map((client) => (
+                    <li key={`${client.source}-${client.id || client.guestKey}`}>
+                      <button
+                        type="button"
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '10px 12px',
+                          border: 'none',
+                          borderBottom: '1px solid var(--border-color)',
+                          background: 'var(--panel-bg)',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => selectCrmClient(client)}
+                      >
+                        <strong>{client.name}</strong>
+                        {client.phone ? (
+                          <span style={{ color: 'var(--text-secondary)', marginLeft: '8px', fontSize: '0.85rem' }}>
+                            {client.phone}
+                          </span>
+                        ) : null}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <input
+                type="text"
+                className="booking-reserve-form__field"
                 placeholder="Nome do cliente *"
                 autoComplete="name"
                 value={formData.customer}
-                onChange={(e) => setFormData({ ...formData, customer: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, customer: e.target.value, customerId: null })}
               />
               <input
                 type="tel"
@@ -1265,7 +1243,7 @@ const Scheduler = () => {
                 inputMode="tel"
                 required
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value, customerId: null })}
               />
               <select
                 className="booking-reserve-form__field"

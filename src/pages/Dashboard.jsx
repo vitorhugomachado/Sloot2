@@ -1,14 +1,20 @@
 ﻿import React, { useState, useMemo, useEffect } from 'react';
-import { Users, Calendar, Clock, X, ShoppingBag, Plus, LayoutGrid, Play, CheckCircle, XCircle, Banknote } from 'lucide-react';
+import { Users, Calendar, Clock, X, ShoppingBag, Plus, LayoutGrid, Play, CheckCircle, XCircle } from 'lucide-react';
 import WhatsAppIcon from '../components/icons/WhatsAppIcon';
+import AppointmentActionModal from '../components/appointments/AppointmentActionModal';
 import { useApp } from '../context/AppContext';
+import { useAppointmentActions, formatCheckoutCurrency } from '../hooks/useAppointmentActions';
+import { filterAvailableBookingTimes, isBookingSlotTaken } from '../utils/bookingAvailability';
+import { parseDurationMinutes } from '../utils/barberAvailability';
+import { getAppointmentStatusConfig, IN_SERVICE_COLOR, isInServiceStatus } from '../utils/appointmentStatus';
+import { normalizePhoneForWhatsApp, openWhatsAppConfirm } from '../utils/appointmentWhatsApp';
+import { STAFF_DASHBOARD_TIME_SLOTS } from '../utils/publicBookingSlots';
 
 const EMPTY_DIRECT_SALE = {
   customerName: '',
   barberId: '',
   items: [{ productId: '', quantity: 1 }],
 };
-import { filterAvailableBookingTimes, isBookingSlotTaken } from '../utils/bookingAvailability';
 import { toIsoLocal } from '../utils/dateLocal';
 import { computeOccupancyForPeriod } from '../utils/occupancyStats';
 import { formatRelativeTime } from '../utils/relativeTime';
@@ -70,8 +76,6 @@ const MiniCalendar = ({ focusDate, onDateSelect }) => {
     </div>
   );
 };
-
-const DASHBOARD_TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
 
 const PERIOD_OPTIONS = [
   { d: 0, l: 'Hoje' },
@@ -152,11 +156,14 @@ const Dashboard = () => {
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
   const [receiptModal, setReceiptModal] = useState({ open: false, app: null });
 
-  // ─── Action Modal State (replaces the old payment-only modal) ───
-  const [actionModal, setActionModal] = useState({ open: false, app: null, step: 'choose' }); // step: 'choose' | 'payment' | 'confirm-start' | 'confirm-cancel'
-  const [paymentSplits, setPaymentSplits] = useState([{ method: 'Pix', amount: 0 }]);
-  const [checkoutProducts, setCheckoutProducts] = useState([{ productId: '', quantity: 1 }]);
-  
+  const appointmentActions = useAppointmentActions({
+    services,
+    products,
+    updateAppointmentStatus,
+    cancelAppointment,
+    sellProduct,
+  });
+
   const [formData, setFormData] = useState({
     customer: '', phone: '', serviceId: '', barberId: '', time: '09:00', date: focusDate
   });
@@ -300,112 +307,7 @@ const Dashboard = () => {
     closeSaleModal();
   };
 
-  // ─── Action Modal handlers ───
-  const openActionModal = (app) => {
-    if (!app || app.status === 'Finalizado' || app.status === 'Cancelado') return;
-    setActionModal({ open: true, app, step: 'choose' });
-    setPaymentSplits([{ method: 'Pix', amount: app.price }]);
-    setCheckoutProducts([{ productId: '', quantity: 1 }]);
-  };
-
-  const closeActionModal = () => {
-    setActionModal({ open: false, app: null, step: 'choose' });
-    setCheckoutProducts([{ productId: '', quantity: 1 }]);
-  };
-
-  const handleMarkInProgress = async () => {
-    const success = await updateAppointmentStatus(actionModal.app.id, 'Em progresso');
-    if (success) closeActionModal();
-  };
-
-  const handleCancelAppointment = async () => {
-    const success = await cancelAppointment(actionModal.app.id);
-    if (success) closeActionModal();
-  };
-
-  const handleFinalizePayment = async () => {
-    const selectedProducts = checkoutProducts
-      .filter(item => item.productId)
-      .map(item => ({
-        productId: Number(item.productId),
-        quantity: Math.max(1, Number(item.quantity || 1))
-      }));
-
-    let productsTotal = 0;
-    const selectedProductsDetailed = [];
-    for (const item of selectedProducts) {
-      const product = products.find(p => Number(p.id) === item.productId);
-      if (!product) {
-        alert('Um produto selecionado não está cadastrado.');
-        return;
-      }
-      if (Number(product.stock || 0) < item.quantity) {
-        alert(`Estoque insuficiente para ${product.name}. Disponível: ${product.stock}.`);
-        return;
-      }
-      const subtotal = Number(product.price || 0) * item.quantity;
-      productsTotal += subtotal;
-      selectedProductsDetailed.push({
-        id: Number(product.id),
-        name: product.name,
-        quantity: item.quantity,
-        unitPrice: Number(product.price || 0),
-        subtotal
-      });
-    }
-
-    const requiredTotal = Number(actionModal.app.price || 0) + productsTotal;
-    const totalPaid = paymentSplits.reduce((acc, curr) => acc + Number(curr.amount), 0);
-    if (Math.abs(totalPaid - requiredTotal) > 0.01) {
-      alert(`O valor total pago (R$ ${totalPaid.toFixed(2)}) deve ser igual ao total do checkout (R$ ${requiredTotal.toFixed(2)}).`);
-      return;
-    }
-
-    for (const item of selectedProducts) {
-      const saleOk = await sellProduct(item.productId, item.quantity, actionModal.app.barberId || null);
-      if (!saleOk) {
-        alert('Não foi possível registrar um dos produtos no estoque.');
-        return;
-      }
-    }
-
-    const success = await updateAppointmentStatus(actionModal.app.id, 'Finalizado', {
-      payments: {
-        splits: paymentSplits,
-        products: selectedProductsDetailed,
-        serviceTotal: Number(actionModal.app.price || 0),
-        productsTotal,
-        totalCheckout: requiredTotal
-      }
-    });
-    if (success) closeActionModal();
-  };
-
-  const handleAddSplit = () => setPaymentSplits([...paymentSplits, { method: 'Pix', amount: 0 }]);
-  
-  const handleChangeService = async (newServiceId) => {
-    const s = services.find(sv => String(sv.id) === String(newServiceId));
-    if (!s) return;
-    await updateAppointmentStatus(actionModal.app.id, actionModal.app.status, {
-      service: s.name,
-      price: s.price
-    });
-    setActionModal({
-      ...actionModal,
-      app: { ...actionModal.app, service: s.name, price: s.price }
-    });
-  };
-  const handleSplitChange = (index, field, value) => {
-    const newSplits = [...paymentSplits];
-    newSplits[index][field] = value;
-    setPaymentSplits(newSplits);
-  };
-  const handleAddCheckoutProduct = () => setCheckoutProducts(prev => [...prev, { productId: '', quantity: 1 }]);
-  const handleCheckoutProductChange = (index, field, value) => {
-    const next = [...checkoutProducts];
-    next[index][field] = value;
-    setCheckoutProducts(next);
-  };
+  const openActionModal = appointmentActions.openActionModal;
 
   const openNewAppModal = (barberId = '', time = '09:00') => {
     const defaultBarberId = isBarber ? String(currentUser.id) : String(barberId);
@@ -414,14 +316,44 @@ const Dashboard = () => {
   };
 
   const dashboardBookingBarberId = isBarber ? String(currentUser.id) : formData.barberId;
+  const dashboardBookingBarber = useMemo(
+    () => barbers.find((b) => String(b.id) === String(dashboardBookingBarberId)) || null,
+    [barbers, dashboardBookingBarberId]
+  );
+  const dashboardBookingDurationMinutes = useMemo(() => {
+    const svc = services.find((s) => String(s.id) === String(formData.serviceId));
+    return parseDurationMinutes(svc?.duration);
+  }, [services, formData.serviceId]);
+  const dashboardSlotOpts = useMemo(
+    () => ({
+      barber: dashboardBookingBarber,
+      durationMinutes: dashboardBookingDurationMinutes,
+      services,
+    }),
+    [dashboardBookingBarber, dashboardBookingDurationMinutes, services]
+  );
+
   const availableDashboardBookingTimes = useMemo(
-    () => filterAvailableBookingTimes(DASHBOARD_TIME_SLOTS, appointments, formData.date, dashboardBookingBarberId),
-    [appointments, formData.date, dashboardBookingBarberId]
+    () =>
+      filterAvailableBookingTimes(
+        STAFF_DASHBOARD_TIME_SLOTS,
+        appointments,
+        formData.date,
+        dashboardBookingBarberId,
+        dashboardSlotOpts
+      ),
+    [appointments, formData.date, dashboardBookingBarberId, dashboardSlotOpts]
   );
 
   useEffect(() => {
     if (!isModalOpen) return;
-    const list = filterAvailableBookingTimes(DASHBOARD_TIME_SLOTS, appointments, formData.date, dashboardBookingBarberId);
+    const list = filterAvailableBookingTimes(
+      STAFF_DASHBOARD_TIME_SLOTS,
+      appointments,
+      formData.date,
+      dashboardBookingBarberId,
+      dashboardSlotOpts
+    );
     setFormData((prev) => {
       if (list.length === 0) {
         return prev.time === '' ? prev : { ...prev, time: '' };
@@ -444,7 +376,12 @@ const Dashboard = () => {
       window.alert('Não há horário disponível para concluir a reserva.');
       return;
     }
-    if (isBookingSlotTaken(appointments, formData.date, effectiveTime, formData.barberId)) {
+    if (
+      isBookingSlotTaken(appointments, formData.date, effectiveTime, formData.barberId, {
+        durationMinutes: dashboardBookingDurationMinutes,
+        services,
+      })
+    ) {
       window.alert(
         'Este horário já está reservado para o profissional selecionado. Escolha outro horário disponível na lista.'
       );
@@ -464,56 +401,11 @@ const Dashboard = () => {
 
   const barberColors = ['#2563EB', '#10B981', '#f59e0b', '#ec4899', '#64748B'];
   const maxRevenue = ranking.length > 0 ? Math.max(...ranking.map(b => b.revenue), 1) : 1;
-  const formatCurrency = (value) => `R$ ${Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
-  const checkoutProductsTotal = useMemo(() => {
-    return checkoutProducts.reduce((sum, item) => {
-      if (!item.productId) return sum;
-      const product = products.find(p => Number(p.id) === Number(item.productId));
-      if (!product) return sum;
-      const qty = Math.max(1, Number(item.quantity || 1));
-      return sum + (Number(product.price || 0) * qty);
-    }, 0);
-  }, [checkoutProducts, products]);
-  const checkoutServiceTotal = Number(actionModal.app?.price || 0);
-  const checkoutGrandTotal = checkoutServiceTotal + checkoutProductsTotal;
+  const formatCurrency = formatCheckoutCurrency;
 
-  useEffect(() => {
-    if (!(actionModal.open && actionModal.step === 'payment')) return;
-    setPaymentSplits((prev) => {
-      if (prev.length !== 1) return prev;
-      const currentAmount = Number(prev[0]?.amount || 0);
-      if (Math.abs(currentAmount - checkoutGrandTotal) < 0.01) return prev;
-      return [{ ...prev[0], amount: checkoutGrandTotal }];
-    });
-  }, [actionModal.open, actionModal.step, checkoutGrandTotal]);
-
-  const normalizePhoneForWhatsApp = (phone) => {
-    if (!phone) return null;
-    let digits = String(phone).replace(/\D/g, '');
-    if (!digits) return null;
-    if (digits.startsWith('00')) digits = digits.slice(2);
-    if (!digits.startsWith('55')) digits = `55${digits}`;
-    return digits;
-  };
-
-  const toBrDate = (isoDate) => {
-    if (!isoDate || !isoDate.includes('-')) return isoDate || '';
-    const [year, month, day] = isoDate.split('-');
-    return `${day}/${month}/${year}`;
-  };
-
-  const buildWhatsAppMessage = (app) => {
-    const msg = `Olá ${app.customer}, tudo bem? Poderia confirmar seu agendamento em ${toBrDate(app.date)} às ${app.time}?`;
-    return encodeURIComponent(msg);
-  };
-
-  const openWhatsAppConfirm = (app, event) => {
+  const openWhatsAppConfirmHandler = (app, event) => {
     event.stopPropagation();
-    const normalizedPhone = normalizePhoneForWhatsApp(app.phone);
-    if (!normalizedPhone) return;
-    const encodedMessage = buildWhatsAppMessage(app);
-    const url = `https://wa.me/${normalizedPhone}?text=${encodedMessage}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    openWhatsAppConfirm(app);
   };
 
   const openReceiptModal = (app) => {
@@ -547,62 +439,8 @@ const Dashboard = () => {
     return { splits: [], products: [], serviceTotal, productsTotal: 0, totalCheckout: serviceTotal };
   };
 
-  const handleQuickStart = (app, event) => {
-    event.stopPropagation();
-    setActionModal({ open: true, app, step: 'confirm-start' });
-    setPaymentSplits([{ method: 'Pix', amount: Number(app.price || 0) }]);
-    setCheckoutProducts([{ productId: '', quantity: 1 }]);
-  };
-
-  const handleQuickConfirm = async (app, event) => {
-    event.stopPropagation();
-    setActionModal({ open: true, app, step: 'payment' });
-    setPaymentSplits([{ method: 'Pix', amount: Number(app.price || 0) }]);
-    setCheckoutProducts([{ productId: '', quantity: 1 }]);
-  };
-
-  const handleQuickCancel = (app, event) => {
-    event.stopPropagation();
-    setActionModal({ open: true, app, step: 'confirm-cancel' });
-    setPaymentSplits([{ method: 'Pix', amount: Number(app.price || 0) }]);
-    setCheckoutProducts([{ productId: '', quantity: 1 }]);
-  };
-
-  const IN_SERVICE_COLOR = '#93C5FD';
-  const isInServiceStatus = (status) => {
-    const s = String(status || '').trim().toLowerCase();
-    return s === 'em progresso' || s === 'em atendimento';
-  };
-
-  const getStatusConfig = (status) => {
-    const s = String(status || '').trim();
-    switch (s) {
-      case 'Finalizado':
-        return { color: '#16a34a', lineColor: 'rgba(22, 163, 74, 0.4)', label: 'Pago' };
-      case 'Em progresso':
-      case 'Em atendimento':
-        return {
-          color: IN_SERVICE_COLOR,
-          lineColor: 'rgba(147, 197, 253, 0.55)',
-          label: 'Em atendimento',
-        };
-      case 'Cancelado':
-        return { color: '#dc2626', lineColor: 'rgba(220, 38, 38, 0.4)', label: 'Cancelado' };
-      case 'Agendado':
-        return { color: '#64748b', lineColor: 'rgba(100, 116, 139, 0.35)', label: 'Agendado' };
-      case 'Confirmado':
-        return { color: '#0d9488', lineColor: 'rgba(13, 148, 136, 0.4)', label: 'Confirmado' };
-      default:
-        if (isInServiceStatus(s)) {
-          return {
-            color: IN_SERVICE_COLOR,
-            lineColor: 'rgba(147, 197, 253, 0.55)',
-            label: 'Em atendimento',
-          };
-        }
-        return { color: 'var(--text-secondary)', lineColor: 'var(--border-color)', label: s || status };
-    }
-  };
+  const { handleQuickStart, handleQuickConfirm, handleQuickCancel } = appointmentActions;
+  const getStatusConfig = getAppointmentStatusConfig;
 
   return (
     <div className="dash-page">
@@ -893,7 +731,7 @@ const Dashboard = () => {
                           className="dash-upcoming-wa-btn"
                           title="Confirmar horário por WhatsApp"
                           aria-label={`Confirmar horário com ${app.customer} por WhatsApp`}
-                          onClick={(event) => openWhatsAppConfirm(app, event)}
+                          onClick={(event) => openWhatsAppConfirmHandler(app, event)}
                         >
                           <WhatsAppIcon size={15} />
                         </button>
@@ -908,249 +746,11 @@ const Dashboard = () => {
       </div>
       </div>
 
-      {/* ═══════ ACTION MODAL (Pago / Cancelar / Em Progresso) ═══════ */}
-      {actionModal.open && actionModal.app && (
-        <div className="modal-backdrop">
-          <div className="modal-glass-panel scheduler-modal-panel fade-in" style={{ width: '95%', maxWidth: '480px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.2rem', margin: 0 }}>
-                {actionModal.step === 'choose'
-                  ? 'Ação do Agendamento'
-                  : actionModal.step === 'payment'
-                    ? 'Check-out — Pagamento'
-                    : actionModal.step === 'confirm-start'
-                      ? 'Confirmar Início'
-                      : 'Confirmar Cancelamento'}
-              </h2>
-              <button style={{ background: 'none' }} onClick={closeActionModal}><X size={20} /></button>
-            </div>
-
-            {/* Appointment Info */}
-            <div className="action-modal-panel">
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontWeight: 600 }}>{actionModal.app.customer}</span>
-                <span style={{ fontWeight: 700, color: 'var(--brand-600)', fontSize: '1.1rem' }}>{formatCurrency(actionModal.app.price)}</span>
-              </div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                {actionModal.app.service} — {actionModal.app.time} — {actionModal.app.date}
-              </div>
-              <div style={{ marginTop: '6px' }}>
-                <span
-                  className="action-modal-status-pill"
-                  style={{
-                    background: actionModal.app.status === 'Em progresso' ? 'rgba(37,99,235,0.1)' : 'rgba(0,0,0,0.05)',
-                    color: actionModal.app.status === 'Em progresso' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  }}
-                >
-                  {actionModal.app.status}
-                </span>
-              </div>
-            </div>
-
-            {/* Change Service Section */}
-            {actionModal.step === 'choose' && (
-              <div className="action-modal-panel action-modal-panel--dashed">
-                <span className="action-modal-panel__title action-modal-panel__title--stack">Trocar Serviço</span>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <select
-                    className="action-modal-field"
-                    onChange={(e) => {
-                      if (e.target.value) handleChangeService(e.target.value);
-                    }}
-                    value=""
-                  >
-                    <option value="">Selecione para trocar...</option>
-                    {services.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} - R$ {s.price}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-
-            {/* Step: Choose Action */}
-            {actionModal.step === 'choose' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {['Agendado', 'Confirmado'].includes(actionModal.app.status) && (
-                  <button
-                    type="button"
-                    className="action-modal-choice-btn action-modal-choice-btn--start"
-                    onClick={() => setActionModal({ ...actionModal, step: 'confirm-start' })}
-                  >
-                    <Play size={18} /> Iniciar Atendimento
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="action-modal-choice-btn action-modal-choice-btn--pay"
-                  onClick={() => setActionModal({ ...actionModal, step: 'payment' })}
-                >
-                  <CheckCircle size={18} aria-hidden /> Marcar como Pago
-                </button>
-                <button
-                  type="button"
-                  className="action-modal-choice-btn action-modal-choice-btn--cancel"
-                  onClick={() => setActionModal({ ...actionModal, step: 'confirm-cancel' })}
-                >
-                  <XCircle size={18} aria-hidden /> Cancelar Agendamento
-                </button>
-              </div>
-            )}
-
-            {/* Step: Confirm Start */}
-            {actionModal.step === 'confirm-start' && (
-              <div>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-                  Deseja realmente iniciar o atendimento de <strong>{actionModal.app.customer}</strong>?
-                </p>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setActionModal({ ...actionModal, step: 'choose' })} className="btn-secondary" style={{ flex: 1, padding: '14px' }}>
-                    ← Voltar
-                  </button>
-                  <button onClick={handleMarkInProgress} style={{ flex: 2, padding: '14px', background: 'var(--accent-color)', color: 'var(--accent-text)', borderRadius: '9999px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                    <Play size={18} /> Confirmar Início
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step: Payment Details */}
-            {actionModal.step === 'payment' && (
-              <div>
-                <div className="action-modal-panel">
-                  <div className="action-modal-panel__head">
-                    <span className="action-modal-panel__title">Composição de Pagamento</span>
-                    <button type="button" className="action-modal-panel__chip-btn" onClick={handleAddSplit}>
-                      <Plus size={14} aria-hidden /> Dividir
-                    </button>
-                  </div>
-                  <div className="action-modal-panel__stack">
-                    {paymentSplits.map((split, index) => (
-                      <div key={index} className="fade-in action-modal-panel__split-row">
-                        <select className="action-modal-field" value={split.method} onChange={e => handleSplitChange(index, 'method', e.target.value)}>
-                          <option value="Pix">Pix</option>
-                          <option value="Cartão de Crédito">Cartão de Crédito</option>
-                          <option value="Cartão de Débito">Cartão de Débito</option>
-                          <option value="Dinheiro">Dinheiro</option>
-                        </select>
-                        <div className="action-modal-field--amount-wrap">
-                          <span className="action-modal-field__currency">R$</span>
-                          <input
-                            type="number"
-                            className="action-modal-field action-modal-field--with-currency"
-                            min="0"
-                            step="0.01"
-                            value={split.amount}
-                            onChange={e => handleSplitChange(index, 'amount', e.target.value)}
-                          />
-                        </div>
-                        {paymentSplits.length > 1 && (
-                          <button
-                            type="button"
-                            className="action-modal-remove-row"
-                            onClick={() => setPaymentSplits(paymentSplits.filter((_, i) => i !== index))}
-                            aria-label="Remover forma de pagamento"
-                          >
-                            <X size={18} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="action-modal-panel">
-                  <div className="action-modal-panel__head">
-                    <span className="action-modal-panel__title">Produtos no checkout</span>
-                    <button type="button" className="action-modal-panel__chip-btn" onClick={handleAddCheckoutProduct}>
-                      <Plus size={14} aria-hidden /> Adicionar
-                    </button>
-                  </div>
-                  <div className="action-modal-panel__stack">
-                    {checkoutProducts.map((item, index) => (
-                      <div key={index} className="action-modal-panel__product-row">
-                        <select
-                          className="action-modal-field"
-                          value={item.productId}
-                          onChange={(e) => handleCheckoutProductChange(index, 'productId', e.target.value)}
-                        >
-                          <option value="">Selecione produto cadastrado</option>
-                          {products.map(p => (
-                            <option key={p.id} value={p.id} disabled={p.stock <= 0}>
-                              {p.name} - R$ {Number(p.price || 0).toFixed(2)} ({p.stock} un.)
-                            </option>
-                          ))}
-                        </select>
-                        <input
-                          type="number"
-                          className="action-modal-field action-modal-field--qty"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => handleCheckoutProductChange(index, 'quantity', e.target.value)}
-                        />
-                        {checkoutProducts.length > 1 && (
-                          <button
-                            type="button"
-                            className="action-modal-remove-row"
-                            onClick={() => setCheckoutProducts(checkoutProducts.filter((_, i) => i !== index))}
-                            aria-label="Remover produto"
-                          >
-                            <X size={18} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <p style={{ margin: '10px 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    Apenas produtos cadastrados podem ser adicionados.
-                  </p>
-                </div>
-                <div className="action-modal-panel action-modal-panel--dashed" style={{ fontSize: '0.82rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Serviço</span>
-                    <strong>{formatCurrency(checkoutServiceTotal)}</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Produtos</span>
-                    <strong>{formatCurrency(checkoutProductsTotal)}</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '6px' }}>
-                    <span style={{ fontWeight: 700 }}>Total checkout</span>
-                    <strong style={{ fontSize: '0.9rem' }}>{formatCurrency(checkoutGrandTotal)}</strong>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setActionModal({ ...actionModal, step: 'choose' })} className="btn-secondary" style={{ flex: 1, padding: '14px' }}>
-                    ← Voltar
-                  </button>
-                  <button className="btn-primary" style={{ flex: 2, padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }} onClick={handleFinalizePayment}>
-                    <Banknote size={18} /> Finalizar Recebimento
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step: Confirm Cancel */}
-            {actionModal.step === 'confirm-cancel' && (
-              <div>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-                  Tem certeza que deseja cancelar o agendamento de <strong>{actionModal.app.customer}</strong>?
-                  Esta ação não pode ser desfeita.
-                </p>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setActionModal({ ...actionModal, step: 'choose' })} className="btn-secondary" style={{ flex: 1, padding: '14px' }}>
-                    ← Voltar
-                  </button>
-                  <button onClick={handleCancelAppointment} style={{ flex: 2, padding: '14px', background: '#ef4444', color: '#fff', borderRadius: '9999px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                    <XCircle size={18} /> Confirmar Cancelamento
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <AppointmentActionModal
+        {...appointmentActions}
+        services={services}
+        products={products}
+      />
 
       {receiptModal.open && receiptModal.app && (
         <div className="modal-backdrop modal-backdrop--elevated">
