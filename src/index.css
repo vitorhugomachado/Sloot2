@@ -1611,6 +1611,23 @@ button.action-modal-choice-btn--cancel svg {
   opacity: 1;
 }
 
+button.action-modal-choice-btn--whatsapp {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #15803d;
+}
+
+button.action-modal-choice-btn--whatsapp:hover {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+button.action-modal-choice-btn--whatsapp svg {
+  color: #16a34a;
+  opacity: 1;
+  flex-shrink: 0;
+}
+
 
 
 

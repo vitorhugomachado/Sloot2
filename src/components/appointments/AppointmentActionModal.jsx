@@ -1,7 +1,9 @@
 import React from 'react';
 import { X, Plus, Play, CheckCircle, XCircle, Banknote } from 'lucide-react';
+import WhatsAppIcon from '../icons/WhatsAppIcon';
 import { getAppointmentStatusStyle } from '../../utils/appointmentStatus';
 import { formatCheckoutCurrency } from '../../hooks/useAppointmentActions';
+import { normalizePhoneForWhatsApp, openWhatsAppConfirm } from '../../utils/appointmentWhatsApp';
 
 /**
  * Modal compartilhado: iniciar, pagar (com produtos), cancelar, trocar serviço.
@@ -32,6 +34,8 @@ export default function AppointmentActionModal({
 
   const app = actionModal.app;
   const statusStyle = getAppointmentStatusStyle(app.status);
+  const waPhone = normalizePhoneForWhatsApp(app.phone);
+  const canWhatsApp = Boolean(waPhone) && app.status !== 'Cancelado' && app.status !== 'Finalizado';
 
   return (
     <div className="modal-backdrop">
@@ -109,6 +113,21 @@ export default function AppointmentActionModal({
               >
                 <Play size={18} /> Iniciar Atendimento
               </button>
+            )}
+            {canWhatsApp ? (
+              <button
+                type="button"
+                className="action-modal-choice-btn action-modal-choice-btn--whatsapp"
+                title="Confirmar horário por WhatsApp"
+                aria-label={`Enviar mensagem para ${app.customer} por WhatsApp`}
+                onClick={() => openWhatsAppConfirm(app)}
+              >
+                <WhatsAppIcon size={18} /> Enviar mensagem no WhatsApp
+              </button>
+            ) : (
+              <p className="action-modal-whatsapp-hint" style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                Cadastre um telefone válido no agendamento para enviar WhatsApp.
+              </p>
             )}
             <button
               type="button"
