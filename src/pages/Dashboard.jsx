@@ -11,6 +11,7 @@ const EMPTY_DIRECT_SALE = {
 import { filterAvailableBookingTimes, isBookingSlotTaken } from '../utils/bookingAvailability';
 import { toIsoLocal } from '../utils/dateLocal';
 import { computeOccupancyForPeriod } from '../utils/occupancyStats';
+import { formatRelativeTime } from '../utils/relativeTime';
 import OccupancyGauge from '../components/OccupancyGauge';
 import DashUpcomingEmpty from '../components/dashboard/DashUpcomingEmpty';
 
@@ -84,6 +85,35 @@ const getPeriodLabel = (days) => {
   return match ? match.l : `${days} dias`;
 };
 
+const ACTIVITY_FEED_LIMIT = 12;
+
+function getActivityLabel(status) {
+  const s = String(status || '').trim();
+  switch (s) {
+    case 'Finalizado':
+      return 'Atendimento finalizado';
+    case 'Em progresso':
+    case 'Em atendimento':
+      return 'Atendimento iniciado';
+    case 'Confirmado':
+      return 'Horário confirmado';
+    case 'Cancelado':
+      return 'Agendamento cancelado';
+    case 'Agendado':
+      return 'Novo agendamento';
+    default:
+      return s || 'Atualização';
+  }
+}
+
+function formatActivitySlot(date, time) {
+  if (!date) return time || '';
+  const parts = String(date).split('-');
+  if (parts.length !== 3) return time ? `${date} ${time}` : date;
+  const slot = `${parts[2]}/${parts[1]}${time ? ` às ${time}` : ''}`;
+  return slot;
+}
+
 /* ─────────── Main Dashboard ─────────── */
 const Dashboard = () => {
   const {
@@ -95,7 +125,13 @@ const Dashboard = () => {
   const todayStr = toIsoLocal(new Date());
   const [focusDate, setFocusDate] = useState(todayStr);
   const [dashboardPeriodDays, setDashboardPeriodDays] = useState(7);
+  const [activityTick, setActivityTick] = useState(0);
   const isBarber = currentUser?.role === 'Barbeiro';
+
+  useEffect(() => {
+    const id = setInterval(() => setActivityTick((t) => t + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   const dashboardPeriodDates = useMemo(() => {
     if (dashboardPeriodDays === 0) {
@@ -139,20 +175,13 @@ const Dashboard = () => {
     [getBarberRanking, dashboardPeriodDates.start, dashboardPeriodDates.end]
   );
 
-  // Recent activity — already filtered by backend for barbers
+  // Feed ao vivo — independente do seletor de KPIs; só eventos com timestamp local
   const recentActivity = useMemo(() => {
     return [...appointments]
-      .filter(
-        (a) => a.date >= dashboardPeriodDates.start && a.date <= dashboardPeriodDates.end
-      )
-      .sort((a, b) => {
-        const aTouched = Number(a._updatedAtLocal || 0);
-        const bTouched = Number(b._updatedAtLocal || 0);
-        if (aTouched !== bTouched) return bTouched - aTouched;
-        return `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`);
-      })
-      .slice(0, 6);
-  }, [appointments, dashboardPeriodDates.start, dashboardPeriodDates.end]);
+      .filter((a) => Number(a._updatedAtLocal || 0) > 0)
+      .sort((a, b) => Number(b._updatedAtLocal) - Number(a._updatedAtLocal))
+      .slice(0, ACTIVITY_FEED_LIMIT);
+  }, [appointments]);
 
   // Upcoming — already filtered by backend for barbers
   const upcoming = useMemo(() => {
@@ -714,32 +743,32 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* ─── Col 2: Atividade Recente ─── */}
+        {/* ─── Col 2: Atividade ao vivo ─── */}
         <div className="dash-panel dash-panel-activity">
           <div className="dash-panel-header">
-            <h3>Atividade Recente</h3>
-            <button className="dash-icon-btn"><LayoutGrid size={16} /></button>
+            <div>
+              <h3>Atividade ao vivo</h3>
+              <p className="dash-panel-subtitle">Atualiza automaticamente</p>
+            </div>
+            <button className="dash-icon-btn" type="button" aria-hidden tabIndex={-1}><LayoutGrid size={16} /></button>
           </div>
           <div className="dash-panel-body">
             {recentActivity.length === 0 ? (
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'center', padding: '2rem 0' }}>
-                Nenhuma atividade neste período ({periodLabel}).
+                Nenhuma movimentação recente. Confirmações, inícios e pagamentos aparecem aqui.
               </p>
             ) : (
               <div className="dash-timeline">
                 {recentActivity.map((app, idx) => {
                   const cfg = getStatusConfig(app.status);
-                  const dateParts = String(app.date || '').split('-');
-                  const dateStr =
-                    dateParts.length === 3
-                      ? `${dateParts[2]}.${dateParts[1]}.${dateParts[0].slice(2)}`
-                      : String(app.date || '');
+                  const relativeTime = formatRelativeTime(app._updatedAtLocal);
+                  const slotLabel = formatActivitySlot(app.date, app.time);
                   const barberName = barbers.find(b => b.id === app.barberId)?.name || '';
                   const isActionable = app.status !== 'Finalizado' && app.status !== 'Cancelado';
                   const isReceipt = app.status === 'Finalizado';
                   return (
                     <div
-                      key={app.id}
+                      key={`${app.id}-${app._updatedAtLocal}`}
                       className={`dash-timeline-item${isInServiceStatus(app.status) ? ' dash-timeline-item--in-service' : ''}`}
                       onClick={() => (isReceipt ? openReceiptModal(app) : (isActionable ? openActionModal(app) : null))}
                       style={{
@@ -748,7 +777,7 @@ const Dashboard = () => {
                         '--timeline-line-color': cfg.lineColor,
                       }}
                     >
-                      <div className="dash-timeline-time">{dateStr}</div>
+                      <div className="dash-timeline-time">{relativeTime}</div>
                       <div className="dash-timeline-dot-col">
                         <div
                           className="dash-timeline-dot"
@@ -762,9 +791,13 @@ const Dashboard = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ flex: 1 }}>
                             <h4 className="dash-timeline-status" style={{ color: cfg.color }}>
-                              {cfg.label}
+                              {getActivityLabel(app.status)}
                             </h4>
-                            <p>{app.customer} — {app.service}{!isBarber ? ` (${barberName})` : ''}</p>
+                            <p>
+                              {app.customer} — {app.service}
+                              {slotLabel ? ` · ${slotLabel}` : ''}
+                              {!isBarber && barberName ? ` (${barberName})` : ''}
+                            </p>
                           </div>
                         </div>
                       </div>

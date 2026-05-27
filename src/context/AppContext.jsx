@@ -9,6 +9,7 @@ import {
   shouldLeadAppointmentsPoll,
   releaseAppointmentsPollLeadership,
 } from '../utils/appointmentsPollLeader';
+import { mergeAppointmentsWithActivity, mergeAppointmentActivity } from '../utils/appointmentActivity';
 import {
   readBootstrapFromCache,
   hasBootstrapCache,
@@ -287,21 +288,7 @@ export const AppProvider = ({ children }) => {
     if (!token || !isStaffRoutePath(location.pathname)) return undefined;
 
     const mergeAppointments = (data) => {
-      if (!Array.isArray(data)) return;
-      setAppointments((prev) => {
-        const prevMap = new Map(prev.map((app) => [Number(app.id), app]));
-        return data.map((app) => {
-          const oldApp = prevMap.get(Number(app.id));
-          if (!oldApp) return app;
-          if (oldApp.status !== app.status) {
-            return { ...app, _updatedAtLocal: Date.now() };
-          }
-          if (oldApp._updatedAtLocal) {
-            return { ...app, _updatedAtLocal: oldApp._updatedAtLocal };
-          }
-          return app;
-        });
-      });
+      setAppointments((prev) => mergeAppointmentsWithActivity(prev, data));
     };
 
     const syncAppointments = async () => {
@@ -555,7 +542,10 @@ export const AppProvider = ({ children }) => {
       if (res.ok) {
         const savedApp = await res.json();
 
-        setAppointments((prev) => [...prev, savedApp]);
+        setAppointments((prev) => [
+          ...prev,
+          mergeAppointmentActivity(undefined, savedApp),
+        ]);
 
         if (token) {
           apiFetch(staffAppointmentsUrl(API_URL), { authScope: 'staff' })
@@ -564,9 +554,10 @@ export const AppProvider = ({ children }) => {
                 const data = await r.json();
                 if (Array.isArray(data)) {
                   setAppointments((prev) => {
+                    const merged = mergeAppointmentsWithActivity(prev, data);
                     const fetchedIds = new Set(data.map((a) => Number(a.id)));
                     const extras = prev.filter((a) => !fetchedIds.has(Number(a.id)));
-                    return [...data, ...extras];
+                    return [...merged, ...extras];
                   });
                 }
               }
