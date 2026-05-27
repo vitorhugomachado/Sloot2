@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Clock, User, Scissors, X, Calendar as CalendarIcon, Users } from 'lucide-react';
 import AppointmentActionModal from '../components/appointments/AppointmentActionModal';
+import SchedulerApptBar from '../components/scheduler/SchedulerApptBar';
 import { useApp } from '../context/AppContext';
 import { useAppointmentActions } from '../hooks/useAppointmentActions';
 import {
@@ -11,6 +12,7 @@ import {
   normalizeBookingTime,
 } from '../utils/bookingAvailability';
 import { isBarberScheduleOpen, parseDurationMinutes } from '../utils/barberAvailability';
+import { getBarberColor, getBarberShortName } from '../utils/barberDisplay';
 import { getAppointmentStatusStyle, isInServiceStatus } from '../utils/appointmentStatus';
 import { STAFF_SCHEDULER_TIME_SLOTS } from '../utils/publicBookingSlots';
 import { toIsoLocal } from '../utils/dateLocal';
@@ -673,6 +675,20 @@ const Scheduler = () => {
                  {barber.name.split(' ')[0]}
                </button>
              ))}
+             {selectedBarberId === 'all' && activeBarbers.length > 0 && (
+               <div className="scheduler-barber-legend" aria-label="Legenda de cores por profissional">
+                 {activeBarbers.map((barber) => (
+                   <span key={barber.id} className="scheduler-barber-legend__item">
+                     <span
+                       className="scheduler-barber-legend__dot"
+                       style={{ background: getBarberColor(barber.id, activeBarbers) }}
+                       aria-hidden
+                     />
+                     {getBarberShortName(barber.name)}
+                   </span>
+                 ))}
+               </div>
+             )}
           </div>
         )}
       </header>
@@ -702,35 +718,19 @@ const Scheduler = () => {
                       <div className="scheduler-mobile-slot__macro">
                         {cellApps.map((app) => {
                           const b = barbers.find((br) => br.id === app.barberId);
-                          const ss = getStatusStyle(app.status);
                           return (
-                            <button
+                            <SchedulerApptBar
                               key={app.id}
-                              type="button"
-                              className={`scheduler-mobile-macro-card scheduler-appt-bar scheduler-appt-bar--interactive${isInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
+                              app={app}
+                              barber={b}
+                              statusStyle={getStatusStyle(app.status)}
+                              stackCount={cellApps.length}
+                              activeBarbers={activeBarbers}
+                              variant="mobile"
                               onMouseEnter={onAppointmentHoverEnter(app, b?.name)}
                               onMouseLeave={clearAppointmentHoverTip}
                               onClick={(e) => openActionModal(app, e)}
-                              disabled={app.status === 'Finalizado' || app.status === 'Cancelado'}
-                              style={{
-                                background: ss.bg,
-                                borderColor: ss.border,
-                                opacity: app.status === 'Cancelado' ? 0.5 : 1,
-                                cursor: app.status === 'Finalizado' || app.status === 'Cancelado' ? 'default' : 'pointer',
-                                minHeight: '47px',
-                                width: '100%',
-                              }}
-                            >
-                              <span className="scheduler-appt-bar__accent" style={{ background: ss.badge }} aria-hidden />
-                              <span
-                                className={`scheduler-appt-bar__name${app.status === 'Cancelado' ? ' scheduler-appt-bar__name--cancelled' : ''}`}
-                              >
-                                {app.customer}
-                              </span>
-                              <span className="scheduler-appt-bar__meta">
-                                {b?.name?.split(' ')[0]} · {ss.label}
-                              </span>
-                            </button>
+                            />
                           );
                         })}
                       </div>
@@ -901,38 +901,23 @@ const Scheduler = () => {
                     className={`scheduler-cell-appts ${apptCountClass(cellApps.length)}`}
                   >
                     
-                    {/* ALL BARBERS view — barras com nome do cliente */}
-                    {selectedBarberId === 'all' && cellApps.map(app => {
-                       const b = barbers.find(b => b.id === app.barberId);
-                       const ss = getStatusStyle(app.status);
+                    {/* ALL BARBERS view — cor + iniciais do barbeiro */}
+                    {selectedBarberId === 'all' && cellApps.map((app) => {
+                       const b = barbers.find((br) => br.id === app.barberId);
                        const actionable = app.status !== 'Finalizado' && app.status !== 'Cancelado';
                        return (
-                         <div
+                         <SchedulerApptBar
                            key={app.id}
-                           role="button"
-                           tabIndex={actionable ? 0 : -1}
-                           className={`scheduler-appt-bar fade-in${actionable ? ' scheduler-appt-bar--interactive' : ' scheduler-appt-bar--muted'}${isInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
+                           app={app}
+                           barber={b}
+                           statusStyle={getStatusStyle(app.status)}
+                           stackCount={cellApps.length}
+                           activeBarbers={activeBarbers}
+                           variant="desktop"
                            onMouseEnter={onAppointmentHoverEnter(app, b?.name)}
                            onMouseLeave={clearAppointmentHoverTip}
                            onClick={(e) => actionable && openActionModal(app, e)}
-                           style={{
-                             background: ss.bg,
-                             borderColor: ss.border,
-                           }}
-                         >
-                           <span className="scheduler-appt-bar__accent" style={{ background: ss.badge }} aria-hidden />
-                           <span
-                             className={`scheduler-appt-bar__name${app.status === 'Cancelado' ? ' scheduler-appt-bar__name--cancelled' : ''}`}
-                             title={app.customer}
-                           >
-                             {app.customer}
-                           </span>
-                           {b?.name && (
-                             <span className="scheduler-appt-bar__meta" title={b.name}>
-                               {b.name.split(' ')[0]}
-                             </span>
-                           )}
-                         </div>
+                         />
                        );
                     })}
 
