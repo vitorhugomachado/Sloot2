@@ -170,8 +170,8 @@ h1, h2, h3, h4, .brand-font {
   top: 0.02em;
   left: 50%;
   transform: translateX(-50%);
-  width: 0.208em;
-  height: 0.208em;
+  width: 0.125em;
+  height: 0.125em;
   border-radius: 50%;
   background: #ff6a00;
   pointer-events: none;
@@ -190,8 +190,8 @@ h1, h2, h3, h4, .brand-font {
 }
 
 .slooti-logo__mark-dot {
-  width: 0.36em;
-  height: 0.36em;
+  width: 0.216em;
+  height: 0.216em;
   border-radius: 50%;
   background: #ff6a00;
   flex-shrink: 0;
@@ -4817,15 +4817,15 @@ button {
   -webkit-appearance: none;
 }
 
-/* Ice White Inputs for contrast (exceto login â€” .cl-field__input) */
-input:not(.cl-field__input),
+/* Ice White Inputs for contrast (exceto login — .cl-field__input, staff login) */
+input:not(.cl-field__input):not(.staff-login-field__input),
 select,
 textarea {
   background-color: #e5e7eb !important;
   border: 1px solid rgba(0, 0, 0, 0.15) !important;
 }
 
-input:not(.cl-field__input):focus,
+input:not(.cl-field__input):not(.staff-login-field__input):focus,
 select:focus,
 textarea:focus {
   background-color: #ffffff !important;
@@ -4843,266 +4843,6 @@ input[type='date']:focus {
 input[type='date'].booking-reserve-form__field:focus {
   border-color: var(--card-outline) !important;
 }
-/* Staff login (barbeiros/profissionais) */
-.staff-login-page {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  background: var(--bg-color);
-  font-family: 'Open Sans', sans-serif;
-}
-
-.staff-login-page input,
-.staff-login-page button {
-  font-family: inherit;
-}
-
-.staff-login-goo-defs {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/* Blob button (login) â€” baseado no efeito gooey */
-.staff-login-panel .blob-btn {
-  --blob-brand: var(--accent-color);
-  --blob-outline: var(--primary-color);
-  --blob-border: 2px;
-  z-index: 1;
-  position: relative;
-  width: 100%;
-  padding: 18px 40px;
-  margin-top: 0.5rem;
-  text-align: center;
-  text-transform: uppercase;
-  color: var(--primary-color);
-  font-size: 1rem;
-  font-weight: 700;
-  background-color: transparent;
-  outline: none;
-  border: none;
-  transition: color 0.5s;
-  cursor: pointer;
-  border-radius: 30px;
-  font-family: inherit;
-}
-
-.staff-login-panel .blob-btn::before {
-  content: '';
-  z-index: 1;
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  border: var(--blob-border) solid var(--blob-outline);
-  border-radius: 30px;
-  pointer-events: none;
-  box-sizing: border-box;
-}
-
-.staff-login-panel .blob-btn__inner {
-  z-index: -1;
-  overflow: hidden;
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 30px;
-  background: #ffffff;
-  box-sizing: border-box;
-}
-
-.staff-login-panel .blob-btn::after {
-  content: '';
-  z-index: -2;
-  position: absolute;
-  left: 3px;
-  top: 3px;
-  width: 100%;
-  height: 100%;
-  transition: all 0.3s 0.2s;
-  border-radius: 30px;
-  pointer-events: none;
-}
-
-.staff-login-panel .blob-btn:hover:not(:disabled) {
-  color: var(--accent-text);
-}
-
-.staff-login-panel .blob-btn:hover:not(:disabled)::after {
-  transition: all 0.3s;
-  left: 0;
-  top: 0;
-}
-
-.staff-login-panel .blob-btn:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-.staff-login-panel .blob-btn__label {
-  position: relative;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.staff-login-panel .blob-btn__blobs {
-  position: relative;
-  display: block;
-  height: 100%;
-  filter: url('#staff-login-goo');
-}
-
-.staff-login-panel .blob-btn__blob {
-  position: absolute;
-  top: var(--blob-border);
-  width: 25%;
-  height: 100%;
-  background: var(--blob-brand);
-  border-radius: 100%;
-  transform: translate3d(0, 150%, 0) scale(1.7);
-  transition: transform 0.45s;
-}
-
-@supports (filter: url('#staff-login-goo')) {
-  .staff-login-panel .blob-btn__blob {
-    transform: translate3d(0, 150%, 0) scale(1.4);
-  }
-}
-
-.staff-login-panel .blob-btn__blob:nth-child(1) {
-  left: 0%;
-  transition-delay: 0s;
-}
-
-.staff-login-panel .blob-btn__blob:nth-child(2) {
-  left: 30%;
-  transition-delay: 0.08s;
-}
-
-.staff-login-panel .blob-btn__blob:nth-child(3) {
-  left: 60%;
-  transition-delay: 0.16s;
-}
-
-.staff-login-panel .blob-btn__blob:nth-child(4) {
-  left: 90%;
-  transition-delay: 0.24s;
-}
-
-.staff-login-panel .blob-btn:hover:not(:disabled) .blob-btn__blob {
-  transform: translateZ(0) scale(1.7);
-}
-
-@supports (filter: url('#staff-login-goo')) {
-  .staff-login-panel .blob-btn:hover:not(:disabled) .blob-btn__blob {
-    transform: translateZ(0) scale(1.4);
-  }
-}
-
-.staff-login-side-art {
-  position: relative;
-  overflow: hidden;
-  background: var(--primary-color);
-}
-
-.staff-login-stripes {
-  position: absolute;
-  inset: 0;
-  background: url('/login-stripes.svg') center center / cover no-repeat;
-}
-
-.staff-login-panel {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  background: var(--bg-color);
-}
-
-.staff-login-card {
-  width: 100%;
-  max-width: 460px;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0.5rem;
-}
-
-.staff-login-brand {
-  font-size: clamp(3rem, 6vw, 4.2rem);
-  letter-spacing: -2px;
-  display: inline-flex;
-  gap: 0.01em;
-  transition: transform 180ms ease, text-shadow 180ms ease;
-  transform-origin: center;
-}
-
-.staff-login-brand:hover {
-  transform: translateY(-4px) scale(1.01);
-  text-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-}
-
-.staff-login-letter {
-  display: inline-block;
-  transition: transform 180ms ease, color 180ms ease, text-shadow 180ms ease;
-}
-
-.staff-login-letter:hover {
-  transform: translateY(-9px) scale(1.08);
-  color: #111111;
-  text-shadow: 0 10px 18px rgba(0, 0, 0, 0.28);
-}
-
-.staff-login-title {
-  font-size: 1.7rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 6px;
-  display: inline-flex;
-}
-
-.staff-login-title-letter {
-  display: inline-block;
-  transition: transform 180ms ease, color 180ms ease, text-shadow 180ms ease;
-}
-
-.staff-login-title-letter:hover {
-  transform: translateY(-5px) scale(1.06);
-  color: #111111;
-  text-shadow: 0 8px 14px rgba(0, 0, 0, 0.2);
-}
-
-.staff-login-subtitle {
-  color: var(--text-secondary);
-  font-size: 0.92rem;
-  margin: 0;
-}
-
-.staff-login-panel .staff-login-input {
-  width: 100%;
-  padding: 12px 12px 12px 40px;
-  border-radius: 10px;
-  border: 1px solid var(--border-color);
-  outline: none;
-  font-family: inherit;
-  font-size: 0.92rem;
-  box-sizing: border-box;
-  background: #f1f5f9;
-}
-
-.staff-login-panel .staff-login-input:focus {
-  border-color: var(--accent-color);
-  background: #ffffff;
-}
-
 .booking-business-name {
   margin: 0 0 10px;
   font-size: clamp(2.3rem, 7vw, 4rem);
@@ -5500,76 +5240,6 @@ input[type='date'].booking-reserve-form__field:focus {
 
 .booking-slot-btn--blocked .booking-slot-icon-wrap svg {
   color: #9ca3af;
-}
-
-@media (max-width: 980px) {
-  .staff-login-page {
-    grid-template-columns: 1fr;
-  }
-
-  .staff-login-side-art {
-    min-height: 160px;
-  }
-
-  .staff-login-panel {
-    padding: 1.25rem;
-  }
-
-  .staff-login-card {
-    max-width: 520px;
-    margin: 0 auto;
-  }
-}
-
-@media (max-width: 768px) {
-  .staff-login-page {
-    min-height: 100dvh;
-    background: var(--bg-color);
-  }
-
-  .staff-login-side-art {
-    display: none;
-  }
-
-  .staff-login-panel {
-    min-height: 100dvh;
-    padding: 1rem;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .staff-login-card {
-    max-width: 420px;
-    width: 100%;
-    padding: 0.25rem 0.1rem;
-  }
-
-  .staff-login-brand {
-    font-size: clamp(2.4rem, 14vw, 3.2rem);
-    letter-spacing: -1px;
-  }
-
-  .staff-login-title {
-    font-size: 1.35rem;
-  }
-
-  .staff-login-panel input {
-    min-height: 46px;
-  }
-
-  .staff-login-panel .blob-btn {
-    min-height: 52px;
-  }
-}
-
-@media (max-width: 480px) {
-  .staff-login-panel {
-    padding: 0.75rem;
-  }
-
-  .staff-login-title {
-    font-size: 1.2rem;
-  }
 }
 
 /* â€”â€” Customer portal (responsive) â€”â€” */

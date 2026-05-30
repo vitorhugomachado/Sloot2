@@ -22,6 +22,8 @@ export default function LoginFormCard({
   subtitle,
   submitLabel,
   logoUrl,
+  showBrand = true,
+  hideTitle = false,
   onSubmit,
   error: errorProp,
   isSubmitting = false,
@@ -85,19 +87,21 @@ export default function LoginFormCard({
 
   return (
     <div className="cl-login-card">
-      <header className="cl-login-card__header">
-        {logoUrl ? (
-          <img
-            src={logoUrl}
-            alt=""
-            className="cl-login-card__logo"
-          />
-        ) : null}
-        <h1 className="cl-login-card__title">{resolvedTitle}</h1>
-        {resolvedSubtitle ? (
-          <p className="cl-login-card__subtitle">{resolvedSubtitle}</p>
-        ) : null}
-      </header>
+      {(showBrand && logoUrl) || !hideTitle || resolvedSubtitle ? (
+        <header className="cl-login-card__header">
+          {showBrand && logoUrl ? (
+            <img
+              src={logoUrl}
+              alt=""
+              className="cl-login-card__logo"
+            />
+          ) : null}
+          {!hideTitle ? <h1 className="cl-login-card__title">{resolvedTitle}</h1> : null}
+          {resolvedSubtitle ? (
+            <p className="cl-login-card__subtitle">{resolvedSubtitle}</p>
+          ) : null}
+        </header>
+      ) : null}
 
       {authInfo ? <p className="cl-login-card__info" role="status">{authInfo}</p> : null}
 

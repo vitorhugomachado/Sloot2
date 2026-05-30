@@ -1,28 +1,40 @@
 import React from 'react';
-import '../../pages/preview/login-preview.css';
+import SlootiLogo from '../SlootiLogo';
+import './login-screen.css';
 
-const BACKGROUNDS = {
-  default: '/fundo.webp',
-  staff: '/images/slooti-staff-login-bg.webp',
-};
+const CUSTOMER_BG = '/fundo.webp';
 
 export default function LoginScreenLayout({ banner, children, variant = 'default' }) {
   const isStaff = variant === 'staff';
 
   return (
     <div className={`login-preview ${isStaff ? 'login-preview--staff' : ''}`}>
-      <div
-        className="login-preview__bg w-full h-screen bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('${BACKGROUNDS[variant] || BACKGROUNDS.default}')`,
-          imageRendering: '-webkit-optimize-contrast',
-          transform: 'translateZ(0)',
-          backfaceVisibility: 'hidden',
-        }}
-        aria-hidden
-      />
+      {!isStaff ? (
+        <div
+          className="login-preview__bg w-full h-screen bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('${CUSTOMER_BG}')`,
+            imageRendering: '-webkit-optimize-contrast',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden',
+          }}
+          aria-hidden
+        />
+      ) : null}
       {banner}
-      <main className="login-preview__stage">{children}</main>
+      <main className="login-preview__stage">
+        {isStaff ? (
+          <div className="login-preview__stack">
+            <div className="login-preview__brand">
+              <SlootiLogo size="xl" onDark />
+              <p className="login-preview__brand-tagline">Barbeiros</p>
+            </div>
+            {children}
+          </div>
+        ) : (
+          children
+        )}
+      </main>
     </div>
   );
 }

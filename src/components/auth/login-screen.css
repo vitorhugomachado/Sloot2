@@ -21,69 +21,187 @@
   overflow: hidden;
 }
 
-/* Login barbeiros — fundo slooti (imagem em public/images/slooti-staff-login-bg.webp) */
+/* Login barbeiros — tela oficial (protótipo canvas, sem imagem de fundo) */
 .login-preview--staff {
-  background-color: #000000;
-  color: #ffffff;
-}
+  --staff-bg: #141414;
+  --staff-card-bg: rgba(228, 228, 228, 0.12);
+  --staff-card-border: rgba(228, 228, 228, 0.12);
+  --staff-field-bg: #181818;
+  --staff-field-border: rgba(228, 228, 228, 0.2);
+  --staff-label: rgba(228, 228, 228, 0.55);
+  --staff-input-text: #e4e4e4;
+  --staff-placeholder: rgba(228, 228, 228, 0.35);
 
-.login-preview--staff .login-preview__bg {
-  background-position: center center;
-  background-size: cover;
+  background-color: var(--staff-bg);
+  color: var(--staff-input-text);
 }
 
 .login-preview--staff .login-preview__stage {
   justify-content: center;
-  padding: 1.5rem;
+  align-items: center;
+  padding: 1.5rem 1.25rem 2.5rem;
 }
 
-.login-preview--staff .cl-login-card {
-  background: rgba(255, 253, 247, 0.88);
-  border: 1px solid #696969;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+.login-preview--staff .login-preview__stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.75rem;
+  width: 100%;
+  max-width: 335px;
+  margin: 0 auto;
 }
 
-.login-preview--staff .cl-login-card__title {
-  color: #1a1a1a;
+.login-preview--staff .login-preview__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  gap: 0.5rem;
 }
 
-.login-preview--staff .cl-login-card__subtitle {
-  color: var(--cl-text-muted);
+.login-preview--staff .login-preview__brand .slooti-logo--xl {
+  font-size: clamp(2.75rem, 14vw, 3.375rem);
 }
 
-.login-preview--staff .cl-field {
-  background-color: #ffffff;
-  border: 1px solid #000000;
+.login-preview--staff .login-preview__brand-tagline {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 300;
+  color: var(--cl-accent);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.login-preview--staff .cl-field:focus-within {
-  border-color: #ff6a00;
+/* Card — canvas StaffLoginCard */
+.staff-login-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1.5rem 1.25rem 1.35rem;
+  border-radius: 28px;
+  background: var(--staff-card-bg);
+  border: 1px solid var(--staff-card-border);
+  box-shadow: none;
 }
 
-.login-preview--staff .cl-field__input,
-.login-preview--staff .cl-field__input:focus {
+.staff-login-card__alert {
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.staff-login-card__alert-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #fca5a5;
+}
+
+.staff-login-card__alert-body {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: rgba(228, 228, 228, 0.75);
+}
+
+.staff-login-card__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.staff-login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.staff-login-field__label {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--staff-label);
+}
+
+.staff-login-field__control {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--staff-field-border) !important;
+  background: var(--staff-field-bg) !important;
+  transition: border-color 0.15s;
+}
+
+.staff-login-field__control:focus-within {
+  border-color: var(--cl-accent) !important;
+  background: var(--staff-field-bg) !important;
+}
+
+.staff-login-field__input {
+  flex: 1;
+  min-width: 0;
+  border: none !important;
+  background: transparent !important;
+  padding: 0.75rem 0;
+  font-size: 0.875rem;
+  font-family: inherit;
+  font-weight: 400;
+  color: var(--staff-input-text) !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.staff-login-field__input:focus {
   background: transparent !important;
   border: none !important;
-  color: #000000 !important;
 }
 
-.login-preview--staff .cl-field__input::placeholder {
-  color: #9ca3af;
+.staff-login-field__input:-webkit-autofill,
+.staff-login-field__input:-webkit-autofill:hover,
+.staff-login-field__input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--staff-field-bg) inset !important;
+  -webkit-text-fill-color: var(--staff-input-text) !important;
+  caret-color: var(--staff-input-text);
 }
 
-.login-preview--staff .cl-field__toggle {
-  color: #000000;
+.staff-login-field__input::placeholder {
+  color: var(--staff-placeholder);
+  opacity: 1;
 }
 
-.login-preview--staff .cl-login-card__submit {
-  border: 1px solid rgba(3, 3, 3, 1);
+.staff-login-card__submit {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 0.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--staff-field-border);
+  border-radius: 10px;
+  background: var(--cl-accent);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
 }
 
-.login-preview--staff .cl-login-card__footer,
-.login-preview--staff .cl-login-card__error {
-  color: var(--cl-text-muted);
+.staff-login-card__submit:hover:not(:disabled) {
+  background: var(--cl-accent-hover);
+}
+
+.staff-login-card__submit:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.staff-login-card__submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .login-preview__bg {
@@ -123,7 +241,6 @@
   width: 100%;
 }
 
-/* Card — alinhado ao protótipo Agent Login */
 .cl-login-card {
   width: 100%;
   max-width: 420px;
@@ -398,11 +515,6 @@
 }
 
 @media (max-width: 400px) {
-  .cl-login-card {
-    padding: 1.75rem 1.35rem 1.5rem;
-    border-radius: 28px;
-  }
-
   .cl-login-card__social {
     flex-direction: column;
   }
@@ -410,5 +522,38 @@
   .cl-social-btn {
     font-size: 0.8125rem;
     min-height: 48px;
+  }
+}
+
+@media (max-width: 768px) {
+  .login-preview--staff .login-preview__stage {
+    padding: 1.5rem 1.25rem calc(2.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .login-preview--staff .login-preview__stack {
+    gap: 1.75rem;
+  }
+}
+
+@media (min-width: 769px) {
+  .login-preview--staff .login-preview__stage {
+    padding: 2rem 3rem;
+  }
+
+  .login-preview--staff .login-preview__stack {
+    max-width: 440px;
+    gap: 2rem;
+  }
+
+  .login-preview--staff .login-preview__brand {
+    gap: 0.625rem;
+  }
+
+  .login-preview--staff .login-preview__brand .slooti-logo--xl {
+    font-size: 3.5rem;
+  }
+
+  .login-preview--staff .login-preview__brand-tagline {
+    font-size: 0.875rem;
   }
 }

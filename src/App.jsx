@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import LoginPage from './pages/LoginPage';
+import StaffLoginPage from './pages/StaffLoginPage';
 import TabLoadingFallback from './components/TabLoadingFallback';
 import PlatformAdminApp from './pages/admin/PlatformAdminApp';
 import BookingPreviewShell from './pages/preview/BookingPreviewShell';
@@ -144,32 +144,6 @@ const CustomerRoute = ({ children }) => {
     );
   }
   return children;
-};
-
-const StaffLoginPage = () => {
-  const { login, currentUser } = useApp();
-  const navigate = useNavigate();
-  const { slug } = useTenant();
-
-  if (currentUser) {
-    return <Navigate to={tenantDashboardPath(slug)} replace />;
-  }
-
-  const handleLogin = async (emailToLogin, pwd) => {
-    const userData = await login(emailToLogin, pwd);
-    const perms = userData?.permissions;
-    const canDashboard = Array.isArray(perms) && perms.includes('dashboard');
-    const barberNoDashboard = userData?.role === 'Barbeiro' && !canDashboard;
-    if (barberNoDashboard) {
-      navigate(tenantDashboardPath(slug, 'scheduler'), {
-        replace: true,
-        state: { schedulerDayView: true, at: Date.now() },
-      });
-    }
-    else navigate(tenantDashboardPath(slug), { replace: true });
-  };
-
-  return <LoginPage onLogin={handleLogin} />;
 };
 
 const CustomerBookingIndex = () => {

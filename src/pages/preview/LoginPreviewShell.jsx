@@ -1,11 +1,10 @@
-import React, { Suspense, lazy } from 'react';
+import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AppProvider } from '../../context/AppContext';
 import { TenantProvider, useTenant } from '../../context/TenantContext';
 import { PREVIEW_DEFAULT_SLUG } from '../../constants/previewTenant';
 import TabLoadingFallback from '../../components/TabLoadingFallback';
-
-const CustomerLoginPreview = lazy(() => import('./CustomerLoginPreview'));
+import StaffLoginPage from '../StaffLoginPage';
 
 function PreviewInner() {
   const { loading, error } = useTenant();
@@ -20,11 +19,7 @@ function PreviewInner() {
     );
   }
 
-  return (
-    <Suspense fallback={<TabLoadingFallback />}>
-      <CustomerLoginPreview />
-    </Suspense>
-  );
+  return <StaffLoginPage />;
 }
 
 export default function LoginPreviewShell() {
