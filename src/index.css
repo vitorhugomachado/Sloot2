@@ -1,8 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700&display=swap');
 
-/* Painéis staff: abas inativas ficam ocultas mas montadas (troca rápida) */
+/* PainÃ©is staff: abas inativas ficam ocultas mas montadas (troca rÃ¡pida) */
 .staff-tab-panel[hidden] {
   display: none !important;
+}
+
+.staff-tab-panel:not([hidden]) {
+  min-height: 0;
 }
 
 @tailwind base;
@@ -208,7 +212,7 @@ h1, h2, h3, h4, .brand-font {
   flex-shrink: 0;
 }
 
-/* legado — redireciona para slooti */
+/* legado â€” redireciona para slooti */
 .sloot-logo-text {
   font-family: 'Manrope', sans-serif;
   font-weight: 200;
@@ -234,7 +238,7 @@ h1, h2, h3, h4, .brand-font {
   box-shadow: none;
 }
 
-/* Financeiro — contorno explícito (cards e filtros de período) */
+/* Financeiro â€” contorno explÃ­cito (cards e filtros de perÃ­odo) */
 .finance-page {
   width: 100%;
   max-width: 100%;
@@ -270,7 +274,7 @@ h1, h2, h3, h4, .brand-font {
   border-color: var(--card-outline);
 }
 
-/* Financeiro — wrappers de layout (desktop; mobile em @media abaixo) */
+/* Financeiro â€” wrappers de layout (desktop; mobile em @media abaixo) */
 .finance-time-range-wrap {
   display: flex;
   flex-wrap: wrap;
@@ -633,7 +637,7 @@ h1, h2, h3, h4, .brand-font {
   }
 }
 
-/* Cabeçalho dos dias: contorno inferior + linhas verticais entre dias */
+/* CabeÃ§alho dos dias: contorno inferior + linhas verticais entre dias */
 .scheduler-desktop-week-header {
   display: grid;
   gap: 0;
@@ -658,6 +662,15 @@ h1, h2, h3, h4, .brand-font {
   padding: 12px;
   background: transparent;
   border-right: 1px solid var(--card-outline);
+  border-top: none;
+  border-bottom: none;
+  border-left: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.scheduler-desktop-week-header__cell:hover:not(.scheduler-desktop-week-header__cell--selected) {
+  background: var(--hover-bg);
 }
 
 .scheduler-desktop-week-header__cell:last-child {
@@ -699,6 +712,29 @@ h1, h2, h3, h4, .brand-font {
   gap: 6px;
   padding: 4px 8px;
   border-radius: 8px;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.scheduler-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.scheduler-header-book-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 18px;
+  min-height: 40px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .scheduler-week-picker-nav-btn {
@@ -747,6 +783,26 @@ h1, h2, h3, h4, .brand-font {
 
 .scheduler-week-picker-date-btn:hover {
   background: var(--hover-bg);
+}
+
+.scheduler-week-picker-view-week-btn {
+  border: none;
+  background: var(--hover-bg);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-left: 2px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.scheduler-week-picker-view-week-btn:hover {
+  background: var(--accent-color);
+  color: var(--accent-text);
 }
 
 .scheduler-week-picker-popover-footer {
@@ -818,25 +874,89 @@ h1, h2, h3, h4, .brand-font {
   line-height: 1.35;
 }
 
+.scheduler-time-col__slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  box-sizing: border-box;
+  transition: height 0.25s ease;
+  box-shadow: inset 0 -1px 0 var(--calendar-border, var(--border-color));
+}
+
+.scheduler-time-col__label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.scheduler-grid-cell {
+  position: relative;
+  min-height: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-right: 1px solid var(--calendar-border, var(--border-color));
+  box-shadow: inset 0 -1px 0 var(--calendar-border, var(--border-color));
+}
+
+.scheduler-grid-cell .hover-visible {
+  inset: 1px;
+  border-radius: 6px;
+}
+
+.scheduler-calendar-grid-body {
+  align-items: stretch;
+}
+
 .scheduler-cell-appts {
   position: absolute;
-  inset: 3px;
+  inset: 1px;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   min-height: 0;
   box-sizing: border-box;
+  align-items: stretch;
+}
+
+.scheduler-cell-appts--count-1 {
+  gap: 0;
+}
+
+.scheduler-cell-appts--count-1 .scheduler-cell-appts__single {
+  flex: 1 1 auto;
+  align-self: stretch;
+  width: 100%;
+  min-height: 100%;
+  height: 100%;
+  margin: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 0.91rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+.scheduler-cell-appts--count-1 .scheduler-appt-bar {
+  flex: 1 1 auto;
+  min-height: 100%;
+  height: 100%;
+  align-self: stretch;
 }
 
 .scheduler-cell-appts .scheduler-appt-bar {
   flex: 1 1 0;
   min-height: 18px;
-}
-
-.scheduler-cell-appts--count-1 .scheduler-appt-bar {
-  flex: 1 1 auto;
-  min-height: 21px;
 }
 
 .scheduler-cell-appts--count-2 .scheduler-appt-bar {
@@ -881,9 +1001,10 @@ h1, h2, h3, h4, .brand-font {
 }
 
 .scheduler-cell-appts__single {
-  flex: 1 1 0;
+  flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .scheduler-cell-appts--count-2 .scheduler-cell-appts__single,
@@ -909,6 +1030,68 @@ h1, h2, h3, h4, .brand-font {
   overflow: hidden;
 }
 
+.scheduler-appt-bar--model-a {
+  background: var(--surface-color, #fff);
+  border-color: var(--border-color, #e5e7eb);
+}
+
+.scheduler-appt-bar--cancelled {
+  opacity: 0.5;
+}
+
+/* Barra lateral e fundo dos cards por status */
+.scheduler-appt-bar.scheduler-appt--in-service .scheduler-appt-bar__accent {
+  background: #3b82f6;
+}
+
+.scheduler-appt-bar.scheduler-appt--paid .scheduler-appt-bar__accent {
+  background: #059669;
+}
+
+.scheduler-appt-bar.scheduler-appt--cancelled {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.28);
+  opacity: 1;
+}
+
+.scheduler-appt-bar.scheduler-appt--cancelled .scheduler-appt-bar__accent {
+  background: #ef4444;
+}
+
+.scheduler-appt-bar.scheduler-appt--in-service,
+.scheduler-appt-bar.scheduler-appt--paid,
+.scheduler-appt-bar.scheduler-appt--cancelled {
+  opacity: 1;
+}
+
+.scheduler-cell-appts__single.scheduler-appt--in-service {
+  box-shadow: inset 4px 0 0 #3b82f6;
+}
+
+.scheduler-cell-appts__single.scheduler-appt--paid {
+  box-shadow: inset 4px 0 0 #059669;
+}
+
+.scheduler-cell-appts__single.scheduler-appt--cancelled {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.28) !important;
+  opacity: 1;
+}
+
+.scheduler-mobile-macro-card.scheduler-appt--cancelled {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.28) !important;
+  opacity: 1;
+}
+
+.scheduler-mobile-macro-card.scheduler-appt--in-service {
+  box-shadow: inset 4px 0 0 #3b82f6;
+}
+
+.scheduler-mobile-macro-card.scheduler-appt--paid {
+  box-shadow: inset 4px 0 0 #059669;
+}
+
 .scheduler-appt-bar--interactive {
   cursor: pointer;
 }
@@ -924,6 +1107,7 @@ h1, h2, h3, h4, .brand-font {
   flex-shrink: 0;
   margin: 3px 0 3px 3px;
   border-radius: 3px;
+  background: var(--text-tertiary, #9ca3af);
 }
 
 .scheduler-appt-bar__avatar {
@@ -941,6 +1125,25 @@ h1, h2, h3, h4, .brand-font {
   color: #fff;
   line-height: 1;
   letter-spacing: -0.02em;
+}
+
+.scheduler-appt-bar__avatar--initials {
+  background: var(--icon-bg, #e5e7eb);
+  color: var(--text-secondary, #6b7280);
+}
+
+.scheduler-appt-bar__avatar--photo {
+  overflow: hidden;
+  background: var(--icon-bg, #f3f4f6);
+  color: transparent;
+}
+
+.scheduler-appt-bar__avatar--photo img,
+.scheduler-mobile-macro-avatar.scheduler-appt-bar__avatar--photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .scheduler-appt-bar__status-dot {
@@ -980,7 +1183,66 @@ h1, h2, h3, h4, .brand-font {
   text-overflow: ellipsis;
 }
 
-/* Agenda (Scheduler) — cards brancos com borda suave */
+/* Agenda (Scheduler) â€” layout e scroll único na grelha */
+.scheduler-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 7rem);
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.scheduler-page .scheduler-header {
+  flex-shrink: 0;
+}
+
+.scheduler-grid-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.scheduler-grid-shell {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.scheduler-grid-shell--narrow {
+  grid-template-columns: 56px 1fr;
+  gap: 0.5rem;
+}
+
+.scheduler-time-col {
+  position: sticky;
+  left: 0;
+  z-index: 25;
+  align-self: start;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.02);
+  box-sizing: border-box;
+}
+
+.scheduler-calendar-panel {
+  padding: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.scheduler-calendar-panel--day-view {
+  min-width: min-content;
+}
+
+/* Agenda (Scheduler) â€” cards brancos com borda suave */
 .scheduler-page .glass-card {
   border: var(--card-border);
   border-radius: 20px;
@@ -989,12 +1251,10 @@ h1, h2, h3, h4, .brand-font {
   background: var(--surface-color);
 }
 
-/* Agenda (Scheduler) — apenas max-width 768px; desktop inalterado */
+/* Agenda (Scheduler) â€” apenas max-width 768px; desktop inalterado */
 @media (max-width: 768px) {
   .scheduler-page {
     height: calc(100dvh - 5.5rem);
-    min-height: 0;
-    box-sizing: border-box;
   }
 
   .scheduler-page .scheduler-header {
@@ -1280,17 +1540,8 @@ h1, h2, h3, h4, .brand-font {
     opacity: 0.65;
   }
 
-  .scheduler-page .scheduler-grid-shell {
-    grid-template-columns: 56px 1fr !important;
-    gap: 0.5rem !important;
-  }
-
-  .scheduler-page .scheduler-time-col > div > span {
+  .scheduler-page .scheduler-time-col__label {
     font-size: 0.65rem !important;
-  }
-
-  .scheduler-page .scheduler-calendar-panel {
-    -webkit-overflow-scrolling: touch;
   }
 
   .scheduler-page .modal-backdrop .scheduler-modal-panel {
@@ -1386,7 +1637,7 @@ h1, h2, h3, h4, .brand-font {
   box-shadow: none;
 }
 
-/* Reservar Horário — card vidro (painel translúcido + blur, referência UI) */
+/* Reservar HorÃ¡rio â€” card vidro (painel translÃºcido + blur, referÃªncia UI) */
 .modal-glass-panel:has(.booking-reserve-form) {
   background: rgba(255, 255, 255, 1);
   backdrop-filter: blur(22px) saturate(1.12);
@@ -1399,7 +1650,7 @@ h1, h2, h3, h4, .brand-font {
 }
 
 
-/* Agenda — todos os modais (detalhes, ações, reservar) */
+/* Agenda â€” todos os modais (detalhes, aÃ§Ãµes, reservar) */
 .modal-glass-panel.scheduler-modal-panel {
   background: rgba(255, 255, 255, 1);
   backdrop-filter: none;
@@ -1443,7 +1694,7 @@ h1, h2, h3, h4, .brand-font {
 }
 
 
-/* Reservar horário — Scheduler + Dashboard */
+/* Reservar horÃ¡rio â€” Scheduler + Dashboard */
 .booking-reserve-form__title-row {
   display: flex;
   justify-content: space-between;
@@ -1560,7 +1811,7 @@ select.booking-reserve-form__field:focus {
   color: var(--text-secondary);
 }
 
-/* Modal “Ação do Agendamento” — cores claras e sutis */
+/* Modal â€œAÃ§Ã£o do Agendamentoâ€ â€” cores claras e sutis */
 button.action-modal-choice-btn {
   display: flex;
   align-items: center;
@@ -1659,7 +1910,7 @@ button.action-modal-choice-btn--whatsapp svg {
 
 
 
-/* Modal de ação — CTAs de confirmação (início / cancelamento) com borda preta */
+/* Modal de aÃ§Ã£o â€” CTAs de confirmaÃ§Ã£o (inÃ­cio / cancelamento) com borda preta */
 button.action-modal-cta-btn {
   box-sizing: border-box;
   border: 1px solid var(--border-color);
@@ -1689,6 +1940,52 @@ button.action-modal-cta-btn--start-blue:hover {
   background: #dbeafe;
 }
 
+/* Confirmar inicio / finalizar pagamento — azul pastel (so modais) */
+button.action-modal-cta-btn--confirm-blue {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+button.action-modal-cta-btn--confirm-blue:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  filter: none;
+}
+
+button.action-modal-cta-btn--confirm-blue svg {
+  color: #2563eb;
+  stroke: #2563eb;
+}
+
+/* Finalizar recebimento — verde pastel */
+button.action-modal-cta-btn--confirm-green {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+button.action-modal-cta-btn--confirm-green:hover {
+  background: #d1fae5;
+  border-color: #6ee7b7;
+  filter: none;
+}
+
+button.action-modal-cta-btn--confirm-green svg {
+  color: #059669;
+  stroke: #059669;
+}
+
+.action-modal-price {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--brand-600);
+}
+
+.action-modal-price--checkout {
+  color: #047857;
+}
+
 button.action-modal-cta-btn--danger {
   background: #fef2f2;
   border-color: #fecaca;
@@ -1700,7 +1997,7 @@ button.action-modal-cta-btn--danger:hover {
 }
 
 
-/* Painéis e campos — modais de ação / checkout (padrão do resumo do agendamento) */
+/* PainÃ©is e campos â€” modais de aÃ§Ã£o / checkout (padrÃ£o do resumo do agendamento) */
 .action-modal-panel {
   padding: 1rem;
   background: #fafafa;
@@ -1878,7 +2175,7 @@ input.action-modal-field--qty {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Botão “Entrar com Google” — alinhado ao estilo do botão oficial (branco, borda suave, Roboto) */
+/* BotÃ£o â€œEntrar com Googleâ€ â€” alinhado ao estilo do botÃ£o oficial (branco, borda suave, Roboto) */
 .google-signin-btn {
   display: flex;
   align-items: center;
@@ -1957,7 +2254,7 @@ input.action-modal-field--qty {
   white-space: nowrap;
 }
 
-/* ─── CRM Clientes — layout mobile (≤768px) ─── */
+/* â”€â”€â”€ CRM Clientes â€” layout mobile (â‰¤768px) â”€â”€â”€ */
 .clients-page {
   box-sizing: border-box;
 }
@@ -2480,7 +2777,7 @@ input.action-modal-field--qty {
 }
 
 
-/* Settings — expediente semanal (day toggles): override global button padding */
+/* Settings â€” expediente semanal (day toggles): override global button padding */
 .settings-weekday-row {
   display: flex;
   flex-wrap: wrap;
@@ -2538,7 +2835,7 @@ button {
   background-color: var(--border-color);
 }
 
-/* Painel staff — contorno na cor primária */
+/* Painel staff â€” contorno na cor primÃ¡ria */
 .main-content .btn-primary,
 .main-content .btn-secondary {
   border: 1px solid var(--primary-color);
@@ -2567,7 +2864,7 @@ button {
   box-sizing: border-box;
 }
 
-/* Configurações — catálogo: bordas da paleta */
+/* ConfiguraÃ§Ãµes â€” catÃ¡logo: bordas da paleta */
 .settings-page .glass-card.settings-catalog-card,
 .settings-page .set-mobile-card {
   border: 1px solid var(--card-outline) !important;
@@ -2586,7 +2883,7 @@ button {
   box-sizing: border-box;
 }
 
-/* Modais: Voltar com fundo branco; CTAs com contorno forte (cards + rodapé) */
+/* Modais: Voltar com fundo branco; CTAs com contorno forte (cards + rodapÃ©) */
 .modal-backdrop .btn-secondary {
   background-color: #ffffff;
   border: 1px solid var(--primary-color);
@@ -2607,7 +2904,7 @@ button {
   border-color: var(--primary-hover);
 }
 
-/* Ações rápidas em círculo — confirmar verde (sucesso); cancelar com contorno */
+/* AÃ§Ãµes rÃ¡pidas em cÃ­rculo â€” confirmar verde (sucesso); cancelar com contorno */
 .sloot-circle-action {
   border-radius: 9999px;
   display: inline-flex;
@@ -2789,7 +3086,7 @@ button {
   transform: scale(0.94);
 }
 
-/* Ícone menu (3 barras) — escuro no header claro; branco no sidebar preto */
+/* Ãcone menu (3 barras) â€” escuro no header claro; branco no sidebar preto */
 .sidebar-toggle-btn--bars {
   color: var(--text-primary);
 }
@@ -3060,7 +3357,7 @@ button {
 }
 
 /* ============================================
-   DASHBOARD — Operational Style
+   DASHBOARD â€” Operational Style
    ============================================ */
 
 .dash-page {
@@ -3083,7 +3380,7 @@ button {
   animation: fadeIn 0.5s ease-out;
 }
 
-/* Dashboard — modais de ação: painel opaco (sem vidro / gradiente) */
+/* Dashboard â€” modais de aÃ§Ã£o: painel opaco (sem vidro / gradiente) */
 .dash-page .modal-backdrop .modal-glass-panel {
   background: rgba(255, 255, 255, 1);
   background-image: none;
@@ -3709,12 +4006,30 @@ button {
   border: 1px solid var(--calendar-border);
 }
 
+/* --- Upcoming list (web: max 3 visíveis + scroll) --- */
+.dash-panel-upcoming {
+  --dash-upcoming-row-h: 3.85rem;
+}
+
+.dash-panel-upcoming .dash-panel-body {
+  overflow: visible;
+}
+
+.dash-upcoming-list {
+  max-height: calc(var(--dash-upcoming-row-h) * 3);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  margin-top: 4px;
+  padding-right: 2px;
+}
 /* --- Upcoming list items --- */
 .dash-upcoming-item {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 0;
+  padding: 8px 0;
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -3770,11 +4085,13 @@ button {
 .dash-upcoming-info {
   flex: 1;
   min-width: 0;
+  line-height: 1.2;
 }
 
 .dash-upcoming-info h4 {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 700;
+  line-height: 1.2;
   color: var(--text-primary);
   margin: 0;
   white-space: nowrap;
@@ -3783,9 +4100,15 @@ button {
 }
 
 .dash-upcoming-info p {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
+  line-height: 1.25;
   color: var(--text-secondary);
   margin: 0;
+}
+
+.dash-upcoming-info .dash-upcoming-service {
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .dash-upcoming-actions {
@@ -3819,40 +4142,77 @@ button {
   transform: translateY(-1px);
 }
 
-.dash-upcoming-action-btn--start {
-  color: #93c5fd;
-  background: rgba(147, 197, 253, 0.22);
-  border: 1px solid rgba(147, 197, 253, 0.6);
-}
+/* Variante D (contorno fino) — só web, card Próximos Agendamentos */
+@media (min-width: 769px) {
+  .dash-panel-upcoming .dash-upcoming-action-btn--start,
+  .dash-panel-upcoming .dash-upcoming-action-btn--start svg {
+    color: rgb(147, 197, 253);
+    stroke: rgb(147, 197, 253);
+  }
 
-.dash-page .dash-upcoming-action-btn--start,
-.dash-upcoming-action-btn--start svg {
-  color: #93c5fd;
-  stroke: #93c5fd;
-}
+  .dash-panel-upcoming .dash-upcoming-action-btn--start {
+    background: rgba(147, 197, 253, 0.08);
+    border: 1px solid rgba(147, 197, 253, 0.35);
+    box-shadow: none;
+  }
 
-.dash-upcoming-action-btn--start:hover {
-  background: rgba(147, 197, 253, 0.35);
-  border-color: #93c5fd;
-}
+  .dash-panel-upcoming .dash-upcoming-action-btn--start:hover {
+    background: rgba(147, 197, 253, 0.14);
+    border-color: rgba(147, 197, 253, 0.45);
+  }
 
-.dash-page .dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service,
-.dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service {
-  color: #93c5fd !important;
-  background: rgba(147, 197, 253, 0.22) !important;
-  border: 1px solid rgba(147, 197, 253, 0.6) !important;
-}
+  .dash-panel-upcoming .dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service {
+    color: rgb(147, 197, 253);
+    background: rgba(147, 197, 253, 0.12);
+    border: 1px solid rgba(147, 197, 253, 0.42);
+  }
 
-.dash-page .dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service:hover,
-.dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service:hover {
-  background: rgba(147, 197, 253, 0.35) !important;
-  border-color: #93c5fd !important;
-}
+  .dash-panel-upcoming .dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service:hover {
+    background: rgba(147, 197, 253, 0.16);
+    border-color: rgba(147, 197, 253, 0.5);
+  }
 
-.dash-page .dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service svg,
-.dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service svg {
-  color: #93c5fd !important;
-  stroke: #93c5fd !important;
+  .dash-panel-upcoming .sloot-circle-action--confirm.sloot-circle-action--sm {
+    color: rgb(13, 148, 136);
+    background: rgba(45, 212, 191, 0.08);
+    border: 1px solid rgba(45, 212, 191, 0.32);
+    box-shadow: none;
+    filter: none;
+  }
+
+  .dash-panel-upcoming .sloot-circle-action--confirm.sloot-circle-action--sm:hover {
+    background: rgba(45, 212, 191, 0.14);
+    border-color: rgba(45, 212, 191, 0.42);
+    color: rgb(13, 148, 136);
+    box-shadow: none;
+  }
+
+  .dash-panel-upcoming .sloot-circle-action--cancel-outline.sloot-circle-action--sm {
+    color: rgb(229, 115, 115);
+    background: rgba(239, 154, 154, 0.08);
+    border: 1px solid rgba(239, 154, 154, 0.35);
+    box-shadow: none;
+    filter: none;
+  }
+
+  .dash-panel-upcoming .sloot-circle-action--cancel-outline.sloot-circle-action--sm:hover {
+    background: rgba(239, 154, 154, 0.14);
+    border-color: rgba(239, 154, 154, 0.45);
+    color: rgb(229, 115, 115);
+  }
+
+  .dash-panel-upcoming .dash-upcoming-actions .dash-upcoming-action-btn svg,
+  .dash-panel-upcoming .dash-upcoming-actions .sloot-circle-action svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .dash-panel-upcoming .dash-upcoming-wa-btn svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
 }
 
 .dash-upcoming-wa-btn {
@@ -3877,7 +4237,7 @@ button {
 }
 
 
-/* WhatsApp actions (CRM, etc.) — same palette as .dash-upcoming-wa-btn */
+/* WhatsApp actions (CRM, etc.) â€” same palette as .dash-upcoming-wa-btn */
 .wa-btn {
   display: inline-flex;
   align-items: center;
@@ -4064,7 +4424,7 @@ button {
     grid-template-columns: 1fr;
   }
 
-  /* Dashboard mobile — escopado a .dash-page; viewport >768 inalterado */
+  /* Dashboard mobile â€” escopado a .dash-page; viewport >768 inalterado */
   .dash-page {
     gap: 1.25rem;
   }
@@ -4140,6 +4500,17 @@ button {
 
   .dash-page .dash-panel-body {
     padding: 0 1.25rem 1.25rem;
+  }
+
+  .dash-page .dash-panel-upcoming .dash-panel-body {
+    overflow-y: auto;
+  }
+
+  .dash-page .dash-upcoming-list {
+    max-height: none;
+    overflow: visible;
+    margin-top: 0;
+    padding-right: 0;
   }
 
   .dash-page .dash-kpi-card,
@@ -4218,6 +4589,27 @@ button {
     box-sizing: border-box;
   }
 
+  .dash-page .dash-upcoming-action-btn--start,
+  .dash-page .dash-upcoming-action-btn--start svg {
+    color: #93c5fd;
+    stroke: #93c5fd;
+  }
+
+  .dash-page .dash-upcoming-action-btn--start {
+    background: rgba(147, 197, 253, 0.22);
+    border: 1px solid rgba(147, 197, 253, 0.6);
+  }
+
+  .dash-page .dash-upcoming-action-btn--start:hover {
+    background: rgba(147, 197, 253, 0.35);
+    border-color: #93c5fd;
+  }
+
+  .dash-page .dash-upcoming-action-btn--start.dash-upcoming-action-btn--in-service {
+    background: rgba(147, 197, 253, 0.22);
+    border: 1px solid rgba(147, 197, 253, 0.6);
+  }
+
   .dash-page .dash-upcoming-item .sloot-circle-action--sm {
     width: 44px;
     height: 44px;
@@ -4262,7 +4654,7 @@ button {
     stroke: var(--sidebar-text) !important;
   }
 
-  /* Mobile: cards e modais brancos sólidos (evita vidro/cinza translúcido) */
+  /* Mobile: cards e modais brancos sÃ³lidos (evita vidro/cinza translÃºcido) */
   .glass-card,
   .modal-glass-panel {
     background: var(--panel-bg) !important;
@@ -4372,7 +4764,7 @@ button {
 }
 
 
-/* New Mini Calendar Styles — padrão: moldura tema, dia ativo em lima */
+/* New Mini Calendar Styles â€” padrÃ£o: moldura tema, dia ativo em lima */
 .dash-mini-cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -4425,7 +4817,7 @@ button {
   -webkit-appearance: none;
 }
 
-/* Ice White Inputs for contrast (exceto login — .cl-field__input) */
+/* Ice White Inputs for contrast (exceto login â€” .cl-field__input) */
 input:not(.cl-field__input),
 select,
 textarea {
@@ -4441,7 +4833,7 @@ textarea:focus {
   outline: none !important;
 }
 
-/* Calendários nativos (type=date): mesma moldura que popovers custom */
+/* CalendÃ¡rios nativos (type=date): mesma moldura que popovers custom */
 input[type='date'] {
   border: 1px solid var(--card-outline) !important;
 }
@@ -4473,7 +4865,7 @@ input[type='date'].booking-reserve-form__field:focus {
   pointer-events: none;
 }
 
-/* Blob button (login) — baseado no efeito gooey */
+/* Blob button (login) â€” baseado no efeito gooey */
 .staff-login-panel .blob-btn {
   --blob-brand: var(--accent-color);
   --blob-outline: var(--primary-color);
@@ -4734,7 +5126,7 @@ input[type='date'].booking-reserve-form__field:focus {
   text-shadow: 0 10px 16px rgba(0, 0, 0, 0.22);
 }
 
-/* Agendamento público — cartões e botões com contorno preto */
+/* Agendamento pÃºblico â€” cartÃµes e botÃµes com contorno preto */
 .public-booking-page .glass-card,
 .public-booking-page button.glass-card {
   border: 1px solid var(--primary-color);
@@ -4800,7 +5192,7 @@ input[type='date'].booking-reserve-form__field:focus {
   outline-offset: 2px;
 }
 
-/* Agendamento público: nome do negócio em destaque; redes mais discretas e mais abaixo */
+/* Agendamento pÃºblico: nome do negÃ³cio em destaque; redes mais discretas e mais abaixo */
 .public-booking-page .booking-business-name {
   font-size: clamp(3rem, 11vw, 5.5rem);
   letter-spacing: -2px;
@@ -5003,7 +5395,7 @@ input[type='date'].booking-reserve-form__field:focus {
   gap: 10px;
 }
 
-/* Agendamento público: ~4 colunas em ecrã largo (referência UI) */
+/* Agendamento pÃºblico: ~4 colunas em ecrÃ£ largo (referÃªncia UI) */
 .booking-slots-grid--public {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -5097,7 +5489,7 @@ input[type='date'].booking-reserve-form__field:focus {
   );
 }
 
-/* Fundo acinzentado atrás do relógio para destacar sobre as listras */
+/* Fundo acinzentado atrÃ¡s do relÃ³gio para destacar sobre as listras */
 .booking-slot-btn--blocked .booking-slot-icon-wrap {
   width: 28px;
   height: 28px;
@@ -5180,7 +5572,7 @@ input[type='date'].booking-reserve-form__field:focus {
   }
 }
 
-/* —— Customer portal (responsive) —— */
+/* â€”â€” Customer portal (responsive) â€”â€” */
 .customer-portal-root {
   min-height: 100vh;
   background: var(--bg-color);
@@ -5188,7 +5580,7 @@ input[type='date'].booking-reserve-form__field:focus {
   box-sizing: border-box;
 }
 
-/* Portal do cliente — cartões e botões com contorno preto */
+/* Portal do cliente â€” cartÃµes e botÃµes com contorno preto */
 .customer-portal-root .glass-card,
 .customer-portal-root .customer-portal-upcoming-card,
 .customer-portal-root .customer-portal-stat-tile,
@@ -5811,7 +6203,7 @@ input[type='date'].booking-reserve-form__field:focus {
   }
 }
 
-/* Estoque — ícones Lucide na tabela: o `button` global usa padding e `border: none` */
+/* Estoque â€” Ã­cones Lucide na tabela: o `button` global usa padding e `border: none` */
 button.inventory-action-icon-btn {
   padding: 0 !important;
   margin: 0;
@@ -5845,7 +6237,7 @@ button.inventory-action-icon-btn--danger svg {
   color: #b91c1c;
 }
 
-/* ─── Estoque — layout geral ─── */
+/* â”€â”€â”€ Estoque â€” layout geral â”€â”€â”€ */
 .inventory-page {
   box-sizing: border-box;
 }
@@ -6120,7 +6512,7 @@ button.inventory-action-icon-btn--danger svg {
   gap: 10px;
 }
 
-/* Mobile — header & KPIs */
+/* Mobile â€” header & KPIs */
 .inv-mobile-header {
   display: flex;
   flex-direction: column;
@@ -6252,7 +6644,7 @@ button.inventory-action-icon-btn--danger svg {
   gap: 10px;
 }
 
-/* Mobile — product card */
+/* Mobile â€” product card */
 .inv-mobile-card {
   padding: 0;
   border-radius: 14px;
@@ -6374,7 +6766,7 @@ button.inventory-action-icon-btn.inv-mobile-action-btn {
   }
 }
 
-/* ─── Configurações — layout mobile (≤768px) ─── */
+/* â”€â”€â”€ ConfiguraÃ§Ãµes â€” layout mobile (â‰¤768px) â”€â”€â”€ */
 .settings-page {
   box-sizing: border-box;
 }
@@ -6789,7 +7181,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   border-color: rgba(239, 68, 68, 0.25);
 }
 
-/* Modal barbeiro — contorno preto em painel, campos e botões */
+/* Modal barbeiro â€” contorno preto em painel, campos e botÃµes */
 .settings-barber-modal.modal-glass-panel {
   border: 1px solid var(--primary-color) !important;
 }
@@ -6869,7 +7261,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   box-sizing: border-box;
 }
 
-/* Modal barbeiro — grids empilhados no mobile */
+/* Modal barbeiro â€” grids empilhados no mobile */
 @media (max-width: 768px) {
   .settings-barber-modal {
     max-height: 92vh !important;
@@ -6912,7 +7304,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 }
 
 /* ============================================
-   STAFF SOFT UI — header, filtros, empty states
+   STAFF SOFT UI â€” header, filtros, empty states
    ============================================ */
 
 .staff-top-header {
@@ -7015,9 +7407,9 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 }
 
 .scheduler-barber-legend__dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  width: 4px;
+  height: 12px;
+  border-radius: 2px;
   flex-shrink: 0;
 }
 
@@ -7128,6 +7520,50 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   border: 1px solid var(--calendar-border) !important;
 }
 
+.scheduler-calendar-panel--day-view .scheduler-desktop-week-header__cell:last-child {
+  border-right: none;
+}
+
+.scheduler-desktop-week-header__cell--barber {
+  gap: 6px;
+  cursor: default;
+}
+
+.scheduler-desktop-week-header__cell--barber:hover {
+  background: transparent;
+}
+
+.scheduler-desktop-week-header__barber-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--icon-bg);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.scheduler-desktop-week-header__barber-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scheduler-grid-shell--narrow .scheduler-desktop-week-header__barber-avatar {
+  width: 24px;
+  height: 24px;
+  font-size: 0.65rem;
+}
+
+.scheduler-grid-shell--narrow .scheduler-desktop-week-header__wd {
+  font-size: 0.62rem;
+}
+
 .scheduler-desktop-week-header {
   border-bottom: 1px solid var(--calendar-border) !important;
 }
@@ -7141,11 +7577,11 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   background: #fafbfc !important;
 }
 
-/* Agenda — modo escuro: coluna de horários preta, números brancos */
+/* Agenda â€” modo escuro: coluna de horÃ¡rios preta, nÃºmeros brancos */
 
 
 
-/* Em atendimento — mantém cartões azuis no modo escuro */
+/* Em atendimento â€” mantÃ©m cartÃµes azuis no modo escuro */
 
 
 

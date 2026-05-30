@@ -160,7 +160,12 @@ const StaffLoginPage = () => {
     const perms = userData?.permissions;
     const canDashboard = Array.isArray(perms) && perms.includes('dashboard');
     const barberNoDashboard = userData?.role === 'Barbeiro' && !canDashboard;
-    if (barberNoDashboard) navigate(tenantDashboardPath(slug, 'scheduler'), { replace: true });
+    if (barberNoDashboard) {
+      navigate(tenantDashboardPath(slug, 'scheduler'), {
+        replace: true,
+        state: { schedulerDayView: true, at: Date.now() },
+      });
+    }
     else navigate(tenantDashboardPath(slug), { replace: true });
   };
 
@@ -243,7 +248,13 @@ const StaffArea = () => {
   };
 
   const setActiveTab = (nextTab) => {
-    navigate(tenantDashboardPath(slug, nextTab === 'dashboard' ? undefined : nextTab));
+    const path = tenantDashboardPath(slug, nextTab === 'dashboard' ? undefined : nextTab);
+    navigate(
+      path,
+      nextTab === 'scheduler'
+        ? { state: { schedulerDayView: true, at: Date.now() } }
+        : undefined
+    );
   };
 
   React.useEffect(() => {
@@ -252,7 +263,10 @@ const StaffArea = () => {
     const perms = currentUser?.permissions;
     const canDashboard = Array.isArray(perms) && perms.includes('dashboard');
     if (canDashboard) return;
-    navigate(tenantDashboardPath(slug, 'scheduler'), { replace: true });
+    navigate(tenantDashboardPath(slug, 'scheduler'), {
+      replace: true,
+      state: { schedulerDayView: true, at: Date.now() },
+    });
   }, [location.pathname, currentUser, navigate, staffHome, slug]);
 
   React.useEffect(() => {

@@ -61,7 +61,9 @@ export default function AppointmentActionModal({
         <div className="action-modal-panel">
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
             <span style={{ fontWeight: 600 }}>{app.customer}</span>
-            <span style={{ fontWeight: 700, color: 'var(--brand-600)', fontSize: '1.1rem' }}>
+            <span
+              className={`action-modal-price${actionModal.step === 'payment' ? ' action-modal-price--checkout' : ''}`}
+            >
               {formatCheckoutCurrency(app.price)}
             </span>
           </div>
@@ -163,7 +165,7 @@ export default function AppointmentActionModal({
               <button
                 type="button"
                 onClick={handleMarkInProgress}
-                className="action-modal-cta-btn action-modal-cta-btn--start-blue"
+                className="action-modal-cta-btn action-modal-cta-btn--confirm-blue"
                 style={{ flex: 2, padding: '14px' }}
               >
                 <Play size={18} /> Confirmar Início
@@ -285,7 +287,9 @@ export default function AppointmentActionModal({
                 }}
               >
                 <span style={{ fontWeight: 700 }}>Total checkout</span>
-                <strong style={{ fontSize: '0.9rem' }}>{formatCheckoutCurrency(checkoutGrandTotal)}</strong>
+                <strong className="action-modal-price action-modal-price--checkout" style={{ fontSize: '0.9rem' }}>
+                  {formatCheckoutCurrency(checkoutGrandTotal)}
+                </strong>
               </div>
             </div>
 
@@ -300,14 +304,10 @@ export default function AppointmentActionModal({
               </button>
               <button
                 type="button"
-                className="btn-primary"
+                className="action-modal-cta-btn action-modal-cta-btn--confirm-green"
                 style={{
                   flex: 2,
                   padding: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
                 }}
                 onClick={handleFinalizePayment}
               >

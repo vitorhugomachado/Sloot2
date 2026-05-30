@@ -6,7 +6,7 @@ import { useApp } from '../context/AppContext';
 import { useAppointmentActions, formatCheckoutCurrency } from '../hooks/useAppointmentActions';
 import { filterAvailableBookingTimes, isBookingSlotTaken } from '../utils/bookingAvailability';
 import { parseDurationMinutes } from '../utils/barberAvailability';
-import { getAppointmentStatusConfig, IN_SERVICE_COLOR, isInServiceStatus } from '../utils/appointmentStatus';
+import { getAppointmentStatusConfig, isInServiceStatus } from '../utils/appointmentStatus';
 import { normalizePhoneForWhatsApp, openWhatsAppConfirm } from '../utils/appointmentWhatsApp';
 import { STAFF_DASHBOARD_TIME_SLOTS } from '../utils/publicBookingSlots';
 
@@ -658,7 +658,8 @@ const Dashboard = () => {
             {upcoming.length === 0 ? (
               <DashUpcomingEmpty />
             ) : (
-              upcoming.map((app) => {
+              <div className="dash-upcoming-list" role="list" aria-label="Lista de próximos agendamentos">
+              {upcoming.map((app) => {
                 const barberForApp = barbers.find((b) => b.id === app.barberId);
                 const barberIdx = barbers.findIndex((b) => b.id === app.barberId);
                 const barberName = barberForApp?.name?.split(' ')[0] || '';
@@ -681,7 +682,7 @@ const Dashboard = () => {
                     </div>
                     <div className="dash-upcoming-info" style={{ flex: 1 }}>
                       <h4>{app.customer}</h4>
-                      <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{app.service || 'Serviço'}</p>
+                      <p className="dash-upcoming-service">{app.service || 'Serviço'}</p>
                       <p>{app.time}{!isBarber ? ` — ${barberName}` : ''}</p>
                     </div>
                     <div className="dash-upcoming-right">
@@ -695,16 +696,9 @@ const Dashboard = () => {
                               ? `${app.customer} em atendimento`
                               : `Iniciar atendimento de ${app.customer}`
                           }
-                          style={{
-                            color: IN_SERVICE_COLOR,
-                            background: isInServiceStatus(app.status)
-                              ? 'rgba(147, 197, 253, 0.35)'
-                              : 'rgba(147, 197, 253, 0.22)',
-                            border: '1px solid rgba(147, 197, 253, 0.6)',
-                          }}
                           onClick={(event) => handleQuickStart(app, event)}
                         >
-                          <Play size={13} strokeWidth={2.25} color="currentColor" />
+                          <Play size={20} strokeWidth={2.25} color="currentColor" />
                         </button>
                         <button
                           type="button"
@@ -713,7 +707,7 @@ const Dashboard = () => {
                           aria-label={`Confirmar atendimento de ${app.customer}`}
                           onClick={(event) => handleQuickConfirm(app, event)}
                         >
-                          <CheckCircle size={13} />
+                          <CheckCircle size={20} strokeWidth={2.25} />
                         </button>
                         <button
                           type="button"
@@ -722,7 +716,7 @@ const Dashboard = () => {
                           aria-label={`Cancelar agendamento de ${app.customer}`}
                           onClick={(event) => handleQuickCancel(app, event)}
                         >
-                          <XCircle size={13} />
+                          <XCircle size={20} strokeWidth={2.25} />
                         </button>
                       </div>
                       {normalizedPhone && (
@@ -733,13 +727,14 @@ const Dashboard = () => {
                           aria-label={`Confirmar horário com ${app.customer} por WhatsApp`}
                           onClick={(event) => openWhatsAppConfirmHandler(app, event)}
                         >
-                          <WhatsAppIcon size={15} />
+                          <WhatsAppIcon size={12} />
                         </button>
                       )}
                     </div>
                   </div>
                 );
-              })
+              })}
+              </div>
             )}
           </div>
         </div>

@@ -1,10 +1,6 @@
 import React from 'react';
-import { isInServiceStatus } from '../../utils/appointmentStatus';
-import {
-  getBarberColor,
-  getBarberInitials,
-  getBarberShortName,
-} from '../../utils/barberDisplay';
+import { getSchedulerStatusClass } from '../../utils/appointmentStatus';
+import { getBarberInitials, getBarberShortName } from '../../utils/barberDisplay';
 
 function buildApptLabel(barber, app, statusLabel) {
   const barberName = barber?.name || 'Profissional';
@@ -13,12 +9,24 @@ function buildApptLabel(barber, app, statusLabel) {
   return `${barberName} — ${customer} — ${status}`;
 }
 
+function BarberAvatar({ barber, className }) {
+  const initials = getBarberInitials(barber?.name);
+  const hasPhoto = Boolean(barber?.foto_perfil);
+
+  return (
+    <span
+      className={`${className}${hasPhoto ? ' scheduler-appt-bar__avatar--photo' : ' scheduler-appt-bar__avatar--initials'}`}
+      aria-hidden
+    >
+      {hasPhoto ? <img src={barber.foto_perfil} alt="" /> : initials}
+    </span>
+  );
+}
+
 export default function SchedulerApptBar({
   app,
   barber,
   statusStyle,
-  stackCount = 1,
-  activeBarbers = [],
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -26,8 +34,7 @@ export default function SchedulerApptBar({
 }) {
   const ss = statusStyle;
   const actionable = app.status !== 'Finalizado' && app.status !== 'Cancelado';
-  const barberColor = getBarberColor(app.barberId, activeBarbers);
-  const initials = getBarberInitials(barber?.name);
+  const statusClass = getSchedulerStatusClass(app.status);
   const shortName = getBarberShortName(barber?.name);
   const ariaLabel = buildApptLabel(barber, app, ss?.label);
 
@@ -35,7 +42,7 @@ export default function SchedulerApptBar({
     return (
       <button
         type="button"
-        className={`scheduler-mobile-macro-card scheduler-appt-bar scheduler-appt-bar--interactive${isInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
+        className={`scheduler-mobile-macro-card scheduler-appt-bar scheduler-appt-bar--interactive${statusClass ? ` ${statusClass}` : ''}`}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         onClick={onClick}
@@ -45,23 +52,12 @@ export default function SchedulerApptBar({
         style={{
           background: ss.bg,
           borderColor: ss.border,
-          opacity: app.status === 'Cancelado' ? 0.5 : 1,
           cursor: actionable ? 'pointer' : 'default',
           minHeight: '47px',
           width: '100%',
         }}
       >
-        <div
-          className="scheduler-mobile-macro-avatar"
-          style={{ background: barberColor, color: '#fff' }}
-          aria-hidden
-        >
-          {barber?.foto_perfil ? (
-            <img src={barber.foto_perfil} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : (
-            initials
-          )}
-        </div>
+        <BarberAvatar barber={barber} className="scheduler-mobile-macro-avatar scheduler-appt-bar__avatar" />
         <div className="scheduler-mobile-macro-text">
           <div
             className={`scheduler-mobile-macro-customer${app.status === 'Cancelado' ? ' scheduler-appt-bar__name--cancelled' : ''}`}
@@ -72,12 +68,6 @@ export default function SchedulerApptBar({
             {shortName || 'Profissional'} · {ss.label}
           </div>
         </div>
-        <span
-          className="scheduler-appt-bar__status-dot"
-          style={{ background: ss.badge }}
-          title={ss.label}
-          aria-hidden
-        />
       </button>
     );
   }
@@ -86,38 +76,21 @@ export default function SchedulerApptBar({
     <div
       role="button"
       tabIndex={actionable ? 0 : -1}
-      className={`scheduler-appt-bar fade-in${actionable ? ' scheduler-appt-bar--interactive' : ' scheduler-appt-bar--muted'}${isInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
+      className={`scheduler-appt-bar scheduler-appt-bar--model-a fade-in${actionable ? ' scheduler-appt-bar--interactive' : ' scheduler-appt-bar--muted'}${statusClass ? ` ${statusClass}` : ''}`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onClick={onClick}
       aria-label={ariaLabel}
       title={ariaLabel}
-      style={{
-        background: ss.bg,
-        borderColor: ss.border,
-      }}
     >
-      <span className="scheduler-appt-bar__accent" style={{ background: barberColor }} aria-hidden />
-      <span className="scheduler-appt-bar__avatar" style={{ background: barberColor }} aria-hidden>
-        {initials}
-      </span>
+      <span className="scheduler-appt-bar__accent" aria-hidden />
+      <BarberAvatar barber={barber} className="scheduler-appt-bar__avatar" />
       <span
         className={`scheduler-appt-bar__name${app.status === 'Cancelado' ? ' scheduler-appt-bar__name--cancelled' : ''}`}
         title={app.customer}
       >
         {app.customer}
       </span>
-      {stackCount === 1 && shortName && (
-        <span className="scheduler-appt-bar__meta" title={barber?.name}>
-          {shortName}
-        </span>
-      )}
-      <span
-        className="scheduler-appt-bar__status-dot"
-        style={{ background: ss.badge }}
-        title={ss.label}
-        aria-hidden
-      />
     </div>
   );
 }

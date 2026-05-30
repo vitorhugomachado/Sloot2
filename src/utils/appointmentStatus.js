@@ -5,6 +5,15 @@ export function isInServiceStatus(status) {
   return s === 'em progresso' || s === 'em atendimento';
 }
 
+/** Classes CSS da agenda conforme status do agendamento. */
+export function getSchedulerStatusClass(status) {
+  const s = String(status || '').trim();
+  if (s === 'Cancelado') return 'scheduler-appt--cancelled';
+  if (s === 'Finalizado') return 'scheduler-appt--paid';
+  if (isInServiceStatus(s)) return 'scheduler-appt--in-service';
+  return '';
+}
+
 /** Estilo para cards da grade / Scheduler (bg, border, badge, label). */
 export function getAppointmentStatusStyle(status) {
   const s = String(status || '').trim();

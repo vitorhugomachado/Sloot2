@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Plus, Clock, User, Scissors, X, Calendar as CalendarIcon, Users } from 'lucide-react';
 import AppointmentActionModal from '../components/appointments/AppointmentActionModal';
 import SchedulerApptBar from '../components/scheduler/SchedulerApptBar';
@@ -12,8 +13,7 @@ import {
   normalizeBookingTime,
 } from '../utils/bookingAvailability';
 import { isBarberScheduleOpen, parseDurationMinutes } from '../utils/barberAvailability';
-import { getBarberColor, getBarberShortName } from '../utils/barberDisplay';
-import { getAppointmentStatusStyle, isInServiceStatus } from '../utils/appointmentStatus';
+import { getAppointmentStatusStyle, getSchedulerStatusClass } from '../utils/appointmentStatus';
 import { STAFF_SCHEDULER_TIME_SLOTS } from '../utils/publicBookingSlots';
 import { toIsoLocal } from '../utils/dateLocal';
 import { API_URL } from '../config/apiUrl';
@@ -142,6 +142,8 @@ const Scheduler = () => {
   );
 
   const [showSchedulerMonthPicker, setShowSchedulerMonthPicker] = useState(false);
+  const [desktopView, setDesktopView] = useState('day');
+  const location = useLocation();
   const [schedulerCalendarMonth, setSchedulerCalendarMonth] = useState(() => {
     const n = new Date();
     return new Date(n.getFullYear(), n.getMonth(), 1);
@@ -154,6 +156,12 @@ const Scheduler = () => {
     mq.addEventListener('change', fn);
     return () => mq.removeEventListener('change', fn);
   }, []);
+
+  useEffect(() => {
+    if (location.state?.schedulerDayView !== true) return;
+    setDesktopView('day');
+    setSelectedDate(toIsoLocal(new Date()));
+  }, [location.state?.schedulerDayView, location.state?.at]);
 
   useEffect(() => {
     if (!showSchedulerMonthPicker) return;
@@ -424,26 +432,83 @@ const Scheduler = () => {
   endOfWeek.setDate(startOfWeek.getDate() + 6);
   const endStr = toIsoLocal(endOfWeek);
 
+  const isDayGrid = desktopView === 'day' || isSchedulerNarrow;
+
+  const gridColumns = useMemo(() => {
+    if (isDayGrid) {
+      if (selectedBarberId === 'all') {
+        return activeBarbers.map((b) => ({
+          kind: 'barber',
+          key: `barber-${b.id}`,
+          date: selectedDate,
+          barberId: String(b.id),
+          barber: b,
+        }));
+      }
+      const barber =
+        activeBarbers.find((b) => String(b.id) === String(selectedBarberId)) ||
+        barbers.find((b) => String(b.id) === String(selectedBarberId));
+      return [
+        {
+          kind: 'barber',
+          key: `barber-${selectedBarberId}`,
+          date: selectedDate,
+          barberId: String(selectedBarberId),
+          barber: barber || null,
+        },
+      ];
+    }
+    const weekBase = new Date(`${startStr}T12:00:00`);
+    return Array.from({ length: 7 }, (_, col) => {
+      const d = new Date(weekBase);
+      d.setDate(weekBase.getDate() + col);
+      const date = toIsoLocal(d);
+      return { kind: 'date', key: date, date };
+    });
+  }, [isDayGrid, selectedDate, selectedBarberId, activeBarbers, barbers, startStr]);
+
   const filteredAppointments = useMemo(() => {
-    return appointments.filter(app => {
+    return appointments.filter((app) => {
+      const matchesBarber =
+        selectedBarberId === 'all' || String(app.barberId) === String(selectedBarberId);
+      if (isDayGrid) {
+        return app.date === selectedDate && matchesBarber;
+      }
       const inRange = app.date >= startStr && app.date <= endStr;
-      const matchesBarber = selectedBarberId === 'all' || String(app.barberId) === String(selectedBarberId);
       return inRange && matchesBarber;
     });
-  }, [appointments, startStr, endStr, selectedBarberId]);
+  }, [appointments, isDayGrid, selectedDate, startStr, endStr, selectedBarberId]);
 
   const shiftDate = (daysCount) => {
-    const d = new Date(selectedDate + "T12:00:00");
+    const d = new Date(selectedDate + 'T12:00:00');
     d.setDate(d.getDate() + daysCount);
     setSelectedDate(toIsoLocal(d));
   };
 
+  const shiftDesktopDate = (direction) => {
+    shiftDate(desktopView === 'day' ? direction : direction * 7);
+  };
+
+  const selectDesktopDay = (iso) => {
+    setSelectedDate(iso);
+    setDesktopView('day');
+  };
+
+  const getWeekdayLabelForIso = (iso) => {
+    const d = new Date(`${iso}T12:00:00`);
+    const dayIndex = (d.getDay() + 6) % 7;
+    return days[dayIndex];
+  };
+
   const getAppointmentsForCell = useCallback(
-    (dateString, timeString) => {
+    (dateString, timeString, barberId = null) => {
       const slot = normalizeBookingTime(timeString);
-      return filteredAppointments.filter(
-        (app) => app.date === dateString && normalizeBookingTime(app.time) === slot
-      );
+      return filteredAppointments.filter((app) => {
+        if (app.date !== dateString) return false;
+        if (normalizeBookingTime(app.time) !== slot) return false;
+        if (barberId != null && String(app.barberId) !== String(barberId)) return false;
+        return true;
+      });
     },
     [filteredAppointments]
   );
@@ -459,23 +524,22 @@ const Scheduler = () => {
   );
 
   const rowHeightsBySlot = useMemo(() => {
-    const weekBase = new Date(`${startStr}T12:00:00`);
-    const weekDates = Array.from({ length: 7 }, (_, col) => {
-      const d = new Date(weekBase);
-      d.setDate(weekBase.getDate() + col);
-      return toIsoLocal(d);
-    });
-
     return STAFF_SCHEDULER_TIME_SLOTS.map((time) => {
       let maxCount = 0;
-      for (const date of weekDates) {
+      for (const col of gridColumns) {
+        const date = col.date;
+        const barberId = col.kind === 'barber' ? col.barberId : null;
         const n = filteredAppointments.filter(
-          (a) => a.date === date && normalizeBookingTime(a.time) === normalizeBookingTime(time)
+          (a) =>
+            a.date === date &&
+            normalizeBookingTime(a.time) === normalizeBookingTime(time) &&
+            (barberId == null || String(a.barberId) === String(barberId))
         ).length;
         if (n > maxCount) maxCount = n;
       }
 
-      if (selectedBarberId !== 'all') {
+      const useSingleRowStyle = isDayGrid || selectedBarberId !== 'all';
+      if (useSingleRowStyle) {
         if (maxCount <= 1) return SCHEDULER_ROW_BASE_SINGLE;
         const inner = maxCount * SCHEDULER_SINGLE_CARD_H + (maxCount - 1) * 3;
         return Math.min(SCHEDULER_ROW_MAX_SINGLE, SCHEDULER_CELL_PAD + inner);
@@ -485,7 +549,12 @@ const Scheduler = () => {
       const inner = maxCount * SCHEDULER_APPT_MIN_H + (maxCount - 1) * SCHEDULER_APPT_GAP;
       return Math.min(SCHEDULER_ROW_MAX_ALL, SCHEDULER_CELL_PAD + inner);
     });
-  }, [filteredAppointments, selectedBarberId, startStr, services]);
+  }, [filteredAppointments, selectedBarberId, gridColumns, isDayGrid]);
+
+  const gridColCount = gridColumns.length;
+  const gridTemplateColumns = isDayGrid
+    ? `repeat(${gridColCount}, minmax(100px, 1fr))`
+    : `repeat(${gridColCount}, minmax(0, 1fr))`;
 
   const apptCountClass = (count) =>
     `scheduler-cell-appts--count-${Math.min(Math.max(count, 0), 9)}`;
@@ -493,7 +562,7 @@ const Scheduler = () => {
   const getStatusStyle = getAppointmentStatusStyle;
 
   return (
-    <div className="fade-in scheduler-page" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 4rem)' }}>
+    <div className="fade-in scheduler-page">
       {/* Header Container */}
       <header className="scheduler-header" style={{ flexShrink: 0, marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         
@@ -535,11 +604,16 @@ const Scheduler = () => {
               })}
             </div>
           )}
-          <div className="scheduler-header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div className="scheduler-header-actions">
             {!isSchedulerNarrow && (
               <div ref={schedulerWeekPickerRef} style={{ position: 'relative' }}>
                 <div className="glass-card scheduler-week-picker-bar">
-                  <button type="button" className="scheduler-week-picker-nav-btn" onClick={() => shiftDate(-7)} aria-label="Semana anterior">
+                  <button
+                    type="button"
+                    className="scheduler-week-picker-nav-btn"
+                    onClick={() => shiftDesktopDate(-1)}
+                    aria-label={desktopView === 'day' ? 'Dia anterior' : 'Semana anterior'}
+                  >
                     <ChevronLeft size={14} />
                   </button>
                   <CalendarIcon size={14} className="scheduler-week-picker-calendar-icon" aria-hidden />
@@ -553,9 +627,23 @@ const Scheduler = () => {
                   >
                     {formatSchedulerDatePt(selectedDate)}
                   </button>
-                  <button type="button" className="scheduler-week-picker-nav-btn" onClick={() => shiftDate(7)} aria-label="Próxima semana">
+                  <button
+                    type="button"
+                    className="scheduler-week-picker-nav-btn"
+                    onClick={() => shiftDesktopDate(1)}
+                    aria-label={desktopView === 'day' ? 'Próximo dia' : 'Próxima semana'}
+                  >
                     <ChevronRight size={14} />
                   </button>
+                  {desktopView === 'day' && (
+                    <button
+                      type="button"
+                      className="scheduler-week-picker-view-week-btn"
+                      onClick={() => setDesktopView('week')}
+                    >
+                      Ver semana
+                    </button>
+                  )}
                 </div>
                 {showSchedulerMonthPicker && (
                   <div className="booking-calendar-popover scheduler-week-picker-popover" role="dialog" aria-label="Calendário">
@@ -594,7 +682,7 @@ const Scheduler = () => {
                             type="button"
                             className={`booking-calendar-day ${isSelected ? 'selected' : ''}`}
                             onClick={() => {
-                              setSelectedDate(iso);
+                              selectDesktopDay(iso);
                               setShowSchedulerMonthPicker(false);
                             }}
                           >
@@ -608,7 +696,7 @@ const Scheduler = () => {
                         type="button"
                         className="scheduler-week-picker-popover-footer-btn"
                         onClick={() => {
-                          setSelectedDate(toIsoLocal(new Date()));
+                          selectDesktopDay(toIsoLocal(new Date()));
                           setShowSchedulerMonthPicker(false);
                         }}
                       >
@@ -629,11 +717,10 @@ const Scheduler = () => {
             {!isSchedulerNarrow && (
               <button
                 type="button"
-                className="btn-primary"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px', padding: '5px 6px', boxShadow: 'var(--shadow-md)' }}
+                className="btn-primary scheduler-header-book-btn"
                 onClick={() => handleOpenModal()}
               >
-                <Plus size={18} /> Agendar
+                <Plus size={16} /> Agendar
               </button>
             )}
           </div>
@@ -650,7 +737,7 @@ const Scheduler = () => {
                  transition: 'all 0.2s ease',
                  background: selectedBarberId === 'all' ? 'var(--accent-color)' : 'var(--hover-bg)',
                  color: selectedBarberId === 'all' ? 'var(--accent-text)' : 'var(--text-secondary)',
-                 border: '1px solid #000'
+                 border: '1px solid var(--border-color)'
                }}>
                <Users size={14} /> Todos
              </button>
@@ -666,7 +753,7 @@ const Scheduler = () => {
                    transition: 'all 0.2s ease',
                    background: selectedBarberId === String(barber.id) ? 'var(--accent-color)' : 'var(--hover-bg)',
                    color: selectedBarberId === String(barber.id) ? 'var(--accent-text)' : 'var(--text-primary)',
-                   border: '1px solid #000',
+                   border: '1px solid var(--border-color)',
                    boxShadow: 'none'
                  }}>
                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', background: selectedBarberId === String(barber.id) ? 'rgba(255, 255, 255, 0.45)' : 'var(--icon-bg)', color: selectedBarberId === String(barber.id) ? 'var(--accent-text)' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem' }}>
@@ -675,135 +762,35 @@ const Scheduler = () => {
                  {barber.name.split(' ')[0]}
                </button>
              ))}
-             {selectedBarberId === 'all' && activeBarbers.length > 0 && (
-               <div className="scheduler-barber-legend" aria-label="Legenda de cores por profissional">
-                 {activeBarbers.map((barber) => (
-                   <span key={barber.id} className="scheduler-barber-legend__item">
-                     <span
-                       className="scheduler-barber-legend__dot"
-                       style={{ background: getBarberColor(barber.id, activeBarbers) }}
-                       aria-hidden
-                     />
-                     {getBarberShortName(barber.name)}
-                   </span>
-                 ))}
-               </div>
-             )}
           </div>
         )}
       </header>
 
-      {/* Mobile: lista rolável só do dia selecionado (selectedDate); chips da semana estão no header */}
-      {isSchedulerNarrow && (
-        <div className="scheduler-mobile-layout">
-          <div className="scheduler-mobile-list-scroll hide-scrollbar">
-            {STAFF_SCHEDULER_TIME_SLOTS.map((time) => {
-              const cellApps = getAppointmentsForCell(selectedDate, time);
-              const slotPast = isBookingSlotInPast(selectedDate, time);
-              return (
-                <div key={time} className="scheduler-mobile-slot">
-                  <div className="scheduler-mobile-slot__time">{time}</div>
-                  <div className="scheduler-mobile-slot__body">
-                    {cellApps.length === 0 ? (
-                      <button
-                        type="button"
-                        className="scheduler-mobile-slot__free"
-                        disabled={slotPast}
-                        onClick={() => handleOpenModal(selectedDate, time)}
-                        style={slotPast ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
-                      >
-                        Livre — toque para agendar
-                      </button>
-                    ) : selectedBarberId === 'all' ? (
-                      <div className="scheduler-mobile-slot__macro">
-                        {cellApps.map((app) => {
-                          const b = barbers.find((br) => br.id === app.barberId);
-                          return (
-                            <SchedulerApptBar
-                              key={app.id}
-                              app={app}
-                              barber={b}
-                              statusStyle={getStatusStyle(app.status)}
-                              stackCount={cellApps.length}
-                              activeBarbers={activeBarbers}
-                              variant="mobile"
-                              onMouseEnter={onAppointmentHoverEnter(app, b?.name)}
-                              onMouseLeave={clearAppointmentHoverTip}
-                              onClick={(e) => openActionModal(app, e)}
-                            />
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      cellApps.map((app) => {
-                        const ss = getStatusStyle(app.status);
-                        return (
-                          <button
-                            key={app.id}
-                            type="button"
-                            className={`scheduler-mobile-single-card fade-in${isInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
-                            onMouseEnter={onAppointmentHoverEnter(
-                              app,
-                              barbers.find((x) => x.id === app.barberId)?.name
-                            )}
-                            onMouseLeave={clearAppointmentHoverTip}
-                            onClick={(e) => openActionModal(app, e)}
-                            disabled={app.status === 'Finalizado' || app.status === 'Cancelado'}
-                            style={{
-                              background: ss.bg,
-                              border: `1px solid ${ss.border}`,
-                              opacity: app.status === 'Cancelado' ? 0.5 : 1,
-                              cursor:
-                                app.status === 'Finalizado' || app.status === 'Cancelado'
-                                  ? 'default'
-                                  : 'pointer',
-                            }}
-                          >
-                            <div style={{ fontWeight: 700, textAlign: 'left' }}>{app.customer}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'left' }}>{app.service}</div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-                              <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>R$ {app.price.toFixed(2)}</span>
-                              <span
-                                style={{
-                                  background: ss.badge,
-                                  color: app.status === 'Agendado' ? 'var(--text-secondary)' : '#fff',
-                                  padding: '2px 8px',
-                                  borderRadius: '6px',
-                                  fontSize: '0.65rem',
-                                  fontWeight: 700,
-                                  textTransform: 'uppercase',
-                                }}
-                              >
-                                {ss.label}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Grid Container — desktop / tablet largo */}
-      {!isSchedulerNarrow && (
-      <div className="scheduler-grid-shell" style={{ flex: 1, display: 'grid', gridTemplateColumns: '80px 1fr', gap: '1rem', minHeight: 0, overflowY: 'auto' }}>
-        
+      {/* Grelha horários × colunas — um único scroll (vertical + horizontal se necessário) */}
+      <div className="scheduler-grid-viewport">
+      <div
+        className={`scheduler-grid-shell${isSchedulerNarrow ? ' scheduler-grid-shell--narrow' : ''}`}
+      >
         {/* Time Column */}
-        <div className="hide-scrollbar glass-card scheduler-time-col" style={{ padding: '0', display: 'flex', flexDirection: 'column', paddingTop: `${dayHeaderHeight}px`, background: 'rgba(0,0,0,0.02)', boxSizing: 'border-box', position: 'sticky', left: 0, zIndex: 20 }}>
+        <div
+          className="glass-card scheduler-time-col"
+          style={{ paddingTop: `${dayHeaderHeight}px` }}
+        >
           {STAFF_SCHEDULER_TIME_SLOTS.map((time, slotIdx) => (
-            <div key={time} style={{ height: `${rowHeightsBySlot[slotIdx]}px`, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', transition: 'height 0.25s ease', boxSizing: 'border-box' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{time}</span>
+            <div
+              key={time}
+              className="scheduler-time-col__slot"
+              style={{ height: `${rowHeightsBySlot[slotIdx]}px` }}
+            >
+              <span className="scheduler-time-col__label">{time}</span>
             </div>
           ))}
         </div>
 
         {/* Calendar Main Grid */}
-        <div className="glass-card hide-scrollbar scheduler-calendar-panel" style={{ padding: '0', position: 'relative', overflowX: 'auto', overflowY: 'visible', display: 'flex', flexDirection: 'column' }}>
+        <div
+          className={`glass-card scheduler-calendar-panel${isDayGrid ? ' scheduler-calendar-panel--day-view' : ''}`}
+        >
           <div
             style={{
               width: '100%',
@@ -814,35 +801,76 @@ const Scheduler = () => {
           <div
             className="scheduler-desktop-week-header"
             style={{
-              gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+              gridTemplateColumns: gridTemplateColumns,
               minHeight: `${dayHeaderHeight}px`,
+              minWidth: isDayGrid ? 'min-content' : undefined,
             }}
           >
-            {days.map((day, i) => {
-              const date = getDayDate(i);
-              const isSelected = date === selectedDate;
+            {gridColumns.map((col) => {
+              if (col.kind === 'barber') {
+                const b = col.barber;
+                return (
+                  <div
+                    key={col.key}
+                    className="scheduler-desktop-week-header__cell scheduler-desktop-week-header__cell--barber"
+                  >
+                    <div
+                      className="scheduler-desktop-week-header__barber-avatar"
+                      aria-hidden
+                    >
+                      {b?.foto_perfil ? (
+                        <img src={b.foto_perfil} alt="" />
+                      ) : (
+                        (b?.name || '?').charAt(0)
+                      )}
+                    </div>
+                    <div className="scheduler-desktop-week-header__wd">
+                      {b?.name?.split(' ')[0] || '—'}
+                    </div>
+                  </div>
+                );
+              }
+              const dayLabel = getWeekdayLabelForIso(col.date);
+              const isSelected = col.date === selectedDate;
               return (
-                <div
-                  key={day}
+                <button
+                  key={col.key}
+                  type="button"
                   className={`scheduler-desktop-week-header__cell${isSelected ? ' scheduler-desktop-week-header__cell--selected' : ''}`}
+                  onClick={() => selectDesktopDay(col.date)}
+                  aria-label={`${dayLabel}, ${formatSchedulerDatePt(col.date)}`}
+                  aria-pressed={isSelected}
                 >
-                  <div className="scheduler-desktop-week-header__wd">{day}</div>
-                  <div className="scheduler-desktop-week-header__num">{date.split('-').reverse()[0]}</div>
-                </div>
+                  <div className="scheduler-desktop-week-header__wd">{dayLabel}</div>
+                  <div className="scheduler-desktop-week-header__num">{col.date.split('-').reverse()[0]}</div>
+                </button>
               );
             })}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gridTemplateRows: rowHeightsBySlot.map((h) => `${h}px`).join(' '), gap: 0, width: '100%', position: 'relative', transition: 'grid-template-rows 0.25s ease' }}>
-            
-            {Array.from({ length: STAFF_SCHEDULER_TIME_SLOTS.length * 7 }).map((_, i) => {
-              const col = i % 7;
-              const rowIdx = Math.floor(i / 7);
+          <div
+            className="scheduler-calendar-grid-body"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: gridTemplateColumns,
+              gridTemplateRows: rowHeightsBySlot.map((h) => `${h}px`).join(' '),
+              gap: 0,
+              width: '100%',
+              minWidth: isDayGrid ? 'min-content' : undefined,
+              position: 'relative',
+              transition: 'grid-template-rows 0.25s ease',
+            }}
+          >
+            {Array.from({ length: STAFF_SCHEDULER_TIME_SLOTS.length * gridColCount }).map((_, i) => {
+              const colIndex = i % gridColCount;
+              const rowIdx = Math.floor(i / gridColCount);
               const time = STAFF_SCHEDULER_TIME_SLOTS[rowIdx];
-              const date = getDayDate(col);
-              const cellApps = getAppointmentsForCell(date, time);
+              const col = gridColumns[colIndex];
+              const date = col.date;
+              const columnBarberId = col.kind === 'barber' ? col.barberId : null;
+              const cellApps = getAppointmentsForCell(date, time, columnBarberId);
               const gridRow = rowIdx + 1;
-              const gridCol = col + 1;
+              const gridCol = colIndex + 1;
               const slotPast = isBookingSlotInPast(date, time);
               const slotOpenForBarber = (b, durationMinutes = 30) =>
                 isBarberScheduleOpen({
@@ -851,48 +879,55 @@ const Scheduler = () => {
                   time,
                   durationMinutes,
                 });
-              /** Individual: só mostra "+" se o slot estiver livre e dentro da carga horária. */
               const showScheduleSlotPlus =
                 !slotPast &&
-                (selectedBarberId === 'all'
-                  ? activeBarbers.some((b) => {
-                      const bid = String(b.id);
-                      const notTaken = !cellHasBlockingAppointment(date, time, bid);
-                      return notTaken && slotOpenForBarber(b);
-                    })
-                  : (() => {
-                      const b = barbers.find((x) => String(x.id) === String(selectedBarberId));
+                (columnBarberId != null
+                  ? (() => {
+                      const b =
+                        col.barber ||
+                        barbers.find((x) => String(x.id) === String(columnBarberId));
                       if (!b) return false;
-                      const free = !cellHasBlockingAppointment(date, time, selectedBarberId);
+                      const free = !cellHasBlockingAppointment(date, time, columnBarberId);
                       return free && slotOpenForBarber(b);
-                    })());
+                    })()
+                  : selectedBarberId === 'all'
+                    ? activeBarbers.some((b) => {
+                        const bid = String(b.id);
+                        const notTaken = !cellHasBlockingAppointment(date, time, bid);
+                        return notTaken && slotOpenForBarber(b);
+                      })
+                    : (() => {
+                        const b = barbers.find((x) => String(x.id) === String(selectedBarberId));
+                        if (!b) return false;
+                        const free = !cellHasBlockingAppointment(date, time, selectedBarberId);
+                        return free && slotOpenForBarber(b);
+                      })());
+              const blockBarberId =
+                columnBarberId ?? (selectedBarberId !== 'all' ? selectedBarberId : null);
               const cellBlocked =
                 slotPast ||
-                (selectedBarberId !== 'all' &&
-                  cellHasBlockingAppointment(date, time, selectedBarberId));
+                (blockBarberId != null &&
+                  cellHasBlockingAppointment(date, time, blockBarberId));
+              const showMacroBars = col.kind === 'date' && selectedBarberId === 'all';
+              const showSingleCards = col.kind === 'barber' || selectedBarberId !== 'all';
               
               return (
-                <div 
-                  key={i} 
-                  className="hover-trigger"
+                <div
+                  key={i}
+                  className="hover-trigger scheduler-grid-cell"
                   onClick={() => {
                     if (cellBlocked) return;
                     handleOpenModal(date, time);
                   }}
-                  style={{ 
-                    borderRight: '1px solid var(--border-color)', 
-                    boxShadow: 'inset 0 -1px 0 var(--border-color)',
-                    position: 'relative',
+                  style={{
                     cursor: cellBlocked ? 'default' : 'pointer',
                     background: 'transparent',
                     gridColumn: gridCol,
                     gridRow: gridRow,
-                    padding: '2px',
-                    boxSizing: 'border-box'
                   }}
                 >
                   {showScheduleSlotPlus && (
-                  <div className="hover-visible" style={{ position: 'absolute', inset: '2px', border: '1px dashed var(--border-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.01)', zIndex: 1 }}>
+                  <div className="hover-visible scheduler-grid-cell__plus" style={{ position: 'absolute', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.01)', zIndex: 1 }}>
                     <Plus size={14} style={{ color: 'var(--text-secondary)' }} />
                   </div>
                   )}
@@ -901,8 +936,8 @@ const Scheduler = () => {
                     className={`scheduler-cell-appts ${apptCountClass(cellApps.length)}`}
                   >
                     
-                    {/* ALL BARBERS view — cor + iniciais do barbeiro */}
-                    {selectedBarberId === 'all' && cellApps.map((app) => {
+                    {/* Semana + Todos: vários barbeiros na mesma célula */}
+                    {showMacroBars && cellApps.map((app) => {
                        const b = barbers.find((br) => br.id === app.barberId);
                        const actionable = app.status !== 'Finalizado' && app.status !== 'Cancelado';
                        return (
@@ -921,16 +956,17 @@ const Scheduler = () => {
                        );
                     })}
 
-                    {/* SINGLE BARBER view */}
-                    {selectedBarberId !== 'all' && cellApps.map(app => {
+                    {/* Dia por coluna de barbeiro ou filtro individual */}
+                    {showSingleCards && cellApps.map((app) => {
                         const ss = getStatusStyle(app.status);
+                        const statusClass = getSchedulerStatusClass(app.status);
                         const actionable = app.status !== 'Finalizado' && app.status !== 'Cancelado';
                         return (
                           <div 
                             key={app.id}
                             role="button"
                             tabIndex={actionable ? 0 : -1}
-                            className={`fade-in scheduler-cell-appts__single${isInServiceStatus(app.status) ? ' scheduler-appt--in-service' : ''}`}
+                            className={`fade-in scheduler-cell-appts__single${statusClass ? ` ${statusClass}` : ''}`}
                             onMouseEnter={onAppointmentHoverEnter(
                               app,
                               barbers.find((x) => x.id === app.barberId)?.name
@@ -938,20 +974,11 @@ const Scheduler = () => {
                             onMouseLeave={clearAppointmentHoverTip}
                             onClick={(e) => actionable && openActionModal(app, e)}
                             style={{
-                              flex: 1,
                               pointerEvents: 'auto',
-                              background: ss.bg,
-                              color: 'var(--text-primary)',
-                              borderRadius: '12px',
-                              padding: '10px',
-                              fontSize: '0.91rem',
-                              boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              justifyContent: 'space-between',
-                              border: `1px solid ${ss.border}`,
                               cursor: actionable ? 'pointer' : 'default',
-                              opacity: app.status === 'Cancelado' ? 0.5 : 1,
+                              ...(app.status === 'Cancelado'
+                                ? { background: ss.bg, borderColor: ss.border }
+                                : {}),
                             }}
                           >
                             <div style={{ overflow: 'hidden' }}>
@@ -975,7 +1002,7 @@ const Scheduler = () => {
           </div>
         </div>
       </div>
-      )}
+      </div>
 
       <AppointmentActionModal
         {...appointmentActions}
