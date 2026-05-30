@@ -4,7 +4,12 @@ import './login-screen.css';
 
 const CUSTOMER_BG = '/fundo.webp';
 
-export default function LoginScreenLayout({ banner, children, variant = 'default' }) {
+export default function LoginScreenLayout({
+  banner,
+  children,
+  variant = 'default',
+  brandTagline = 'Barbeiros',
+}) {
   const isStaff = variant === 'staff';
 
   return (
@@ -27,7 +32,7 @@ export default function LoginScreenLayout({ banner, children, variant = 'default
           <div className="login-preview__stack">
             <div className="login-preview__brand">
               <SlootiLogo size="xl" onDark />
-              <p className="login-preview__brand-tagline">Barbeiros</p>
+              <p className="login-preview__brand-tagline">{brandTagline}</p>
             </div>
             {children}
           </div>

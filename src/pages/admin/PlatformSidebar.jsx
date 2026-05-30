@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
-import { Store, LogOut, Menu } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { Store, LogOut, Menu, LayoutDashboard, Users } from 'lucide-react';
 import SlootiLogo from '../../components/SlootiLogo';
 
 const SIDEBAR_LEAVE_MS = 110;
@@ -34,6 +35,8 @@ export default function PlatformSidebar({ isCollapsed, setIsCollapsed, onLogout 
     setIsCollapsed(!isCollapsed);
   };
 
+  const navClass = ({ isActive }) => `nav-item${isActive ? ' active' : ''}`;
+
   return (
     <aside
       className={`sidebar platform-sidebar ${isCollapsed ? 'collapsed' : ''} ${!isCollapsed ? 'active' : ''}`}
@@ -57,10 +60,18 @@ export default function PlatformSidebar({ isCollapsed, setIsCollapsed, onLogout 
       </p>
 
       <nav className="nav-menu">
-        <button type="button" className="nav-item active" aria-current="page">
+        <NavLink to="/admin" end className={navClass}>
+          <LayoutDashboard size={20} />
+          <span>Visão geral</span>
+        </NavLink>
+        <NavLink to="/admin/barbearias" className={navClass}>
           <Store size={20} />
           <span>Barbearias</span>
-        </button>
+        </NavLink>
+        <NavLink to="/admin/admins" className={navClass}>
+          <Users size={20} />
+          <span>Admins</span>
+        </NavLink>
       </nav>
 
       <div className="sidebar-footer">

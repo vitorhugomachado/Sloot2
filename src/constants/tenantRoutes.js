@@ -24,6 +24,15 @@ export function isReservedTenantSlug(slug) {
   return RESERVED_TENANT_SLUGS.has(norm(slug));
 }
 
+/** Primeiro segmento do path do browser (/:slug/...) quando não for reservado. */
+export function tenantSlugFromPathname(pathname) {
+  const parts = String(pathname || '').split('/').filter(Boolean);
+  if (!parts.length) return '';
+  const candidate = norm(parts[0]);
+  if (!candidate || isReservedTenantSlug(candidate)) return '';
+  return candidate;
+}
+
 export function tenantBookingPath(slug) {
   const s = norm(slug);
   return s ? `/${s}` : '/';

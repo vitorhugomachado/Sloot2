@@ -1,9 +1,14 @@
 import React, { lazy, Suspense, useState, useEffect } from 'react';
-import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import StaffLoginPage from './pages/StaffLoginPage';
 import TabLoadingFallback from './components/TabLoadingFallback';
-import PlatformAdminApp from './pages/admin/PlatformAdminApp';
+import PlatformAdminApp, { PlatformAdminOutlet } from './pages/admin/PlatformAdminApp';
+import PlatformAdminPage from './pages/admin/PlatformAdminPage';
+import PlatformDashboardPage from './pages/admin/PlatformDashboardPage';
+import PlatformTenantsPage from './pages/admin/PlatformTenantsPage';
+import PlatformTenantDetailPage from './pages/admin/PlatformTenantDetailPage';
+import PlatformAdminsPage from './pages/admin/PlatformAdminsPage';
 import BookingPreviewShell from './pages/preview/BookingPreviewShell';
 import LoginPreviewShell from './pages/preview/LoginPreviewShell';
 import TenantNotFound from './pages/TenantNotFound';
@@ -22,6 +27,7 @@ import {
 } from './constants/tenantRoutes';
 import { Menu, LogOut } from 'lucide-react';
 import SlootiLogo from './components/SlootiLogo';
+import LandingPage from './pages/landing/LandingPage';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Clients = lazy(() => import('./pages/Clients'));
@@ -216,6 +222,13 @@ const StaffArea = () => {
 
   const activeTab = tab && VALID_TABS.includes(tab) ? tab : 'dashboard';
 
+  const allowedTabs = React.useMemo(() => {
+    const perms = Array.isArray(currentUser?.permissions) ? currentUser.permissions : [];
+    return VALID_TABS.filter((tabId) => perms.includes(tabId));
+  }, [currentUser?.permissions]);
+
+  const firstAllowedTab = allowedTabs[0] || 'dashboard';
+
   const handleLogout = () => {
     logout();
     navigate(tenantLoginPath(slug), { replace: true });
@@ -237,11 +250,21 @@ const StaffArea = () => {
     const perms = currentUser?.permissions;
     const canDashboard = Array.isArray(perms) && perms.includes('dashboard');
     if (canDashboard) return;
-    navigate(tenantDashboardPath(slug, 'scheduler'), {
+    const fallback = allowedTabs.find((t) => t !== 'dashboard') || firstAllowedTab;
+    navigate(tenantDashboardPath(slug, fallback === 'dashboard' ? undefined : fallback), {
       replace: true,
-      state: { schedulerDayView: true, at: Date.now() },
+      state: fallback === 'scheduler' ? { schedulerDayView: true, at: Date.now() } : undefined,
     });
-  }, [location.pathname, currentUser, navigate, staffHome, slug]);
+  }, [location.pathname, currentUser, navigate, staffHome, slug, allowedTabs, firstAllowedTab]);
+
+  React.useEffect(() => {
+    if (!tab || !VALID_TABS.includes(tab)) return;
+    if (allowedTabs.includes(tab)) return;
+    navigate(tenantDashboardPath(slug, firstAllowedTab === 'dashboard' ? undefined : firstAllowedTab), {
+      replace: true,
+      state: firstAllowedTab === 'scheduler' ? { schedulerDayView: true, at: Date.now() } : undefined,
+    });
+  }, [tab, allowedTabs, firstAllowedTab, navigate, slug]);
 
   React.useEffect(() => {
     if (tab && !VALID_TABS.includes(tab)) {
@@ -364,7 +387,7 @@ function TenantAppContent() {
       <Route path="cliente/*" element={<LegacyClienteRedirect />} />
       <Route path="clientes/*" element={<Navigate to={bookingHome} replace />} />
       <Route path="barbeiros/*" element={<LegacyBarbeirosRedirect />} />
-      <Route path="admin/*" element={<Navigate to={tenantDashboardPath(tenantSlug)} replace />} />
+      <Route path="admin/*" element={<Navigate to="/admin" replace />} />
       <Route path="*" element={<Navigate to={bookingHome} replace />} />
     </Routes>
   );
@@ -402,7 +425,16 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/admin/*" element={<PlatformAdminApp />} />
+      <Route path="/admin" element={<PlatformAdminApp />}>
+        <Route index element={<PlatformAdminPage page={PlatformDashboardPage} />} />
+        <Route path="barbearias" element={<PlatformAdminOutlet />}>
+          <Route index element={<PlatformAdminPage page={PlatformTenantsPage} />} />
+          <Route path=":id" element={<PlatformAdminPage page={PlatformTenantDetailPage} />} />
+          <Route path=":id/:tab" element={<PlatformAdminPage page={PlatformTenantDetailPage} />} />
+        </Route>
+        <Route path="admins" element={<PlatformAdminPage page={PlatformAdminsPage} />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Route>
       <Route path="/platform" element={<Navigate to="/admin" replace />} />
       <Route path="/cadastro" element={<Navigate to="/" replace />} />
       <Route path="/telateste" element={<BookingPreviewShell />} />
@@ -410,7 +442,7 @@ function App() {
       <Route path="/cliente/*" element={<Navigate to={defaultHome} replace />} />
       <Route path="/barbeiros/*" element={<Navigate to={defaultLogin} replace />} />
       <Route path="/:tenantSlug/*" element={<TenantShell />} />
-      <Route path="/" element={<Navigate to={defaultHome} replace />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="*" element={<Navigate to={defaultHome} replace />} />
     </Routes>
   );

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { UserPlus, Shield, Mail, Check, X, ShieldCheck, LayoutDashboard, Calendar, Users as UsersIcon, DollarSign, MoreVertical } from 'lucide-react';
+import { UserPlus, Shield, Mail, Check, X, ShieldCheck, LayoutDashboard, Calendar, Users as UsersIcon, DollarSign, MoreVertical, Package, Settings } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getStaffStatusColors } from '../utils/staffStatus';
+import { ALL_TENANT_MODULES, TENANT_MODULE_LABELS } from '../constants/tenantModules';
 
 /** Garante array de strings (evita Json/string antigo no Prisma). */
 function normalizePermissionList(raw) {
@@ -19,16 +20,28 @@ function normalizePermissionList(raw) {
 }
 
 const Users = () => {
-  const { barbers, updateBarberPermissions, toggleBarberStatus } = useApp();
+  const { barbers, updateBarberPermissions, toggleBarberStatus, tenantModules } = useApp();
   const [selectedUser, setSelectedUser] = useState(null);
 
-  const modules = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
-    { id: 'scheduler', label: 'Agenda', icon: <Calendar size={18} /> },
-    { id: 'clients', label: 'CRM / Clientes', icon: <UsersIcon size={18} /> },
-    { id: 'finance', label: 'Financeiro', icon: <DollarSign size={18} /> },
-    { id: 'users', label: 'Gestão de Usuários', icon: <Shield size={18} /> },
-  ];
+  const moduleIcons = {
+    dashboard: <LayoutDashboard size={18} />,
+    scheduler: <Calendar size={18} />,
+    clients: <UsersIcon size={18} />,
+    finance: <DollarSign size={18} />,
+    users: <Shield size={18} />,
+    inventory: <Package size={18} />,
+    settings: <Settings size={18} />,
+  };
+
+  const enabledTenantModules = Array.isArray(tenantModules) && tenantModules.length > 0
+    ? tenantModules
+    : ALL_TENANT_MODULES;
+
+  const modules = enabledTenantModules.map((id) => ({
+    id,
+    label: TENANT_MODULE_LABELS[id] || id,
+    icon: moduleIcons[id] || <Shield size={18} />,
+  }));
 
   const togglePermission = (userId, moduleId) => {
     const user = barbers.find(u => u.id === userId);

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { GoogleIcon } from '../../pages/preview/BookingPreviewAuth';
 import { isValidPhone, PHONE_ERROR } from '../../utils/phone';
 
@@ -161,8 +162,14 @@ export default function LoginFormCard({
               type="button"
               className="cl-field__toggle"
               onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              aria-pressed={showPassword}
             >
-              {showPassword ? 'Ocultar' : 'Mostrar'}
+              {showPassword ? (
+                <EyeOff size={18} strokeWidth={1.75} aria-hidden />
+              ) : (
+                <Eye size={18} strokeWidth={1.75} aria-hidden />
+              )}
             </button>
           </label>
         )}

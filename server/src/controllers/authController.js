@@ -1,6 +1,21 @@
 const prisma = require('../lib/prisma.js');
 const { comparePassword, generateToken } = require('../utils/auth');
 const { tenantIdFromReq } = require('../lib/tenantHelpers');
+const { normalizeModuleList, intersectPermissions } = require('../lib/tenantModules');
+
+async function shapeStaffAuthResponse(barber) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: barber.tenantId },
+    select: { enabledModules: true },
+  });
+  const tenantModules = normalizeModuleList(tenant?.enabledModules);
+  const { password: _, ...barberData } = barber;
+  return {
+    ...barberData,
+    permissions: intersectPermissions(barber.permissions, tenantModules),
+    tenantModules,
+  };
+}
 
 const login = async (req, res) => {
   const rawEmail = req.body?.email;
@@ -32,9 +47,9 @@ const login = async (req, res) => {
       tenantId: barber.tenantId,
     });
 
-    const { password: _, ...barberData } = barber;
+    const user = await shapeStaffAuthResponse(barber);
 
-    res.json({ token, user: barberData });
+    res.json({ token, user, tenantModules: user.tenantModules });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Erro interno no servidor' });
@@ -47,8 +62,8 @@ const getMe = async (req, res) => {
       where: { id: req.user.id, tenantId: req.user.tenantId },
     });
     if (!barber) return res.status(404).json({ message: 'Usuário não encontrado' });
-    const { password: _, ...barberData } = barber;
-    res.json(barberData);
+    const user = await shapeStaffAuthResponse(barber);
+    res.json(user);
   } catch (error) {
     res.status(500).json({ message: 'Erro ao buscar perfil' });
   }

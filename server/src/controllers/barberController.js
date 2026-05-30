@@ -3,6 +3,7 @@ const { hashPassword } = require('../utils/auth');
 const { defaultDateRange } = require('./scheduleBlockController');
 const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
 const { invalidatePublicCache } = require('../middlewares/publicCache');
+const { assertModuleEnabled } = require('../lib/tenantModules');
 
 async function attachScheduleBlocks(barbers, from, to) {
   if (!Array.isArray(barbers) || barbers.length === 0) return barbers;
@@ -160,6 +161,11 @@ const createBarber = async (req, res) => {
     if (!req.user || req.user.role !== 'Gerente') {
       return res.status(403).json({ message: 'Apenas gestão pode cadastrar profissionais.' });
     }
+    try {
+      await assertModuleEnabled(req, 'users');
+    } catch (err) {
+      return res.status(err.status || 403).json({ message: err.message || 'Acesso negado.' });
+    }
     const body = req.body && typeof req.body === 'object' ? req.body : {};
     const { password, shifts: shiftsRaw } = body;
     const data = pickBarberScalars(body);
@@ -245,6 +251,14 @@ const updateBarber = async (req, res) => {
     const body = req.body && typeof req.body === 'object' ? req.body : {};
     const { password, shifts: shiftsRaw } = body;
     const data = pickBarberScalars(body);
+
+    if (isGerente && (data.permissions !== undefined || data.role !== undefined || data.status !== undefined)) {
+      try {
+        await assertModuleEnabled(req, 'users');
+      } catch (err) {
+        return res.status(err.status || 403).json({ message: err.message || 'Acesso negado.' });
+      }
+    }
 
     if (!isGerente) {
       delete data.permissions;

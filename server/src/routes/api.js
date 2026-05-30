@@ -33,19 +33,41 @@ const { resolveTenant } = require('../controllers/tenantController');
 const {
   platformLogin,
   listTenants,
+  getTenant,
   createTenant,
+  updateTenant,
+  updateTenantManager,
   updateTenantStatus,
+  updateTenantModules,
+  getPlatformStats,
+  listPlatformAdmins,
+  createPlatformAdmin,
+  updatePlatformAdmin,
+  updatePlatformAdminStatus,
 } = require('../controllers/platformController');
+const requireTenantModule = require('../middlewares/requireTenantModule');
 const { getPeriodClosings, createPeriodClosing } = require('../controllers/periodClosingController');
+const requirePlatformTenant = require('../middlewares/requirePlatformTenant');
+const platformTenantOpsRoutes = require('./platformTenantOpsRoutes');
 
 const router = express.Router();
 
 // Platform (sem tenant) — sub-router isolado do requireTenant
 const platformRouter = express.Router();
 platformRouter.post('/login', platformLogin);
+platformRouter.get('/stats', platformAuthMiddleware, getPlatformStats);
+platformRouter.get('/admins', platformAuthMiddleware, listPlatformAdmins);
+platformRouter.post('/admins', platformAuthMiddleware, createPlatformAdmin);
+platformRouter.patch('/admins/:id', platformAuthMiddleware, updatePlatformAdmin);
+platformRouter.patch('/admins/:id/status', platformAuthMiddleware, updatePlatformAdminStatus);
 platformRouter.get('/tenants', platformAuthMiddleware, listTenants);
+platformRouter.get('/tenants/:id', platformAuthMiddleware, getTenant);
 platformRouter.post('/tenants', platformAuthMiddleware, createTenant);
+platformRouter.patch('/tenants/:id', platformAuthMiddleware, updateTenant);
+platformRouter.patch('/tenants/:id/manager', platformAuthMiddleware, updateTenantManager);
+platformRouter.patch('/tenants/:id/modules', platformAuthMiddleware, updateTenantModules);
 platformRouter.patch('/tenants/:id/status', platformAuthMiddleware, updateTenantStatus);
+platformRouter.use('/tenants/:id', platformAuthMiddleware, requirePlatformTenant, platformTenantOpsRoutes);
 router.use('/platform', platformRouter);
 
 router.get('/tenant/resolve/:slug', resolveTenant);
@@ -68,33 +90,33 @@ router.get('/schedule-blocks/public', cachePublic(60), getPublicScheduleBlocks);
 router.use(requireTenantAuthMatch);
 
 router.use('/barbers', barberRoutes);
-router.use('/clients', authMiddleware, clientRoutes);
-router.get('/appointments', authMiddleware, getAppointments);
-router.patch('/appointments/:id', authMiddleware, updateAppointment);
+router.use('/clients', authMiddleware, requireTenantModule('clients'), clientRoutes);
+router.get('/appointments', authMiddleware, requireTenantModule('scheduler'), getAppointments);
+router.patch('/appointments/:id', authMiddleware, requireTenantModule('scheduler'), updateAppointment);
 
 router.post('/services', authMiddleware, createService);
 router.put('/services/:id', authMiddleware, updateService);
 router.delete('/services/:id', authMiddleware, deleteService);
 
-router.get('/products', authMiddleware, getProducts);
-router.post('/products', authMiddleware, createProduct);
-router.patch('/products/:id/stock', authMiddleware, adjustProductStock);
-router.put('/products/:id', authMiddleware, updateProduct);
-router.delete('/products/:id', authMiddleware, deleteProduct);
-router.get('/sales', authMiddleware, getSales);
-router.post('/sales', authMiddleware, createSale);
+router.get('/products', authMiddleware, requireTenantModule('inventory'), getProducts);
+router.post('/products', authMiddleware, requireTenantModule('inventory'), createProduct);
+router.patch('/products/:id/stock', authMiddleware, requireTenantModule('inventory'), adjustProductStock);
+router.put('/products/:id', authMiddleware, requireTenantModule('inventory'), updateProduct);
+router.delete('/products/:id', authMiddleware, requireTenantModule('inventory'), deleteProduct);
+router.get('/sales', authMiddleware, requireTenantModule('inventory'), getSales);
+router.post('/sales', authMiddleware, requireTenantModule('inventory'), createSale);
 
-router.get('/expenses', authMiddleware, getExpenses);
-router.post('/expenses', authMiddleware, createExpense);
-router.put('/expenses/:id', authMiddleware, updateExpense);
-router.delete('/expenses/:id', authMiddleware, deleteExpense);
+router.get('/expenses', authMiddleware, requireTenantModule('finance'), getExpenses);
+router.post('/expenses', authMiddleware, requireTenantModule('finance'), createExpense);
+router.put('/expenses/:id', authMiddleware, requireTenantModule('finance'), updateExpense);
+router.delete('/expenses/:id', authMiddleware, requireTenantModule('finance'), deleteExpense);
 
-router.get('/month-closings', authMiddleware, getMonthClosings);
-router.post('/month-closings', authMiddleware, createMonthClosing);
+router.get('/month-closings', authMiddleware, requireTenantModule('finance'), getMonthClosings);
+router.post('/month-closings', authMiddleware, requireTenantModule('finance'), createMonthClosing);
 
-router.put('/business', authMiddleware, updateBusinessInfo);
+router.put('/business', authMiddleware, requireTenantModule('settings'), updateBusinessInfo);
 
-router.get('/period-closings', authMiddleware, getPeriodClosings);
-router.post('/period-closings', authMiddleware, createPeriodClosing);
+router.get('/period-closings', authMiddleware, requireTenantModule('finance'), getPeriodClosings);
+router.post('/period-closings', authMiddleware, requireTenantModule('finance'), createPeriodClosing);
 
 module.exports = router;

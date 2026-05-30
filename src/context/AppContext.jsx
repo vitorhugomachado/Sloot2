@@ -26,7 +26,7 @@ import {
   clearPendingCustomer,
   isCustomerTokenForTenant,
 } from '../utils/tenantAuthStorage';
-import { isStaffRoutePath as isStaffRoutePathFromRoutes } from '../constants/tenantRoutes';
+import { isStaffRoutePath as isStaffRoutePathFromRoutes, tenantSlugFromPathname } from '../constants/tenantRoutes';
 
 const AppContext = createContext();
 
@@ -68,6 +68,7 @@ export const AppProvider = ({ children }) => {
   const loading = bootstrapLoading;
   const [token, setToken] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [tenantModules, setTenantModules] = useState([]);
 
   const [customerToken, setCustomerToken] = useState(null);
   const [currentCustomer, setCurrentCustomer] = useState(null);
@@ -92,11 +93,20 @@ export const AppProvider = ({ children }) => {
   const customerLogoutRef = useRef(() => {});
 
   const apiFetch = useCallback(async (url, options = {}) => {
+    const slugHeader = String(
+      tenantHeaders['X-Tenant-Slug']
+      || tenantSlug
+      || (typeof window !== 'undefined' ? tenantSlugFromPathname(window.location.pathname) : '')
+    ).trim().toLowerCase();
+
     const headers = {
       'Content-Type': 'application/json',
-      ...tenantHeaders,
       ...options.headers,
     };
+
+    if (slugHeader) {
+      headers['X-Tenant-Slug'] = slugHeader;
+    }
 
     const authScope = options.authScope || 'auto';
     const activeToken = resolveAuthToken(authScope);
@@ -113,12 +123,9 @@ export const AppProvider = ({ children }) => {
         if (authScope === 'customer' && activeToken) customerLogoutRef.current();
         if (authScope === 'staff' && activeToken) staffLogoutRef.current();
       }
-      if (res.status === 403 && authScope === 'staff' && activeToken) {
-        staffLogoutRef.current();
-      }
     }
     return res;
-  }, [tenantHeaders, resolveAuthToken]);
+  }, [tenantHeaders, tenantSlug, resolveAuthToken]);
 
   const applyBootstrapData = useCallback((data) => {
     if (!data || typeof data !== 'object') return;
@@ -143,7 +150,11 @@ export const AppProvider = ({ children }) => {
   const loadPublicBootstrap = useCallback(async (signal) => {
     const qs = getBootstrapQueryString();
     const url = `${API_URL}/public/bootstrap?${qs}`;
-    const headers = { 'X-Tenant-Slug': tenantSlug };
+    const slugHeader = String(
+      tenantSlug
+      || (typeof window !== 'undefined' ? tenantSlugFromPathname(window.location.pathname) : '')
+    ).trim().toLowerCase();
+    const headers = slugHeader ? { 'X-Tenant-Slug': slugHeader } : {};
     const timeout = new Promise((_, reject) => {
       const id = setTimeout(() => reject(new Error('Bootstrap timeout')), BOOTSTRAP_TIMEOUT_MS);
       signal?.addEventListener('abort', () => clearTimeout(id), { once: true });
@@ -177,7 +188,10 @@ export const AppProvider = ({ children }) => {
 
     setToken(staffTok);
     setCustomerToken((prev) => custTok || prev);
-    if (!staffTok) setCurrentUser(null);
+    if (!staffTok) {
+      setCurrentUser(null);
+      setTenantModules([]);
+    }
     if (!custTok) {
       setCurrentCustomer((prev) => {
         if (tenantSlugChanged) return null;
@@ -213,6 +227,7 @@ export const AppProvider = ({ children }) => {
             if (userRes.ok) {
               const user = await userRes.json();
               setCurrentUser(user);
+              setTenantModules(Array.isArray(user.tenantModules) ? user.tenantModules : []);
 
               const apptsRes = await apiFetch(staffAppointmentsUrl(API_URL), {
                 authScope: 'staff',
@@ -241,6 +256,7 @@ export const AppProvider = ({ children }) => {
               persistStaffToken(tenantSlug, null);
               setToken(null);
               setCurrentUser(null);
+              setTenantModules([]);
             }
           } catch (e) {
             if (!ac.signal.aborted) console.error('Auth error on reload:', e);
@@ -316,9 +332,18 @@ export const AppProvider = ({ children }) => {
   }, [token, tenantSlug, location.pathname]);
 
   const login = async (email, password) => {
+    const slugHeader = String(
+      tenantHeaders['X-Tenant-Slug']
+      || tenantSlug
+      || (typeof window !== 'undefined' ? tenantSlugFromPathname(window.location.pathname) : '')
+    ).trim().toLowerCase();
+
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...tenantHeaders },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(slugHeader ? { 'X-Tenant-Slug': slugHeader } : {}),
+      },
       body: JSON.stringify({ email, password }),
     });
     
@@ -330,6 +355,7 @@ export const AppProvider = ({ children }) => {
     const { token: newToken, user } = await res.json();
     setToken(newToken);
     setCurrentUser(user);
+    setTenantModules(Array.isArray(user.tenantModules) ? user.tenantModules : []);
     persistStaffToken(tenantSlug, newToken);
     return user;
   };
@@ -501,6 +527,7 @@ export const AppProvider = ({ children }) => {
     persistStaffToken(tenantSlug, null);
     setToken(null);
     setCurrentUser(null);
+    setTenantModules([]);
     void loadPublicBootstrap();
   };
 
@@ -1077,7 +1104,7 @@ export const AppProvider = ({ children }) => {
       sellProduct, updateBusinessInfo,
       getFinancialStats, getBarberRanking,
       addExpense, removeExpense, updateExpense, refreshMonthClosings, createMonthClosing, refreshPeriodClosings, createPeriodClosing,
-      login, logout, currentUser, token, apiFetch, loading, bootstrapLoading, staffLoading,
+      login, logout, currentUser, tenantModules, token, apiFetch, loading, bootstrapLoading, staffLoading,
       currentCustomer, isCustomerAuthenticated: customerSessionActive, customerLogin, customerGoogleLogin, customerRegister, customerLogout, refreshCurrentCustomer, syncNavigatedCustomer,
       getCustomerAppointments, updateCustomerProfile,
       customerUpdateAppointmentStatus, customerCancelAppointment,

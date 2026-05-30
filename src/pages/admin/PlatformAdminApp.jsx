@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Outlet, useOutletContext } from 'react-router-dom';
 import PlatformLogin from './PlatformLogin';
-import PlatformTenantsPage from './PlatformTenantsPage';
 import { getPlatformToken, setPlatformToken } from './platformAuth';
+
+/** Repassa o contexto do admin para rotas aninhadas (ex. barbearias/:id). */
+export function PlatformAdminOutlet() {
+  const context = useOutletContext();
+  return <Outlet context={context} />;
+}
 
 export default function PlatformAdminApp() {
   const [authed, setAuthed] = useState(() => !!getPlatformToken());
@@ -17,10 +22,5 @@ export default function PlatformAdminApp() {
     return <PlatformLogin onSuccess={() => setAuthed(true)} />;
   }
 
-  return (
-    <Routes>
-      <Route path="/" element={<PlatformTenantsPage onLogout={handleLogout} />} />
-      <Route path="*" element={<Navigate to="/admin" replace />} />
-    </Routes>
-  );
+  return <Outlet context={{ onLogout: handleLogout }} />;
 }

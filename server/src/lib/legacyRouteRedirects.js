@@ -52,7 +52,7 @@ function resolveLegacyRedirect(path, defaultSlug) {
     return `/${slug}${mapBarbeirosRest(sub)}`;
   }
   if (rest === '/admin' || rest.startsWith('/admin/')) {
-    return `/${slug}/dashboard`;
+    return '/admin';
   }
 
   return null;

@@ -580,5 +580,7 @@ module.exports = {
   updateClient,
   deleteClient,
   promoteFromAppointment,
-  exportCsv
+  exportCsv,
+  buildClientsIndex,
+  findClientByKey,
 };

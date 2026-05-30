@@ -73,9 +73,7 @@ const Sidebar = ({ activeTab, setActiveTab, user, isCollapsed, setIsCollapsed, o
           .filter((item) => {
             const hasDirectPermission = user?.permissions?.includes(item.id);
             const hasLegacyInventoryPermission = item.id === 'inventory' && user?.permissions?.includes('products');
-            const isManagerInventory = item.id === 'inventory' && user?.role === 'Gerente';
-            const isManagerSettings = item.id === 'settings' && user?.role === 'Gerente';
-            return hasDirectPermission || hasLegacyInventoryPermission || isManagerInventory || isManagerSettings;
+            return hasDirectPermission || hasLegacyInventoryPermission;
           })
           .map((item) => (
           <a

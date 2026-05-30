@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
-import { platformFetch, slugify } from './platformAuth';
+import { Eye, EyeOff, X } from 'lucide-react';
+import { platformFetch, slugify, validateStrongPassword } from './platformAuth';
 
 export default function CreateTenantModal({ open, onClose, onCreated }) {
   const [shopName, setShopName] = useState('');
@@ -9,6 +9,10 @@ export default function CreateTenantModal({ open, onClose, onCreated }) {
   const [managerName, setManagerName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [createDefaultServices, setCreateDefaultServices] = useState(true);
+  const [createDefaultHours, setCreateDefaultHours] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -26,15 +30,28 @@ export default function CreateTenantModal({ open, onClose, onCreated }) {
     setManagerName('');
     setEmail('');
     setPassword('');
+    setPasswordConfirm('');
+    setShowPassword(false);
+    setCreateDefaultServices(true);
+    setCreateDefaultHours(true);
     setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    const pwdErr = validateStrongPassword(password);
+    if (pwdErr) {
+      setError(pwdErr);
+      return;
+    }
+    if (password !== passwordConfirm) {
+      setError('As senhas não coincidem.');
+      return;
+    }
     setLoading(true);
     try {
-      const result = await platformFetch('/platform/tenants', {
+      const result = await platformFetch('/tenants', {
         method: 'POST',
         body: JSON.stringify({
           shopName,
@@ -42,6 +59,8 @@ export default function CreateTenantModal({ open, onClose, onCreated }) {
           managerName,
           email,
           password,
+          createDefaultServices,
+          createDefaultHours,
         }),
       });
       reset();
@@ -119,21 +138,60 @@ export default function CreateTenantModal({ open, onClose, onCreated }) {
             onChange={(ev) => setEmail(ev.target.value)}
             autoComplete="email"
           />
+          <div className="platform-password-field">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              className="booking-reserve-form__field"
+              placeholder="Senha inicial *"
+              required
+              minLength={8}
+              value={password}
+              onChange={(ev) => setPassword(ev.target.value)}
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              className="platform-password-toggle"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
           <input
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             className="booking-reserve-form__field"
-            placeholder="Senha inicial *"
+            placeholder="Confirmar senha *"
             required
-            minLength={4}
-            value={password}
-            onChange={(ev) => setPassword(ev.target.value)}
+            minLength={8}
+            value={passwordConfirm}
+            onChange={(ev) => setPasswordConfirm(ev.target.value)}
             autoComplete="new-password"
           />
+          <p className="booking-reserve-form__hint">Mín. 8 caracteres, maiúscula, minúscula e número.</p>
+
+          <label className="platform-checkbox-label">
+            <input
+              type="checkbox"
+              checked={createDefaultServices}
+              onChange={(e) => setCreateDefaultServices(e.target.checked)}
+            />
+            Criar serviços padrão (Corte, Barba)
+          </label>
+          <label className="platform-checkbox-label">
+            <input
+              type="checkbox"
+              checked={createDefaultHours}
+              onChange={(e) => setCreateDefaultHours(e.target.checked)}
+            />
+            Criar horário padrão (seg–sáb)
+          </label>
+
           <div className="booking-reserve-form__row" style={{ marginTop: '0.25rem' }}>
-            <button type="button" className="btn-secondary" style={{ flex: 1 }} onClick={handleClose}>
+            <button type="button" className="dash-action-btn secondary" style={{ flex: 1 }} onClick={handleClose}>
               Cancelar
             </button>
-            <button type="submit" className="btn-primary booking-reserve-form__submit" style={{ flex: 1, marginTop: 0 }} disabled={loading}>
+            <button type="submit" className="dash-action-btn primary booking-reserve-form__submit" style={{ flex: 1, marginTop: 0 }} disabled={loading}>
               {loading ? 'Criando…' : 'Criar barbearia'}
             </button>
           </div>

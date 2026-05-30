@@ -12,6 +12,8 @@ async function resolveTenantBySlug(slug) {
 
 /** Exige barbearia válida (header X-Tenant-Slug ou :slug na rota). */
 async function requireTenant(req, res, next) {
+  if (req.method === 'OPTIONS') return next();
+
   try {
     const slug = getTenantSlugFromRequest(req);
     if (!slug) {

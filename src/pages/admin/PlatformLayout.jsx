@@ -42,13 +42,7 @@ export default function PlatformLayout({ children, onLogout }) {
         onLogout={onLogout}
       />
 
-      <main className={`main-content platform-main-content ${isSidebarCollapsed ? 'expanded' : ''}`}>
-        <header className="platform-desktop-header desktop-only">
-          <div>
-            <h1 className="platform-desktop-title">Administração slooti</h1>
-            <p className="platform-desktop-subtitle">Gestão de barbearias na plataforma</p>
-          </div>
-        </header>
+      <main className={`main-content ${isSidebarCollapsed ? 'expanded' : ''}`}>
         {children}
       </main>
     </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 /**
  * Card de login staff — layout idêntico ao protótipo canvas (mobile + web).
@@ -10,6 +11,7 @@ export default function StaffLoginFormCard({
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,10 +50,10 @@ export default function StaffLoginFormCard({
           <span className="staff-login-field__label" id="staff-login-password-label">
             Senha
           </span>
-          <div className="staff-login-field__control">
+          <div className="staff-login-field__control staff-login-field__control--password">
             <input
               className="staff-login-field__input"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="Senha"
               required
               value={password}
@@ -59,6 +61,19 @@ export default function StaffLoginFormCard({
               autoComplete="current-password"
               aria-labelledby="staff-login-password-label"
             />
+            <button
+              type="button"
+              className="staff-login-field__toggle"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              aria-pressed={showPassword}
+            >
+              {showPassword ? (
+                <EyeOff size={18} strokeWidth={1.75} aria-hidden />
+              ) : (
+                <Eye size={18} strokeWidth={1.75} aria-hidden />
+              )}
+            </button>
           </div>
         </div>
 

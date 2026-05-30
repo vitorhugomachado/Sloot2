@@ -26,6 +26,7 @@ model Tenant {
   show_instagram Boolean  @default(false)
   show_facebook  Boolean  @default(false)
   show_whatsapp  Boolean  @default(false)
+  enabledModules Json     @default("[\"dashboard\",\"scheduler\",\"clients\",\"finance\",\"users\",\"inventory\",\"settings\"]")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

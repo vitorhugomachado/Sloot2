@@ -1,11 +1,16 @@
 const prisma = require('./prisma.js');
 const { hashPassword } = require('../utils/auth');
+const { publicTenantShape } = require('./tenantHelpers');
+const { seedTenantDefaults } = require('./tenantDefaults');
+const { DEFAULT_ENABLED_MODULES } = require('./tenantModules');
 const {
+  validateTenantSlug,
+  validateShopName,
+  validateManagerName,
+  validateEmail,
+  validateManagerPassword,
   normalizeSlug,
-  isValidSlug,
-  isReservedSlug,
-  publicTenantShape,
-} = require('./tenantHelpers');
+} = require('./tenantValidation');
 
 /**
  * Cria tenant + primeiro Gerente. Usado apenas pelo painel /admin (platform).
@@ -13,44 +18,14 @@ const {
  */
 async function createTenantWithManager(body) {
   const data = body && typeof body === 'object' ? body : {};
-  const shopName = String(data.shopName || data.name || '').trim();
-  const slug = normalizeSlug(data.slug || shopName);
-  const managerName = String(data.managerName || data.adminName || '').trim();
-  const email = String(data.email || '').trim().toLowerCase();
-  const password = String(data.password || '');
+  const shopName = validateShopName(data.shopName || data.name);
+  const slug = validateTenantSlug(data.slug || shopName);
+  const managerName = validateManagerName(data.managerName || data.adminName);
+  const email = validateEmail(data.email);
+  const password = validateManagerPassword(data.password);
 
-  if (!shopName || shopName.length < 2) {
-    const err = new Error('Nome da barbearia é obrigatório.');
-    err.status = 400;
-    throw err;
-  }
-  if (!isValidSlug(slug)) {
-    const err = new Error(
-      'URL da barbearia inválida. Use letras minúsculas, números e hífens (ex.: minha-barbearia).',
-    );
-    err.status = 400;
-    throw err;
-  }
-  if (isReservedSlug(slug)) {
-    const err = new Error('Esta URL está reservada pelo sistema. Escolha outro identificador.');
-    err.status = 400;
-    throw err;
-  }
-  if (!managerName) {
-    const err = new Error('Nome do responsável é obrigatório.');
-    err.status = 400;
-    throw err;
-  }
-  if (!email) {
-    const err = new Error('E-mail é obrigatório.');
-    err.status = 400;
-    throw err;
-  }
-  if (password.length < 4) {
-    const err = new Error('Senha deve ter pelo menos 4 caracteres.');
-    err.status = 400;
-    throw err;
-  }
+  const createDefaultServices = Boolean(data.createDefaultServices);
+  const createDefaultHours = Boolean(data.createDefaultHours);
 
   const existingSlug = await prisma.tenant.findUnique({ where: { slug } });
   if (existingSlug) {
@@ -69,6 +44,7 @@ async function createTenantWithManager(body) {
         phone: String(data.phone || '').trim(),
         email: data.contactEmail ? String(data.contactEmail).trim() : email,
         address: String(data.address || '').trim(),
+        enabledModules: DEFAULT_ENABLED_MODULES,
       },
     });
 
@@ -92,6 +68,11 @@ async function createTenantWithManager(body) {
       },
     });
 
+    await seedTenantDefaults(tx, tenant.id, {
+      services: createDefaultServices,
+      workingHours: createDefaultHours,
+    });
+
     return { tenant, barber };
   });
 
@@ -103,4 +84,4 @@ async function createTenantWithManager(body) {
   };
 }
 
-module.exports = { createTenantWithManager };
+module.exports = { createTenantWithManager, normalizeSlug };

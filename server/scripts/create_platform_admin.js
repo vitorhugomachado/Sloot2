@@ -5,6 +5,7 @@
 require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const { hashPassword } = require('../src/utils/auth');
+const { validateStrongPassword } = require('../src/lib/passwordPolicy');
 
 const prisma = new PrismaClient();
 
@@ -18,8 +19,9 @@ async function main() {
     process.exit(1);
   }
 
-  if (password.length < 4) {
-    console.error('Senha deve ter pelo menos 4 caracteres.');
+  const pwdError = validateStrongPassword(password);
+  if (pwdError) {
+    console.error(pwdError);
     process.exit(1);
   }
 

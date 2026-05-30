@@ -40,6 +40,21 @@ function getTenantSlugFromRequest(req) {
   if (header && String(header).trim()) return normalizeSlug(header);
   if (req.params?.slug) return normalizeSlug(req.params.slug);
   if (req.query?.tenant) return normalizeSlug(req.query.tenant);
+
+  const referer = req.headers.referer || req.headers.referrer;
+  if (referer && String(referer).trim()) {
+    try {
+      const pathname = new URL(String(referer)).pathname;
+      const match = pathname.match(/^\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/|$)/);
+      if (match) {
+        const fromReferer = normalizeSlug(match[1]);
+        if (fromReferer && !isReservedSlug(fromReferer)) return fromReferer;
+      }
+    } catch {
+      /* ignore malformed referer */
+    }
+  }
+
   return '';
 }
 
