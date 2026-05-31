@@ -10,6 +10,8 @@ import {
 } from 'recharts';
 import { useApp } from '../context/AppContext';
 import { buildCommissionReport, indexBarbersById, splitAppointmentCommission, getShopPercent } from '../utils/commission';
+import { getAppointmentRevenueDate, getAppointmentServiceRevenue } from '../utils/appointmentRevenue';
+import { parseLocalDateIso, toIsoLocal } from '../utils/dateLocal';
 
 // --- SHARED COMPONENTS ---
 
@@ -73,14 +75,19 @@ function getMonthFinancialSnapshot(monthStr, getFinancialStats, barbersById) {
 const VisaoGeralTab = ({ stats, startDate, endDate, netProfit, repasseServicos, retencaoCasaServicos, netMargin }) => {
   const chartData = useMemo(() => {
     const dataMap = {};
-    const curr = new Date(startDate);
-    const end = new Date(endDate);
+    const curr = parseLocalDateIso(startDate);
+    const end = parseLocalDateIso(endDate);
     while (curr <= end) {
-      const s = getLocalDateStr(curr);
+      const s = toIsoLocal(curr);
       dataMap[s] = { date: s.split('-').reverse().slice(0, 2).join('/'), total: 0 };
       curr.setDate(curr.getDate() + 1);
     }
-    stats.appointments.forEach(app => { if (dataMap[app.date]) dataMap[app.date].total += app.price; });
+    stats.appointments.forEach((app) => {
+      const revenueDate = getAppointmentRevenueDate(app);
+      if (dataMap[revenueDate]) {
+        dataMap[revenueDate].total += getAppointmentServiceRevenue(app);
+      }
+    });
     stats.sales.forEach(sale => { if (dataMap[sale.date]) dataMap[sale.date].total += (sale.price * sale.quantity); });
     return Object.values(dataMap);
   }, [stats, startDate, endDate]);

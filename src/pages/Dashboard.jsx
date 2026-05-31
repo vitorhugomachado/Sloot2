@@ -15,7 +15,7 @@ const EMPTY_DIRECT_SALE = {
   barberId: '',
   items: [{ productId: '', quantity: 1 }],
 };
-import { toIsoLocal } from '../utils/dateLocal';
+import { toIsoLocal, todayIsoLocal, getLocalPeriodRange } from '../utils/dateLocal';
 import { computeOccupancyForPeriod } from '../utils/occupancyStats';
 import { formatRelativeTime } from '../utils/relativeTime';
 import OccupancyGauge from '../components/OccupancyGauge';
@@ -90,6 +90,7 @@ const getPeriodLabel = (days) => {
 };
 
 const ACTIVITY_FEED_LIMIT = 12;
+const ACTIVITY_VISIBLE_ROWS = 5;
 
 function getActivityLabel(status) {
   const s = String(status || '').trim();
@@ -126,7 +127,7 @@ const Dashboard = () => {
     updateAppointmentStatus, cancelAppointment, currentUser
   } = useApp();
 
-  const todayStr = toIsoLocal(new Date());
+  const todayStr = todayIsoLocal();
   const [focusDate, setFocusDate] = useState(todayStr);
   const [dashboardPeriodDays, setDashboardPeriodDays] = useState(7);
   const [activityTick, setActivityTick] = useState(0);
@@ -137,18 +138,10 @@ const Dashboard = () => {
     return () => clearInterval(id);
   }, []);
 
-  const dashboardPeriodDates = useMemo(() => {
-    if (dashboardPeriodDays === 0) {
-      return { start: todayStr, end: todayStr };
-    }
-    const end = new Date(todayStr);
-    const start = new Date(todayStr);
-    start.setDate(start.getDate() - Math.max(dashboardPeriodDays - 1, 0));
-    return {
-      start: toIsoLocal(start),
-      end: toIsoLocal(end)
-    };
-  }, [todayStr, dashboardPeriodDays]);
+  const dashboardPeriodDates = useMemo(
+    () => getLocalPeriodRange(todayStr, dashboardPeriodDays),
+    [todayStr, dashboardPeriodDays],
+  );
 
   const periodLabel = getPeriodLabel(dashboardPeriodDays);
 
@@ -482,7 +475,7 @@ const Dashboard = () => {
           <KpiCard
             label={isBarber ? 'Meu faturamento' : 'Faturamento'}
             value={`R$${stats.revenue.toLocaleString('pt-BR')}`}
-            subtitle={`Serviços finalizados + produtos · ${periodLabel}`}
+            subtitle={`Serviços pagos no período + produtos · ${periodLabel}`}
             stagger={1}
           />
           <OccupancyGauge
@@ -586,7 +579,11 @@ const Dashboard = () => {
           <div className="dash-panel-header">
             <div>
               <h3>Atividade ao vivo</h3>
-              <p className="dash-panel-subtitle">Atualiza automaticamente</p>
+              <p className="dash-panel-subtitle">
+                {recentActivity.length > ACTIVITY_VISIBLE_ROWS
+                  ? 'Atualiza automaticamente · role para ver mais'
+                  : 'Atualiza automaticamente'}
+              </p>
             </div>
             <button className="dash-icon-btn" type="button" aria-hidden tabIndex={-1}><LayoutGrid size={16} /></button>
           </div>
@@ -596,7 +593,12 @@ const Dashboard = () => {
                 Nenhuma movimentação recente. Confirmações, inícios e pagamentos aparecem aqui.
               </p>
             ) : (
-              <div className="dash-timeline">
+              <div
+                className="dash-timeline"
+                role="feed"
+                aria-label="Atividade ao vivo"
+                aria-busy="false"
+              >
                 {recentActivity.map((app, idx) => {
                   const cfg = getStatusConfig(app.status);
                   const relativeTime = formatRelativeTime(app._updatedAtLocal);

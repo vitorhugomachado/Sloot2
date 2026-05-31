@@ -11,6 +11,11 @@ import {
 } from '../utils/appointmentsPollLeader';
 import { mergeAppointmentsWithActivity, mergeAppointmentActivity } from '../utils/appointmentActivity';
 import {
+  getAppointmentServiceRevenue,
+  isAppointmentInRevenuePeriod,
+} from '../utils/appointmentRevenue';
+import { todayIsoLocal } from '../utils/dateLocal';
+import {
   readBootstrapFromCache,
   hasBootstrapCache,
   writeCache,
@@ -909,7 +914,7 @@ export const AppProvider = ({ children }) => {
         price: product.price,
         cost: product.cost,
         quantity,
-        date: new Date().toISOString().split('T')[0],
+        date: saleMeta.saleDate || todayIsoLocal(),
         barberId: barberId || null,
         customerId: customerId ? Number(customerId) : null,
         customerName: customerName?.trim() || null,
@@ -1025,7 +1030,9 @@ export const AppProvider = ({ children }) => {
     let periodExpenses = [...expenses];
 
     if (startDate && endDate) {
-      finished = finished.filter(app => app.date >= startDate && app.date <= endDate);
+      finished = finished.filter(
+        (app) => isAppointmentInRevenuePeriod(app, startDate, endDate),
+      );
       soldProducts = soldProducts.filter(sale => sale.date >= startDate && sale.date <= endDate);
       periodExpenses = periodExpenses.filter(e => e.date >= startDate && e.date <= endDate);
     }
@@ -1044,7 +1051,10 @@ export const AppProvider = ({ children }) => {
       soldProducts = soldProducts.filter(sale => Number(sale.barberId) === id);
     }
     
-    const serviceRevenue = finished.reduce((sum, app) => sum + app.price, 0);
+    const serviceRevenue = finished.reduce(
+      (sum, app) => sum + getAppointmentServiceRevenue(app),
+      0,
+    );
     const productRevenue = soldProducts.reduce((sum, sale) => sum + (sale.price * sale.quantity), 0);
     const productCost = soldProducts.reduce((sum, sale) => sum + (sale.cost * sale.quantity), 0);
     const expensesTotal = periodExpenses.reduce((sum, e) => sum + e.amount, 0);

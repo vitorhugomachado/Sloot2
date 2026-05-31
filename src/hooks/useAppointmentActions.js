@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { todayIsoLocal } from '../utils/dateLocal';
 
 const EMPTY_CHECKOUT_PRODUCT = { productId: '', quantity: 1 };
 
@@ -110,8 +111,15 @@ export function useAppointmentActions({
       return;
     }
 
+    const paidAt = todayIsoLocal();
+
     for (const item of selectedProducts) {
-      const saleOk = await sellProduct(item.productId, item.quantity, actionModal.app.barberId || null);
+      const saleOk = await sellProduct(
+        item.productId,
+        item.quantity,
+        actionModal.app.barberId || null,
+        { saleDate: paidAt },
+      );
       if (!saleOk) {
         alert('Não foi possível registrar um dos produtos no estoque.');
         return;
@@ -125,6 +133,7 @@ export function useAppointmentActions({
         serviceTotal: Number(actionModal.app.price || 0),
         productsTotal,
         totalCheckout: requiredTotal,
+        paidAt,
       },
     });
     if (success) closeActionModal();

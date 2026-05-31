@@ -50,22 +50,32 @@ const Sidebar = ({ activeTab, setActiveTab, user, isCollapsed, setIsCollapsed, o
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '1.5rem' }}>
+      <div
+        className="brand"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: isCollapsed ? 'center' : 'space-between',
+          gap: '10px',
+          marginBottom: '1.5rem',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <SlootiLogo size="lg" variant={isCollapsed ? 'mark' : 'full'} onDark={false} />
+          <SlootiLogo size="lg" variant={isCollapsed ? 'mark' : 'full'} onDark />
         </div>
         
-        {/* Toggle Controls */}
-        <button
-          type="button"
-          className="sidebar-toggle-btn sidebar-toggle-btn--bars"
-          onClick={handleToggleClick}
-          title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
-          aria-expanded={!isCollapsed}
-          aria-label={isCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
-        >
-          <Menu size={22} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
-        </button>
+        {!isCollapsed && (
+          <button
+            type="button"
+            className="sidebar-toggle-btn sidebar-toggle-btn--bars"
+            onClick={handleToggleClick}
+            title="Recolher menu"
+            aria-expanded
+            aria-label="Recolher menu lateral"
+          >
+            <Menu size={22} strokeWidth={2.25} className="sidebar-menu-icon" aria-hidden />
+          </button>
+        )}
       </div>
 
       <nav style={{ flex: 1 }}>

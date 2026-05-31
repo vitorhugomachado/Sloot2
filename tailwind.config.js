@@ -16,7 +16,7 @@ export default {
           hover: "#FF8533",
         },
         accent: "#FF6A00",
-        sidebar: "#FFFFFF",
+        sidebar: "#000000",
         surface: {
           main: "#F6F5F3",
           card: "#FFFFFF",

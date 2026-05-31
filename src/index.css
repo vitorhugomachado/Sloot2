@@ -30,11 +30,11 @@
   --accent-text: #000000;
   --accent-soft: rgba(255, 106, 0, 0.14);
 
-  --sidebar-bg: #FFFFFF;
-  --sidebar-text: #1A1A1A;
-  --sidebar-text-muted: #6B7280;
-  --sidebar-border: #E7E4DF;
-  --sidebar-nav-hover-bg: rgba(255, 106, 0, 0.06);
+  --sidebar-bg: #000000;
+  --sidebar-text: #FFFFFF;
+  --sidebar-text-muted: rgba(255, 255, 255, 0.55);
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-nav-hover-bg: rgba(255, 255, 255, 0.06);
 
   --bg-color: #F6F5F3;
   --surface-color: #FFFFFF;
@@ -3027,7 +3027,7 @@ button {
   border-right: 1px solid var(--sidebar-border);
   color: var(--sidebar-text);
   padding: 1.5rem 1rem;
-  box-shadow: 2px 0 16px rgba(26, 26, 26, 0.04);
+  box-shadow: 2px 0 24px rgba(0, 0, 0, 0.25);
   z-index: 1001;
   display: flex;
   flex-direction: column;
@@ -3099,7 +3099,7 @@ button {
   transform: scale(0.94);
 }
 
-/* Ícone menu (3 barras) — escuro no sidebar e header claros */
+/* Ícone menu (3 barras) — preto no header mobile; branco no sidebar preto */
 .sidebar-toggle-btn--bars {
   color: var(--text-primary);
 }
@@ -3116,8 +3116,8 @@ button {
 .sidebar .sidebar-toggle-btn--bars,
 .sidebar .sidebar-toggle-btn--bars svg,
 .sidebar .sidebar-toggle-btn--bars .sidebar-menu-icon {
-  color: var(--sidebar-text);
-  stroke: var(--sidebar-text);
+  color: #ffffff;
+  stroke: #ffffff;
 }
 
 .sidebar-toggle-btn--bars svg.sidebar-menu-icon {
@@ -3145,6 +3145,14 @@ button {
 }
 
 .sidebar.collapsed .brand-name {
+  display: none;
+}
+
+.sidebar.collapsed .brand {
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-toggle-btn--bars {
   display: none;
 }
 
@@ -3215,12 +3223,12 @@ button {
 }
 
 .sidebar .sidebar-toggle-btn {
-  color: var(--sidebar-text);
-  background: var(--icon-bg);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .sidebar .sidebar-toggle-btn:hover {
-  background: var(--icon-hover);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .sidebar-logout-btn {
@@ -3286,6 +3294,11 @@ button {
   width: 22px;
   height: 22px;
   flex-shrink: 0;
+}
+
+.sidebar .nav-item svg {
+  color: inherit;
+  stroke: currentColor;
 }
 
 .brand {
@@ -3784,6 +3797,17 @@ button {
 
 .dash-panel-activity {
   order: 3;
+}
+
+/* Atividade ao vivo: ~5 eventos visíveis, restante com scroll */
+.dash-panel-activity .dash-panel-body {
+  --dash-activity-visible-rows: 5;
+  --dash-activity-row-height: 4.75rem;
+  max-height: calc(var(--dash-activity-visible-rows) * var(--dash-activity-row-height));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
 }
 
 .dash-panel-header {
@@ -4663,8 +4687,8 @@ button {
   .sidebar .sidebar-toggle-btn--bars,
   .sidebar .sidebar-toggle-btn svg,
   .sidebar .sidebar-toggle-btn .sidebar-menu-icon {
-    color: var(--sidebar-text) !important;
-    stroke: var(--sidebar-text) !important;
+    color: #ffffff !important;
+    stroke: #ffffff !important;
   }
 
   /* Mobile: cards e modais brancos sÃ³lidos (evita vidro/cinza translÃºcido) */
@@ -4745,14 +4769,14 @@ button {
 
 .mobile-header .sidebar-toggle-btn {
   background: transparent;
-  color: var(--text-primary);
+  color: #000000;
 }
 
 .mobile-header .sidebar-toggle-btn--bars,
 .mobile-header .sidebar-toggle-btn--bars svg,
 .mobile-header .sidebar-toggle-btn--bars .sidebar-menu-icon {
-  color: var(--text-primary);
-  stroke: var(--text-primary);
+  color: #000000;
+  stroke: #000000;
 }
 
 .mobile-header .sidebar-toggle-btn:hover {
@@ -7337,7 +7361,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 }
 
 .sidebar-logout-btn {
-  color: #6c757d;
+  color: var(--sidebar-text-muted);
   justify-content: center;
 }
 
@@ -7753,7 +7777,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--text-secondary);
+  color: var(--sidebar-text-muted);
 }
 
 .platform-sidebar-subtitle--hidden {

@@ -25,6 +25,12 @@ import { DEFAULT_SLUG } from '../../context/TenantContext';
 import { tenantBookingPath, tenantLoginPath } from '../../constants/tenantRoutes';
 import Reveal from './Reveal';
 import LandingPricing from './LandingPricing';
+import {
+  ProductShowcase,
+  FEATURE_TAB_SCREENS,
+  PERSONA_SCREENS,
+  BENTO_MODULES,
+} from './LandingProductShowcase';
 import './landing.css';
 
 const DEMO_SLUG = DEFAULT_SLUG;
@@ -155,67 +161,6 @@ const TESTIMONIALS = [
   },
 ];
 
-function DashboardMock({ variant = 'dark' }) {
-  const light = variant === 'light';
-  return (
-    <div className={`landing-mock ${light ? 'landing-mock--light' : ''}`}>
-      <div className="landing-mock__bar">
-        <span className="landing-mock__dot" />
-        <span className="landing-mock__dot" />
-        <span className="landing-mock__dot" />
-      </div>
-      <div className="landing-mock__screen">
-        <div className="landing-mock__kpi-row">
-          <div className="landing-mock__kpi">
-            <div className="landing-mock__kpi-label">Receita do mês</div>
-            <div className="landing-mock__kpi-value">R$ 18.420</div>
-          </div>
-          <div className="landing-mock__kpi">
-            <div className="landing-mock__kpi-label">Ocupação</div>
-            <div className="landing-mock__kpi-value">87%</div>
-          </div>
-        </div>
-        <div className="landing-mock__bars">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div key={n} className="landing-mock__bar-col" />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function BookingMock() {
-  return (
-    <div className="landing-mock landing-mock--light landing-booking-mock">
-      <div className="landing-mock__bar">
-        <span className="landing-mock__dot" />
-        <span className="landing-mock__dot" />
-        <span className="landing-mock__dot" />
-      </div>
-      <div className="landing-mock__screen landing-booking-mock__screen">
-        <div className="landing-booking-mock__header">
-          <div className="landing-booking-mock__logo">
-            <Scissors size={22} aria-hidden />
-          </div>
-          <div>
-            <div className="landing-booking-mock__name">Sua Barbearia</div>
-            <div className="landing-booking-mock__sub">Agende em 3 passos</div>
-          </div>
-        </div>
-        {['Corte + barba', 'Escolher barbeiro', 'Data e horário'].map((step, idx) => (
-          <div
-            key={step}
-            className={`landing-booking-mock__step ${idx === 0 ? 'landing-booking-mock__step--active' : ''}`}
-          >
-            {step}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function LandingPage() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -295,9 +240,9 @@ export default function LandingPage() {
         </div>
       )}
 
-      <section className="landing-hero landing-hero--gendo">
+      <section className="landing-hero landing-hero--gendo landing-hero--studio">
         <div className="landing-hero__inner">
-          <div className="landing-hero__copy">
+          <div className="landing-hero__studio-copy">
             <h1 className="landing-hero__title landing-hero__title--gendo">
               Gerencie agenda, clientes e financeiro em um só lugar
             </h1>
@@ -323,10 +268,10 @@ export default function LandingPage() {
               ))}
             </ul>
           </div>
-          <div className="landing-hero__visual" aria-hidden>
-            <div className="landing-hero__visual-glow" />
-            <DashboardMock variant="light" />
+          <div className="landing-hero__studio-product">
+            <ProductShowcase screen="dashboard" variant="hero" />
           </div>
+          <div className="landing-hero__studio-fade" aria-hidden />
         </div>
       </section>
 
@@ -368,7 +313,10 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="landing-personas__mock">
-                  {persona === 'client' ? <BookingMock /> : <DashboardMock variant="light" />}
+                  <ProductShowcase
+                    screen={PERSONA_SCREENS[persona]}
+                    variant={persona === 'client' ? 'phone' : 'default'}
+                  />
                 </div>
               </div>
             </Reveal>
@@ -411,6 +359,22 @@ export default function LandingPage() {
               </Reveal>
             ))}
           </div>
+          <div className="lp-bento" aria-label="Módulos da plataforma">
+            {BENTO_MODULES.map((item, i) => (
+              <Reveal key={item.id} delay={i * 60}>
+                <div className={`lp-bento__item lp-bento__item--${item.span}`}>
+                  <span className="lp-bento__label">
+                    <item.icon size={18} aria-hidden />
+                    {item.label}
+                  </span>
+                  <ProductShowcase
+                    screen={item.screen}
+                    variant={item.span === 'phone' ? 'phone' : 'bento'}
+                  />
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -438,6 +402,11 @@ export default function LandingPage() {
               </button>
             ))}
           </div>
+          <Reveal key={featureTab}>
+            <div className="landing-features__showcase">
+              <ProductShowcase screen={FEATURE_TAB_SCREENS[featureTab]} variant="hero" />
+            </div>
+          </Reveal>
           <div className="landing-features__grid" role="tabpanel">
             {activeFeatures.items.map((item, i) => (
               <Reveal key={item.title} delay={i * 70}>
@@ -487,7 +456,7 @@ export default function LandingPage() {
                   <ArrowRight size={18} aria-hidden />
                 </Link>
               </div>
-              <BookingMock />
+              <ProductShowcase screen="booking" variant="phone" />
             </div>
           </Reveal>
         </div>

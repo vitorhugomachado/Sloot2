@@ -21,16 +21,16 @@
   overflow: hidden;
 }
 
-/* Login barbeiros — paleta clara (igual fluxo de agendamento) */
+/* Login barbeiros — fundo escuro */
 .login-preview--staff {
-  --staff-bg: #F6F5F3;
-  --staff-card-bg: #FFFFFF;
-  --staff-card-border: #E7E4DF;
-  --staff-field-bg: #FFFFFF;
-  --staff-field-border: #E7E4DF;
-  --staff-label: #6B7280;
-  --staff-input-text: #1A1A1A;
-  --staff-placeholder: #9CA3AF;
+  --staff-bg: #141414;
+  --staff-card-bg: rgba(228, 228, 228, 0.12);
+  --staff-card-border: rgba(228, 228, 228, 0.12);
+  --staff-field-bg: #181818;
+  --staff-field-border: rgba(228, 228, 228, 0.2);
+  --staff-label: rgba(228, 228, 228, 0.55);
+  --staff-input-text: #e4e4e4;
+  --staff-placeholder: rgba(228, 228, 228, 0.35);
 
   background-color: var(--staff-bg);
   color: var(--staff-input-text);
@@ -85,28 +85,28 @@
   border-radius: 28px;
   background: var(--staff-card-bg);
   border: 1px solid var(--staff-card-border);
-  box-shadow: 0 16px 48px rgba(17, 24, 39, 0.06), 0 2px 8px rgba(17, 24, 39, 0.03);
+  box-shadow: none;
 }
 
 .staff-login-card__alert {
   padding: 0.75rem 0.85rem;
   border-radius: 10px;
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  background: #fef2f2;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.12);
 }
 
 .staff-login-card__alert-title {
   margin: 0 0 0.25rem;
   font-size: 0.8125rem;
   font-weight: 700;
-  color: #dc2626;
+  color: #fca5a5;
 }
 
 .staff-login-card__alert-body {
   margin: 0;
   font-size: 0.8125rem;
   line-height: 1.4;
-  color: #7f1d1d;
+  color: rgba(228, 228, 228, 0.75);
 }
 
 .staff-login-card__form {

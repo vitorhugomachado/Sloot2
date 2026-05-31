@@ -1,5 +1,5 @@
 const prisma = require('../lib/prisma');
-const { normalizeBookingTime, isBookingSlotInPast } = require('../utils/appointmentTime');
+const { normalizeBookingTime, isBookingSlotInPast, getLocalDateIso } = require('../utils/appointmentTime');
 const { parseDurationMinutes, validateBarberAppointmentSlot } = require('../utils/barberAvailability');
 const { invalidatePublicCache } = require('../middlewares/publicCache');
 const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
@@ -247,6 +247,20 @@ const updateAppointment = async (req, res) => {
 
     if (data.barberId) data.barberId = Number(data.barberId);
     if (data.price) data.price = parseFloat(data.price);
+
+    if (String(data.status || '') === 'Finalizado' && existing.status !== 'Finalizado') {
+      const paidAt = getLocalDateIso();
+      let payments = data.payments !== undefined ? data.payments : existing.payments;
+      if (payments && typeof payments === 'object' && !Array.isArray(payments)) {
+        if (!payments.paidAt) {
+          data.payments = { ...payments, paidAt };
+        }
+      } else if (data.payments === undefined && payments && typeof payments === 'object' && !Array.isArray(payments)) {
+        data.payments = { ...payments, paidAt };
+      } else if (!payments) {
+        data.payments = { paidAt };
+      }
+    }
 
     const appointment = await prisma.appointment.update({
       where: { id },
