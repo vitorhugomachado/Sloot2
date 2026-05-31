@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { hashPassword } = require('../src/utils/auth');
+const { clientAt } = require('../scripts/lib/realClientNames');
 const prisma = new PrismaClient();
 
 async function main() {
@@ -93,14 +94,26 @@ async function main() {
     ],
   });
 
+  const demoClients = Array.from({ length: 24 }, (_, i) => {
+    const { name, phone } = clientAt(i);
+    return {
+      tenantId: tenant.id,
+      name,
+      phone,
+      email: i % 4 === 0 ? `contato.${i + 1}@demo.slooti.local` : null,
+    };
+  });
+  await prisma.customer.createMany({ data: demoClients });
+
   const carlos = await prisma.barber.findFirst({
     where: { tenantId: tenant.id, name: 'Carlos Santos' },
   });
+  const firstClient = demoClients[0];
   await prisma.appointment.create({
     data: {
       tenantId: tenant.id,
-      customer: 'Vitor Machado',
-      phone: '11999999999',
+      customer: firstClient.name,
+      phone: firstClient.phone,
       service: 'Corte + Barba',
       barberId: carlos.id,
       date: '2024-04-02',
@@ -110,7 +123,7 @@ async function main() {
     },
   });
 
-  console.log(`Database seeded (tenant: ${tenantSlug})`);
+  console.log(`Database seeded (tenant: ${tenantSlug}, ${demoClients.length} clientes demo)`);
 }
 
 main()

@@ -30,11 +30,11 @@
   --accent-text: #000000;
   --accent-soft: rgba(255, 106, 0, 0.14);
 
-  --sidebar-bg: #000000;
-  --sidebar-text: #ffffff;
-  --sidebar-text-muted: rgba(255, 255, 255, 0.55);
-  --sidebar-border: #696969;
-  --sidebar-nav-hover-bg: rgba(255, 255, 255, 0.06);
+  --sidebar-bg: #FFFFFF;
+  --sidebar-text: #1A1A1A;
+  --sidebar-text-muted: #6B7280;
+  --sidebar-border: #E7E4DF;
+  --sidebar-nav-hover-bg: rgba(255, 106, 0, 0.06);
 
   --bg-color: #F6F5F3;
   --surface-color: #FFFFFF;
@@ -212,14 +212,14 @@ h1, h2, h3, h4, .brand-font {
   flex-shrink: 0;
 }
 
-/* legado â€” redireciona para slooti */
+/* legado — redireciona para slooti */
 .sloot-logo-text {
   font-family: 'Manrope', sans-serif;
   font-weight: 200;
   text-transform: lowercase;
   letter-spacing: 0.04em;
   line-height: 1;
-  color: #ffffff;
+  color: var(--text-primary);
   display: inline-block;
 }
 
@@ -3027,7 +3027,7 @@ button {
   border-right: 1px solid var(--sidebar-border);
   color: var(--sidebar-text);
   padding: 1.5rem 1rem;
-  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.03);
+  box-shadow: 2px 0 16px rgba(26, 26, 26, 0.04);
   z-index: 1001;
   display: flex;
   flex-direction: column;
@@ -3099,7 +3099,7 @@ button {
   transform: scale(0.94);
 }
 
-/* Ãcone menu (3 barras) â€” escuro no header claro; branco no sidebar preto */
+/* Ícone menu (3 barras) — escuro no sidebar e header claros */
 .sidebar-toggle-btn--bars {
   color: var(--text-primary);
 }
@@ -3215,12 +3215,12 @@ button {
 }
 
 .sidebar .sidebar-toggle-btn {
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--sidebar-text);
+  background: var(--icon-bg);
 }
 
 .sidebar .sidebar-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--icon-hover);
 }
 
 .sidebar-logout-btn {

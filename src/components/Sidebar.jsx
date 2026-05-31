@@ -52,7 +52,7 @@ const Sidebar = ({ activeTab, setActiveTab, user, isCollapsed, setIsCollapsed, o
     >
       <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <SlootiLogo size="lg" variant={isCollapsed ? 'mark' : 'full'} />
+          <SlootiLogo size="lg" variant={isCollapsed ? 'mark' : 'full'} onDark={false} />
         </div>
         
         {/* Toggle Controls */}

@@ -44,7 +44,7 @@ export default function PlatformSidebar({ isCollapsed, setIsCollapsed, onLogout 
       onMouseLeave={handleMouseLeave}
     >
       <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '1.5rem' }}>
-        <SlootiLogo size="lg" variant={isCollapsed ? 'mark' : 'full'} />
+        <SlootiLogo size="lg" variant={isCollapsed ? 'mark' : 'full'} onDark={false} />
         <button
           type="button"
           className="sidebar-toggle-btn sidebar-toggle-btn--bars"

@@ -8,6 +8,7 @@
     "dev": "node index.js",
     "postinstall": "prisma generate",
     "list:barbers": "node scripts/list_barbers.js",
+    "rename:test-clients": "node scripts/rename_test_clients.js",
     "create:platform-admin": "node scripts/create_platform_admin.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

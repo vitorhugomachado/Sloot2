@@ -5,6 +5,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const { PrismaClient } = require('@prisma/client');
+const { clientAt } = require('./lib/realClientNames');
 
 const prisma = new PrismaClient();
 
@@ -19,21 +20,31 @@ const TIME_SLOTS = ['09:00', '10:30', '14:00', '15:30', '11:00'];
 const DAY_OFFSETS = [1, 2, 3, 5, 8];
 
 async function main() {
-  const services = await prisma.service.findMany({ orderBy: { id: 'asc' } });
+  const slug = String(process.env.DEFAULT_TENANT_SLUG || 'two-brothers').trim().toLowerCase();
+  const tenant = await prisma.tenant.findUnique({ where: { slug } });
+  if (!tenant) {
+    console.error(`Tenant "${slug}" não encontrado.`);
+    process.exit(1);
+  }
+
+  const services = await prisma.service.findMany({
+    where: { tenantId: tenant.id },
+    orderBy: { id: 'asc' },
+  });
   if (!services.length) {
     console.error('Nenhum serviço no banco. Rode o seed ou cadastre serviços antes.');
     process.exit(1);
   }
 
   let barbers = await prisma.barber.findMany({
-    where: { deletedAt: null, status: 'Ativo', role: 'Barbeiro' },
-    orderBy: { id: 'asc' }
+    where: { tenantId: tenant.id, deletedAt: null, status: 'Ativo', role: 'Barbeiro' },
+    orderBy: { id: 'asc' },
   });
 
   if (!barbers.length) {
     barbers = await prisma.barber.findMany({
-      where: { deletedAt: null, status: 'Ativo' },
-      orderBy: { id: 'asc' }
+      where: { tenantId: tenant.id, deletedAt: null, status: 'Ativo' },
+      orderBy: { id: 'asc' },
     });
     console.warn('Nenhum usuário com role Barbeiro; usando todos os barbeiros ativos.');
   }
@@ -52,15 +63,17 @@ async function main() {
       const d = new Date(base);
       d.setDate(d.getDate() + DAY_OFFSETS[i]);
       const svc = services[i % services.length];
+      const client = clientAt(n);
       rows.push({
-        customer: `Cliente Teste ${barber.id}-${i + 1}`,
-        phone: `1198${String(barber.id).padStart(2, '0')}${String(n).padStart(5, '0')}`,
+        tenantId: tenant.id,
+        customer: client.name,
+        phone: client.phone,
         service: svc.name,
         barberId: barber.id,
         date: toYMD(d),
         time: TIME_SLOTS[i],
         status: i === 0 ? 'Confirmado' : 'Agendado',
-        price: svc.price
+        price: svc.price,
       });
       n += 1;
     }

@@ -31,7 +31,7 @@ export default function LoginScreenLayout({
         {isStaff ? (
           <div className="login-preview__stack">
             <div className="login-preview__brand">
-              <SlootiLogo size="xl" onDark />
+              <SlootiLogo size="xl" onDark={false} />
               <p className="login-preview__brand-tagline">{brandTagline}</p>
             </div>
             {children}

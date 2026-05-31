@@ -16,7 +16,7 @@ export default function TenantNotFound({ slug }) {
         textAlign: 'center',
       }}
     >
-      <SlootiLogo size="lg" />
+      <SlootiLogo size="lg" onDark={false} />
       <h1 style={{ margin: 0, fontSize: '1.25rem' }}>Barbearia não encontrada</h1>
       <p style={{ margin: 0, color: 'var(--text-secondary)', maxWidth: '420px' }}>
         {slug

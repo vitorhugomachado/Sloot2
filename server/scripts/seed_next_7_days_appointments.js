@@ -9,6 +9,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const { PrismaClient } = require('@prisma/client');
+const { clientAt } = require('./lib/realClientNames');
 
 const prisma = new PrismaClient();
 
@@ -103,7 +104,7 @@ async function main() {
   const taken = await loadTakenSlots(tenant.id, dates, barberIds);
 
   const rows = [];
-  let phoneSeq = Date.now() % 100000000;
+  let clientSeq = 0;
   let barberIdx = 0;
   let timeIdx = 0;
   let created = 0;
@@ -124,10 +125,11 @@ async function main() {
         if (taken.has(key)) continue;
 
         const svc = services[created % services.length];
+        const client = clientAt(clientSeq++, '44');
         rows.push({
           tenantId: tenant.id,
-          customer: `Cliente Teste ${String(created + 1).padStart(2, '0')}`,
-          phone: `4499${String(phoneSeq++).padStart(7, '0')}`,
+          customer: client.name,
+          phone: client.phone,
           service: svc.name,
           barberId: barber.id,
           date,

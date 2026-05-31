@@ -8,6 +8,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const { PrismaClient } = require('@prisma/client');
+const { clientAt } = require('./lib/realClientNames');
 
 const prisma = new PrismaClient();
 
@@ -32,12 +33,6 @@ function findBarber(barbers, ...needles) {
 }
 
 async function main() {
-  const services = await prisma.service.findMany({ orderBy: { id: 'asc' } });
-  if (!services.length) {
-    console.error('Nenhum serviço no banco. Cadastre serviços ou rode prisma seed.');
-    process.exit(1);
-  }
-
   const barbers = await prisma.barber.findMany({
     where: { deletedAt: null, status: 'Ativo' },
     orderBy: { id: 'asc' },
@@ -46,6 +41,15 @@ async function main() {
   const paulo = findBarber(barbers, 'paulo');
   const romario = findBarber(barbers, 'romario', 'romário');
   const junior = findBarber(barbers, 'junior', 'júnior');
+
+  const services = await prisma.service.findMany({
+    where: { tenantId: paulo.tenantId },
+    orderBy: { id: 'asc' },
+  });
+  if (!services.length) {
+    console.error('Nenhum serviço no banco. Cadastre serviços ou rode prisma seed.');
+    process.exit(1);
+  }
 
   const missing = [];
   if (!paulo) missing.push('Paulo');
@@ -58,16 +62,19 @@ async function main() {
   }
 
   const trio = [paulo, romario, junior];
+  const tenantId = paulo.tenantId;
   const rows = [];
-  let phoneSeq = 10000100;
+  let clientSeq = 0;
 
   for (const date of DATES) {
     for (let i = 0; i < 10; i++) {
       const barber = trio[i % 3];
       const svc = services[i % services.length];
+      const client = clientAt(clientSeq++);
       rows.push({
-        customer: `Cliente ${date.slice(8, 10)}/${date.slice(5, 7)} #${i + 1}`,
-        phone: `119${String(phoneSeq++).padStart(8, '0')}`,
+        tenantId,
+        customer: client.name,
+        phone: client.phone,
         service: svc.name,
         barberId: barber.id,
         date,
