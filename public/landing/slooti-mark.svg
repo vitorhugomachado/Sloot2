@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" role="img" aria-label="Slooti">
+  <rect width="120" height="120" rx="24" fill="#0A0A0A"/>
+  <rect x="14" y="14" width="92" height="92" rx="18" stroke="#FFFFFF" stroke-width="3"/>
+  <path d="M78 34C68 28 52 28 42 36C32 44 32 56 42 62C50 67 62 66 70 62C76 59 80 62 80 68C80 76 70 84 56 84C46 84 38 80 34 74" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="88" cy="32" r="7" fill="#FF6A00"/>
+</svg>
