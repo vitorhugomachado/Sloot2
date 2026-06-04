@@ -9,6 +9,7 @@ export const LANDING_PLANS = [
   {
     id: 'basico',
     tag: 'Essencial',
+    tagTone: 'accent',
     image: '/landing/features/feature-agenda.png',
     imageAlt: 'Plano essencial Slooti',
     name: 'Básico',
@@ -24,6 +25,7 @@ export const LANDING_PLANS = [
   {
     id: 'profissional',
     tag: 'Mais popular',
+    tagTone: 'accent',
     image: '/landing/features/feature-equipe.png',
     imageAlt: 'Plano profissional Slooti',
     name: 'Profissional',
@@ -39,6 +41,7 @@ export const LANDING_PLANS = [
   {
     id: 'rede',
     tag: 'Multi-unidades',
+    tagTone: 'neutral',
     image: '/landing/features/feature-financeiro.png',
     imageAlt: 'Plano multi-unidades Slooti',
     name: 'Rede',
@@ -50,31 +53,37 @@ export const LANDING_PLANS = [
   },
 ];
 
-export function formatPlanPrice(value) {
+export function formatPlanPrice(value, fractionDigits = 0) {
   return value.toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   });
 }
 
+/** Valores exibidos como na referência visual dos cards (anual = R$/mês + pill 12x + total ano). */
 export function getPlanPriceDisplay(plan, billing) {
   if (!plan.pricing) {
-    return { main: 'Sob consulta', suffix: '' };
+    return { type: 'consult' };
   }
 
   if (billing === 'annual') {
+    const monthly = plan.pricing.annualInstallment;
+    const installment = monthly / 10;
+
     return {
-      main: `12x ${formatPlanPrice(plan.pricing.annualInstallment)}`,
-      suffix: '/mês',
-      note: `${formatPlanPrice(plan.pricing.annualInstallment * 12)} por ano`,
+      type: 'priced',
+      value: monthly,
+      pill: `ou 12x de ${formatPlanPrice(installment, 2)}`,
+      note: `${formatPlanPrice(monthly * 12)} por ano`,
     };
   }
 
   return {
-    main: formatPlanPrice(plan.pricing.monthly),
-    suffix: '/mês',
-    note: '',
+    type: 'priced',
+    value: plan.pricing.monthly,
+    pill: null,
+    note: null,
   };
 }

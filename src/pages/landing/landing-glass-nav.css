@@ -96,6 +96,34 @@
   gap: 0.5rem;
 }
 
+.landing-glass-nav__demo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 999px;
+  border: 1px solid rgba(26, 26, 26, 0.18);
+  background: transparent;
+  color: #1a1a1a;
+  font-family: var(--landing-font, 'Manrope', system-ui, sans-serif);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.landing-glass-nav__demo:hover {
+  border-color: #1a1a1a;
+  background: rgba(26, 26, 26, 0.04);
+  transform: translateY(-1px);
+}
+
 .landing-glass-nav__cta {
   display: inline-flex;
   align-items: center;
@@ -226,6 +254,7 @@
     display: none;
   }
 
+  .landing-glass-nav__demo,
   .landing-glass-nav__cta {
     display: none;
   }

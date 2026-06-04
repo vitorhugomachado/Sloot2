@@ -1,23 +1,22 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import LandingGlassNav from './LandingGlassNav';
-import LandingHero from './LandingHero';
 import LandingHeroCard from './LandingHeroCard';
 import LandingFeatureRows from './LandingFeatureRows';
 import LandingTestimonial from './LandingTestimonial';
 import LandingPricing from './LandingPricing';
+import LandingFinalCta from './LandingFinalCta';
 import LandingFooter from './LandingFooter';
 import { gsap, SLOOTI_EASE } from './gsap';
 import './landing.css';
 
 export default function LandingPage() {
   const pageRef = useRef(null);
-  const [navVisible, setNavVisible] = useState(false);
-
-  const handleCapsuleNavReady = useCallback((ready) => {
-    setNavVisible(ready);
-  }, []);
 
   useEffect(() => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isNarrow = window.matchMedia('(max-width: 767px)').matches;
+    if (reduceMotion || isNarrow) return undefined;
+
     const ctx = gsap.context(() => {
       gsap.from('[data-landing-animate]', {
         opacity: 0,
@@ -34,16 +33,16 @@ export default function LandingPage() {
 
   return (
     <div className="landing-page" ref={pageRef}>
-      <LandingGlassNav visible={navVisible} />
+      <LandingGlassNav visible />
 
       <main className="landing-page__main" aria-label="Landing Slooti">
-        <LandingHero onCapsuleNavReady={handleCapsuleNavReady} />
         <LandingHeroCard />
         <LandingFeatureRows />
         <LandingPricing />
         <LandingTestimonial />
       </main>
 
+      <LandingFinalCta />
       <LandingFooter />
     </div>
   );

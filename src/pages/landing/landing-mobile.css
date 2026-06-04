@@ -1,0 +1,263 @@
+/* Landing — otimizações mobile (≤767px e ≤479px) */
+
+@media (max-width: 767px) {
+  .landing-page {
+    overflow-x: clip;
+  }
+
+  .landing-page__main {
+    min-height: auto;
+  }
+
+  /* —— Hero carrossel —— */
+  .landing-hero-card {
+    padding-top: calc(4.25rem + env(safe-area-inset-top, 0px));
+    padding-bottom: 2rem;
+  }
+
+  .landing-hero-card__card,
+  .landing-hero-card__carousel {
+    min-height: 0;
+  }
+
+  .landing-hero-card__nav {
+    display: none;
+  }
+
+  .landing-hero-card__carousel {
+    touch-action: pan-y;
+  }
+
+  .landing-hero-card__media {
+    aspect-ratio: 4 / 3;
+  }
+
+  .landing-hero-card__media--editorial {
+    aspect-ratio: 4 / 3;
+    min-height: 10.5rem;
+  }
+
+  .landing-hero-card__logo-wordmark.slooti-logo {
+    font-size: clamp(2.25rem, 12vw, 3.5rem);
+  }
+
+  .landing-hero-card__body {
+    padding: 1.25rem 1.25rem 1.35rem;
+    gap: 0.75rem;
+  }
+
+  .landing-hero-card__title {
+    max-width: none;
+    font-size: clamp(1.5rem, 7vw, 2rem);
+  }
+
+  .landing-hero-card__title--stacked {
+    font-size: clamp(1.85rem, 8.5vw, 2.65rem);
+    max-width: none;
+  }
+
+  .landing-hero-card__subtitle {
+    max-width: none;
+    font-size: 0.9375rem;
+  }
+
+  .landing-hero-card__actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    margin-top: 0.35rem;
+    gap: 0.625rem;
+  }
+
+  .landing-hero-card__cta {
+    width: 100%;
+    min-height: 3rem;
+  }
+
+  .landing-hero-card__indicators {
+    gap: 0.35rem;
+    margin-top: 1rem;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .landing-hero-card__indicator {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 999px;
+    background: transparent;
+  }
+
+  .landing-hero-card__indicator.is-active {
+    width: 2.75rem;
+    background: transparent;
+  }
+
+  .landing-hero-card__indicator::before {
+    content: '';
+    display: block;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin: auto;
+    border-radius: 999px;
+    background: rgba(26, 26, 26, 0.22);
+    transition:
+      width 0.2s ease,
+      background-color 0.2s ease;
+  }
+
+  .landing-hero-card__indicator.is-active::before {
+    width: 1.35rem;
+    background: #ff6a00;
+  }
+
+  /* —— Features —— */
+  .landing-features {
+    padding-top: 2rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .landing-features__inner {
+    gap: 2.5rem;
+  }
+
+  .landing-features__row {
+    gap: 1.25rem;
+  }
+
+  .landing-features__title {
+    font-size: clamp(1.65rem, 7vw, 2.25rem);
+  }
+
+  /* —— Planos —— */
+  .landing-pricing {
+    padding-bottom: 2.5rem;
+  }
+
+  .landing-pricing__header {
+    row-gap: 0.85rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .landing-pricing__title {
+    font-size: clamp(1.5rem, 7vw, 2rem);
+  }
+
+  .landing-pricing__billing {
+    max-width: none;
+    width: 100%;
+  }
+
+  .landing-pricing__link-all {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .landing-pricing__grid {
+    max-width: none;
+    width: 100%;
+    gap: 1rem;
+  }
+
+  .landing-pricing__price-value {
+    font-size: clamp(2.15rem, 10vw, 2.85rem);
+  }
+
+  .landing-pricing__cta {
+    min-height: 3rem;
+  }
+
+  /* —— Depoimentos —— */
+  .landing-testimonial {
+    padding-bottom: 2rem;
+  }
+
+  .landing-testimonial__card {
+    padding: 2rem 1.25rem;
+  }
+
+  .landing-testimonial__brands {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    max-width: 100%;
+    padding: 0.35rem 0.5rem;
+    border-radius: 999px;
+  }
+
+  .landing-testimonial__brands::-webkit-scrollbar {
+    display: none;
+  }
+
+  .landing-testimonial__brand {
+    flex-shrink: 0;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.8125rem;
+  }
+
+  .landing-testimonial__quote {
+    margin-top: 1.5rem;
+  }
+
+  .landing-testimonial__quote p {
+    font-size: clamp(1.25rem, 5.5vw, 1.65rem);
+  }
+
+  .landing-testimonial__cta {
+    width: 100%;
+    max-width: 20rem;
+  }
+
+  /* —— CTA final —— */
+  .landing-final-cta {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .landing-final-cta__card {
+    padding: 2rem 1.25rem;
+  }
+
+  .landing-final-cta__actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .landing-final-cta__cta {
+    width: 100%;
+    min-height: 3rem;
+  }
+
+  /* —— Nav —— */
+  .landing-glass-nav {
+    top: calc(0.65rem + env(safe-area-inset-top, 0px));
+    width: calc(100% - 1rem);
+  }
+
+  .landing-glass-nav__bar {
+    padding: 0.4rem 0.4rem 0.4rem 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .landing-glass-nav__logo {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+@media (max-width: 479px) {
+  .landing-hero-card__title--stacked {
+    font-size: clamp(1.65rem, 9vw, 2.35rem);
+  }
+
+  .landing-pricing__body {
+    padding: 0.35rem 1rem 1.1rem;
+  }
+
+  .landing-footer__inner {
+    padding-inline: 1rem;
+  }
+}

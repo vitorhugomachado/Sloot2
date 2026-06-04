@@ -1,6 +1,6 @@
 .landing-hero-card {
   width: 100%;
-  padding: clamp(2rem, 5vw, 3.5rem) clamp(1rem, 3vw, 2.5rem) clamp(2.5rem, 6vw, 4rem);
+  padding: clamp(5rem, 12vw, 6.5rem) clamp(1rem, 3vw, 2.5rem) clamp(2.5rem, 6vw, 4rem);
   background: #f6f5f3;
 }
 
@@ -10,9 +10,7 @@
 }
 
 .landing-hero-card__card {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-  align-items: stretch;
+  position: relative;
   overflow: hidden;
   min-height: clamp(22rem, 52vh, 32rem);
   border-radius: clamp(1.5rem, 3vw, 2rem);
@@ -20,6 +18,88 @@
   box-shadow:
     0 1px 2px rgba(10, 10, 10, 0.04),
     0 24px 64px rgba(10, 10, 10, 0.1);
+}
+
+.landing-hero-card__carousel {
+  position: relative;
+  min-height: clamp(22rem, 52vh, 32rem);
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  outline: none;
+}
+
+.landing-hero-card__carousel.is-dragging {
+  touch-action: none;
+  cursor: grabbing;
+  transition: none;
+}
+
+.landing-hero-card__carousel:focus-visible {
+  outline: 2px solid #ff6a00;
+  outline-offset: 4px;
+}
+
+.landing-hero-card__nav {
+  position: absolute;
+  top: 50%;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid rgba(26, 26, 26, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #1a1a1a;
+  box-shadow: 0 4px 16px rgba(10, 10, 10, 0.08);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.landing-hero-card__nav:hover {
+  background: #fff;
+  border-color: rgba(26, 26, 26, 0.2);
+}
+
+.landing-hero-card__nav:focus-visible {
+  outline: 2px solid #ff6a00;
+  outline-offset: 2px;
+}
+
+.landing-hero-card__nav--prev {
+  left: clamp(0.5rem, 2vw, 1rem);
+}
+
+.landing-hero-card__nav--next {
+  right: clamp(0.5rem, 2vw, 1rem);
+}
+
+.landing-hero-card__slide {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: stretch;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.landing-hero-card__slide.is-active {
+  position: relative;
+  min-height: inherit;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  z-index: 1;
 }
 
 .landing-hero-card__media {
@@ -34,6 +114,60 @@
   object-fit: cover;
   object-position: center;
   display: block;
+}
+
+.landing-hero-card__media--editorial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  background: #0a0a0a;
+}
+
+.landing-hero-card__editorial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: clamp(1.75rem, 4vw, 3rem);
+}
+
+.landing-hero-card__logo-wordmark.slooti-logo {
+  font-size: clamp(3.25rem, 10vw, 6.25rem);
+  letter-spacing: 0.05em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+.landing-hero-card__logo-wordmark .slooti-logo__i-dot {
+  width: 0.14em;
+  height: 0.14em;
+  top: 0.04em;
+}
+
+.landing-hero-card__title--stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08em;
+  max-width: 14ch;
+  font-size: clamp(2.35rem, 5.5vw, 4rem);
+  font-weight: 700;
+  line-height: 1.02;
+  text-wrap: unset;
+}
+
+.landing-hero-card__slide.is-editorial .landing-hero-card__actions {
+  margin-top: 0.75rem;
+}
+
+.landing-hero-card__title-line {
+  display: block;
+}
+
+.landing-hero-card__title-line.is-accent {
+  color: #ff6a00;
 }
 
 .landing-hero-card__body {
@@ -123,18 +257,81 @@
   background: rgba(26, 26, 26, 0.04);
 }
 
+.landing-hero-card__indicators {
+  display: flex;
+  justify-content: center;
+  gap: 0.625rem;
+  margin-top: 1.25rem;
+}
+
+.landing-hero-card__indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.625rem;
+  height: 0.625rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(26, 26, 26, 0.2);
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    width 0.2s ease;
+}
+
+.landing-hero-card__indicator.is-active {
+  width: 1.5rem;
+  background: #ff6a00;
+}
+
+.landing-hero-card__indicator:focus-visible {
+  outline: 2px solid #ff6a00;
+  outline-offset: 3px;
+}
+
+.landing-hero-card__indicator-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 @media (max-width: 767px) {
-  .landing-hero-card__card {
+  .landing-hero-card__slide,
+  .landing-hero-card__slide.is-active {
     grid-template-columns: 1fr;
-    min-height: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-hero-card__slide {
+    transition: none;
   }
 
-  .landing-hero-card__media {
-    aspect-ratio: 16 / 10;
-    min-height: auto;
+  .landing-hero-card__carousel {
+    cursor: default;
   }
 
-  .landing-hero-card__body {
-    padding: 1.5rem;
+  .landing-hero-card__indicator {
+    transition: none;
+  }
+
+  .landing-hero-card__cta {
+    transition: none;
+  }
+
+  .landing-hero-card__cta.is-primary:hover {
+    transform: none;
+  }
+
+  .landing-hero-card__nav {
+    transition: none;
   }
 }

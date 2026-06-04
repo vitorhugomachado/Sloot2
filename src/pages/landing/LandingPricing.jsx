@@ -12,6 +12,33 @@ import './landing-pricing.css';
 
 const DEMO_BOOKING = tenantBookingPath(DEFAULT_SLUG);
 
+function PriceBlock({ plan, billing, featured }) {
+  const price = getPlanPriceDisplay(plan, billing);
+
+  if (price.type === 'consult') {
+    return (
+      <div className="landing-pricing__price-block">
+        <span className="landing-pricing__price-eyebrow">Sob consulta</span>
+        <p className="landing-pricing__price landing-pricing__price--consult">Sob consulta</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="landing-pricing__price-block">
+      <p className={`landing-pricing__price${featured ? ' is-accent' : ''}`}>
+        <span className="landing-pricing__price-currency">R$</span>
+        <span className="landing-pricing__price-value">{price.value}</span>
+        <span className="landing-pricing__period">/mês</span>
+      </p>
+      {price.pill ? (
+        <span className={`landing-pricing__pill${featured ? ' is-accent' : ''}`}>{price.pill}</span>
+      ) : null}
+      {price.note ? <span className="landing-pricing__price-note">{price.note}</span> : null}
+    </div>
+  );
+}
+
 export default function LandingPricing() {
   const [billing, setBilling] = useState(DEFAULT_LANDING_BILLING);
 
@@ -56,7 +83,6 @@ export default function LandingPricing() {
             const href = plan.cta.href ?? DEMO_BOOKING;
             const CtaTag = plan.cta.href === null ? Link : 'a';
             const ctaProps = plan.cta.href === null ? { to: href } : { href };
-            const price = getPlanPriceDisplay(plan, billing);
 
             return (
               <article
@@ -65,27 +91,21 @@ export default function LandingPricing() {
                 data-landing-animate
               >
                 <div className="landing-pricing__media">
+                  <span
+                    className={`landing-pricing__tag landing-pricing__tag--${plan.tagTone || 'accent'}`}
+                  >
+                    {plan.tag}
+                  </span>
                   <img src={plan.image} alt={plan.imageAlt} loading="lazy" decoding="async" />
                 </div>
 
                 <div className="landing-pricing__body">
-                  <div className="landing-pricing__meta">
-                    <span className="landing-pricing__tag">{plan.tag}</span>
-                    <div className="landing-pricing__price-wrap">
-                      <span className="landing-pricing__price">
-                        {price.main}
-                        {price.suffix ? (
-                          <span className="landing-pricing__period">{price.suffix}</span>
-                        ) : null}
-                      </span>
-                      {price.note ? (
-                        <span className="landing-pricing__price-note">{price.note}</span>
-                      ) : null}
-                    </div>
-                  </div>
-
                   <h3 className="landing-pricing__name">{plan.name}</h3>
                   <p className="landing-pricing__desc">{plan.description}</p>
+
+                  <PriceBlock plan={plan} billing={billing} featured={plan.featured} />
+
+                  <hr className="landing-pricing__divider" aria-hidden />
 
                   <ul className="landing-pricing__list">
                     {plan.highlights.map((item) => (
@@ -94,7 +114,10 @@ export default function LandingPricing() {
                   </ul>
 
                   <CtaTag {...ctaProps} className="landing-pricing__cta">
-                    {plan.cta.label}
+                    <span>{plan.cta.label}</span>
+                    <span className="landing-pricing__cta-arrow" aria-hidden>
+                      →
+                    </span>
                   </CtaTag>
                 </div>
               </article>
