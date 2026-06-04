@@ -2,25 +2,28 @@ export const LANDING_FEATURE_ROWS = [
   {
     id: 'agenda',
     image: '/landing/features/feature-agenda.png',
-    imageAlt: 'Agenda online de barbearia no tablet',
-    title: 'Agenda que preenche sozinha',
-    body: 'Clientes agendam online 24 horas por dia. Horários, serviços e profissionais sincronizados em tempo real — sem ligações e sem caderno.',
+    imageAlt: 'Cliente agendando horário pelo celular na barbearia',
+    title: 'Cliente agenda em 30 segundos',
+    body:
+      'Link exclusivo da sua barbearia: o cliente escolhe serviço, barbeiro e horário pelo celular. Confirmação imediata e lembrete automático antes do atendimento — menos mensagem perdida no WhatsApp.',
     reverse: false,
   },
   {
     id: 'equipe',
     image: '/landing/features/feature-equipe.png',
-    imageAlt: 'Equipe de barbearia organizando a agenda',
-    title: 'Sua equipe no mesmo ritmo',
-    body: 'Cada barbeiro com agenda própria, comissões automáticas e visão clara do dia. Menos confusão, mais cadeiras ocupadas.',
+    imageAlt: 'Barbeiros conferindo comissões no tablet',
+    title: 'Comissão certa, sem discussão',
+    body:
+      'Percentual por barbeiro e por serviço, calculado a cada corte. Veja quanto cada profissional faturou hoje, na semana e no mês — transparência para a equipe e para você.',
     reverse: true,
   },
   {
     id: 'financeiro',
     image: '/landing/features/feature-financeiro.png',
-    imageAlt: 'Controle financeiro da barbearia',
-    title: 'Financeiro sem planilha',
-    body: 'Entradas, saídas e relatórios em um só lugar. Saiba quanto sua barbearia faturou hoje — e o que pode melhorar amanhã.',
+    imageAlt: 'Relatórios financeiros da barbearia no laptop',
+    title: 'Relatórios que explicam o mês',
+    body:
+      'Faturamento, ticket médio, serviços mais vendidos e horários de pico em gráficos claros. Feche o caixa do dia em um clique e exporte os números para o contador.',
     reverse: false,
   },
 ];

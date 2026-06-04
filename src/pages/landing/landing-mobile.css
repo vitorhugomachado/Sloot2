@@ -147,11 +147,6 @@
     width: 100%;
   }
 
-  .landing-pricing__link-all {
-    width: 100%;
-    justify-content: center;
-  }
-
   .landing-pricing__grid {
     max-width: none;
     width: 100%;
@@ -203,11 +198,6 @@
 
   .landing-testimonial__quote p {
     font-size: clamp(1.25rem, 5.5vw, 1.65rem);
-  }
-
-  .landing-testimonial__cta {
-    width: 100%;
-    max-width: 20rem;
   }
 
   /* —— CTA final —— */

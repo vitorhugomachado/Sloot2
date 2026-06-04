@@ -1,16 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { DEFAULT_SLUG } from '../../context/TenantContext';
-import { tenantBookingPath } from '../../constants/tenantRoutes';
 import {
   DEFAULT_LANDING_BILLING,
   getPlanPriceDisplay,
   LANDING_BILLING_OPTIONS,
   LANDING_PLANS,
 } from './landingPricing.config';
+import { getLandingPlanWhatsAppUrl } from './landingContact.config';
 import './landing-pricing.css';
-
-const DEMO_BOOKING = tenantBookingPath(DEFAULT_SLUG);
 
 function PriceBlock({ plan, billing, featured }) {
   const price = getPlanPriceDisplay(plan, billing);
@@ -72,17 +68,11 @@ export default function LandingPricing() {
               );
             })}
           </div>
-
-          <a href="#contato" className="landing-pricing__link-all">
-            Comparar todos
-          </a>
         </header>
 
         <div className="landing-pricing__grid">
           {LANDING_PLANS.map((plan) => {
-            const href = plan.cta.href ?? DEMO_BOOKING;
-            const CtaTag = plan.cta.href === null ? Link : 'a';
-            const ctaProps = plan.cta.href === null ? { to: href } : { href };
+            const whatsappHref = getLandingPlanWhatsAppUrl(plan.name);
 
             return (
               <article
@@ -113,12 +103,17 @@ export default function LandingPricing() {
                     ))}
                   </ul>
 
-                  <CtaTag {...ctaProps} className="landing-pricing__cta">
+                  <a
+                    href={whatsappHref}
+                    className="landing-pricing__cta"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <span>{plan.cta.label}</span>
                     <span className="landing-pricing__cta-arrow" aria-hidden>
                       →
                     </span>
-                  </CtaTag>
+                  </a>
                 </div>
               </article>
             );

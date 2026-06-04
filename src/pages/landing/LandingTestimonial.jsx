@@ -1,8 +1,5 @@
 import { useState } from 'react';
-import {
-  LANDING_TESTIMONIALS,
-  LANDING_TESTIMONIAL_CTA,
-} from './landingTestimonial.config';
+import { LANDING_TESTIMONIALS } from './landingTestimonial.config';
 import './landing-testimonial.css';
 
 export default function LandingTestimonial() {
@@ -54,9 +51,6 @@ export default function LandingTestimonial() {
                 {active.author}
                 <span className="landing-testimonial__role">{active.role}</span>
               </cite>
-              <a href={active.fullStoryHref} className="landing-testimonial__cta">
-                {LANDING_TESTIMONIAL_CTA.label}
-              </a>
             </footer>
           </div>
         </div>

@@ -1,13 +1,9 @@
-import { Link } from 'react-router-dom';
-import { DEFAULT_SLUG } from '../../context/TenantContext';
-import { tenantBookingPath } from '../../constants/tenantRoutes';
 import { LANDING_FINAL_CTA } from './landingFinalCta.config';
+import { LANDING_WHATSAPP_URL } from './landingContact.config';
 import './landing-final-cta.css';
 
-const DEMO_BOOKING = tenantBookingPath(DEFAULT_SLUG);
-
 export default function LandingFinalCta() {
-  const { title, subtitle, primaryCta, secondaryCta } = LANDING_FINAL_CTA;
+  const { title, subtitle, primaryCta } = LANDING_FINAL_CTA;
 
   return (
     <section className="landing-final-cta" aria-labelledby="landing-final-cta-title">
@@ -19,12 +15,14 @@ export default function LandingFinalCta() {
           <p className="landing-final-cta__subtitle">{subtitle}</p>
 
           <div className="landing-final-cta__actions">
-            <Link to={DEMO_BOOKING} className="landing-final-cta__cta is-primary">
+            <a
+              href={LANDING_WHATSAPP_URL}
+              className="landing-final-cta__cta is-primary"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               {primaryCta.label}
-            </Link>
-            <Link to={secondaryCta.to} className="landing-final-cta__cta is-secondary">
-              {secondaryCta.label}
-            </Link>
+            </a>
           </div>
         </div>
       </div>

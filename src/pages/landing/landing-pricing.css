@@ -11,11 +11,11 @@
 }
 
 .landing-pricing__header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  column-gap: clamp(1rem, 2.5vw, 1.75rem);
-  row-gap: 1rem;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
 }
 
@@ -71,27 +71,6 @@
   font-weight: 300;
   letter-spacing: -0.03em;
   color: #1a1a1a;
-}
-
-.landing-pricing__link-all {
-  justify-self: end;
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.25rem;
-  padding: 0.4rem 0.95rem;
-  border-radius: 999px;
-  background: #1a1a1a;
-  color: #f6f5f3;
-  font-family: var(--landing-font, 'Manrope', system-ui, sans-serif);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background-color 0.2s ease;
-}
-
-.landing-pricing__link-all:hover {
-  background: #333;
 }
 
 .landing-pricing__grid {
@@ -377,15 +356,14 @@
   }
 
   .landing-pricing__header {
-    grid-template-columns: 1fr;
-    justify-items: stretch;
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .landing-pricing__billing-option,
-  .landing-pricing__cta,
-  .landing-pricing__link-all {
+  .landing-pricing__cta {
     transition: none;
   }
 }

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DEFAULT_SLUG } from '../../context/TenantContext';
 import { tenantBookingPath } from '../../constants/tenantRoutes';
-import { LANDING_DEMO_PATH } from './landingFinalCta.config';
 import './landing-glass-nav.css';
 
 const DEMO_BOOKING = tenantBookingPath(DEFAULT_SLUG);
@@ -45,13 +44,6 @@ export default function LandingGlassNav({ visible = false }) {
         </nav>
 
         <div className="landing-glass-nav__actions">
-          <Link
-            to={LANDING_DEMO_PATH}
-            className="landing-glass-nav__demo"
-            onClick={closeMenu}
-          >
-            Ver demo
-          </Link>
           <Link to={DEMO_BOOKING} className="landing-glass-nav__cta" onClick={closeMenu}>
             Teste grátis
           </Link>
@@ -81,15 +73,6 @@ export default function LandingGlassNav({ visible = false }) {
                 </a>
               </li>
             ))}
-            <li>
-              <Link
-                to={LANDING_DEMO_PATH}
-                className="landing-glass-nav__mobile-link"
-                onClick={closeMenu}
-              >
-                Ver demo
-              </Link>
-            </li>
             <li>
               <Link to={DEMO_BOOKING} className="landing-glass-nav__mobile-cta" onClick={closeMenu}>
                 Teste grátis
