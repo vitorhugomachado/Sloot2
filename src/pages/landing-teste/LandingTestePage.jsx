@@ -611,13 +611,6 @@ export default function LandingTestePage() {
                 </div>
               ) : null}
             </div>
-
-            {isMobileLanding ? (
-              <div className="lt-hero-card__pain" data-lt-reveal>
-                <h2 className="lt-section-title">{PAIN_SECTION.title}</h2>
-                <p className="lt-section-text">{PAIN_SECTION.text}</p>
-              </div>
-            ) : null}
           </div>
         </section>
 
