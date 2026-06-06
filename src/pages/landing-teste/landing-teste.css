@@ -506,10 +506,6 @@
     grid-template-columns: 1fr;
     gap: 36px;
   }
-
-  .lt-hero__visual {
-    order: -1;
-  }
 }
 
 /* Phone mockup */
