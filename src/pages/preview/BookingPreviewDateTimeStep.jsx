@@ -43,7 +43,9 @@ export default function BookingPreviewDateTimeStep({
 
   useEffect(() => {
     if (!selectedDate || selectedTime) return;
-    timeSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const node = timeSectionRef.current;
+    if (!node || node.closest('.lt-phone__embed')) return;
+    node.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [selectedDate, selectedTime]);
 
   return (

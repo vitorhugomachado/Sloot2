@@ -36,7 +36,7 @@
   overflow-y: auto;
   padding: 28px 22px 24px;
   border-radius: 0;
-  background: #fff;
+  background: #f5f4f4;
   border: none;
   box-shadow: none;
   text-align: center;
@@ -46,12 +46,41 @@
 .lt-demo-intro__body {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
   width: 100%;
-  max-width: 100%;
+  max-width: 20rem;
   margin: auto;
   flex: 1;
+  justify-content: center;
+}
+
+.lt-demo-intro__block {
+  width: 100%;
+}
+
+.lt-demo-intro__block--brand {
+  display: flex;
+  justify-content: center;
+}
+
+.lt-demo-intro__block--actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.lt-demo-intro__rule {
+  flex-shrink: 0;
+  width: 100%;
+  height: 1px;
+  margin: 16px 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(10, 10, 10, 0.07) 12%,
+    rgba(10, 10, 10, 0.07) 88%,
+    transparent 100%
+  );
 }
 
 @keyframes lt-demo-intro-card-in {
@@ -92,10 +121,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 10px auto 24px;
-  padding: 16px 24px;
-  background: #fff;
-  border-radius: 16px;
+  margin: 4px auto 0;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
 }
 
 .lt-demo-intro__logo {
@@ -104,13 +133,22 @@
 }
 
 .lt-demo-intro__title {
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.3;
   letter-spacing: -0.02em;
   color: #1a1a1a;
-  max-width: 18em;
+  max-width: none;
+  text-align: center;
+}
+
+.lt-demo-intro__title-line {
+  display: inline;
+}
+
+.lt-demo-intro__title-line--accent {
+  color: #ff6a00;
 }
 
 .lt-demo-intro__highlight {
@@ -118,21 +156,21 @@
 }
 
 .lt-demo-intro__subtitle {
-  margin: 0 0 20px;
+  margin: 0;
   font-size: 1rem;
   line-height: 1.55;
   color: #6b7280;
-  max-width: 22em;
+  max-width: none;
+  text-align: center;
 }
 
 .lt-demo-intro__steps {
   list-style: none;
   width: 100%;
-  max-width: 20rem;
-  margin: 0 0 22px;
-  padding: 16px 18px;
-  border-radius: 14px;
-  background: #fcfcfd;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
   text-align: left;
 }
 
@@ -140,13 +178,24 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 12px 0;
   font-size: 1.05rem;
   font-weight: 500;
   color: #374151;
+  border-bottom: 1px solid rgba(10, 10, 10, 0.06);
+}
+
+.lt-demo-intro__step:first-child {
+  padding-top: 0;
+}
+
+.lt-demo-intro__step:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .lt-demo-intro__step + .lt-demo-intro__step {
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 .lt-demo-intro__step-icon {
@@ -168,7 +217,6 @@
   justify-content: center;
   gap: 8px;
   width: 100%;
-  max-width: 20rem;
   padding: 16px 18px;
   border: none;
   border-radius: 999px;
@@ -193,9 +241,28 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin: 16px 0 0;
+  margin: 14px 0 0;
   font-size: 0.85rem;
   color: #9ca3af;
+  text-align: center;
+}
+
+@media (max-width: 960px) {
+  .lt-demo-intro__title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .lt-demo-intro__title-line {
+    display: block;
+  }
+
+  .lt-demo-intro__title-line--accent {
+    font-size: 1.65rem;
+    line-height: 1.2;
+  }
 }
 
 @media (max-width: 767px) {
@@ -203,9 +270,16 @@
     padding: 20px 16px 18px;
   }
 
+  .lt-demo-intro__body {
+    max-width: none;
+  }
+
+  .lt-demo-intro__rule {
+    margin: 14px 0;
+  }
+
   .lt-demo-intro__logo-wrap {
-    margin: 6px auto 14px;
-    padding: 8px 12px;
+    margin: 2px auto 0;
   }
 
   .lt-demo-intro__logo {
@@ -218,25 +292,28 @@
     margin-bottom: 10px;
   }
 
+  .lt-demo-intro__title-line--accent {
+    font-size: 1.25rem;
+  }
+
   .lt-demo-intro__subtitle {
     font-size: 0.875rem;
-    margin-bottom: 14px;
     max-width: none;
   }
 
   .lt-demo-intro__steps {
-    max-width: none;
-    margin-bottom: 16px;
-    padding: 12px 14px;
+    margin-bottom: 0;
+    padding: 0;
   }
 
   .lt-demo-intro__step {
     font-size: 0.9rem;
     gap: 10px;
+    padding: 10px 0;
   }
 
   .lt-demo-intro__step + .lt-demo-intro__step {
-    margin-top: 10px;
+    margin-top: 0;
   }
 
   .lt-demo-intro__step-icon {
@@ -250,7 +327,6 @@
   }
 
   .lt-demo-intro__cta {
-    max-width: none;
     padding: 14px 16px;
     font-size: 0.9375rem;
   }

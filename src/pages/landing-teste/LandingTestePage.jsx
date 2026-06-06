@@ -43,6 +43,15 @@ function scrollToSection(id, onDone) {
 
 const BENEFITS_CAROUSEL_MS = 4500;
 
+function SectionDivider({ dark = false }) {
+  return (
+    <hr
+      className={`lt-section-divider${dark ? ' lt-section-divider--on-dark' : ''}`}
+      aria-hidden
+    />
+  );
+}
+
 const BENEFIT_ICONS = {
   calendar: Calendar,
   link: Link2,
@@ -86,13 +95,17 @@ export default function LandingTestePage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const isMobileLanding = useMediaQuery('(max-width: 960px)');
   const [activeBenefit, setActiveBenefit] = useState(0);
-  const [activePlan, setActivePlan] = useState(0);
+  const [activeStep, setActiveStep] = useState(0);
+  const [activePlan, setActivePlan] = useState(1);
   const benefitsTouchStartX = useRef(null);
   const benefitsTouchStartY = useRef(null);
   const [benefitsTouchRoot, setBenefitsTouchRoot] = useState(null);
   const pricingViewportRef = useRef(null);
   const pricingTouchStartX = useRef(null);
   const pricingTouchStartY = useRef(null);
+  const stepsViewportRef = useRef(null);
+  const stepsTouchStartX = useRef(null);
+  const stepsTouchStartY = useRef(null);
 
   const scrolled = useHeaderBlur();
   const glowRef = useCursorGlow(pageRef);
@@ -123,9 +136,69 @@ export default function LandingTestePage() {
   }, []);
 
   useEffect(() => {
-    if (!isMobileLanding) {
-      setActivePlan(0);
-    }
+    setActivePlan(isMobileLanding ? 1 : 0);
+    if (!isMobileLanding) setActiveStep(0);
+  }, [isMobileLanding]);
+
+  useEffect(() => {
+    if (!isMobileLanding) return undefined;
+
+    const viewport = stepsViewportRef.current;
+    if (!viewport) return undefined;
+
+    const onTouchStart = (event) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      stepsTouchStartX.current = touch.clientX;
+      stepsTouchStartY.current = touch.clientY;
+    };
+
+    const onTouchMove = (event) => {
+      if (stepsTouchStartX.current == null || stepsTouchStartY.current == null) return;
+
+      const touch = event.touches[0];
+      if (!touch) return;
+
+      const deltaX = touch.clientX - stepsTouchStartX.current;
+      const deltaY = touch.clientY - stepsTouchStartY.current;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+        event.preventDefault();
+      }
+    };
+
+    const onTouchEnd = (event) => {
+      if (stepsTouchStartX.current == null || stepsTouchStartY.current == null) return;
+
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+
+      const deltaX = touch.clientX - stepsTouchStartX.current;
+      const deltaY = touch.clientY - stepsTouchStartY.current;
+
+      stepsTouchStartX.current = null;
+      stepsTouchStartY.current = null;
+
+      if (Math.abs(deltaX) < 32 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+
+      if (deltaX < 0) {
+        setActiveStep((current) => Math.min(current + 1, STEPS.length - 1));
+      } else {
+        setActiveStep((current) => Math.max(current - 1, 0));
+      }
+    };
+
+    viewport.addEventListener('touchstart', onTouchStart, { passive: true });
+    viewport.addEventListener('touchmove', onTouchMove, { passive: false });
+    viewport.addEventListener('touchend', onTouchEnd, { passive: true });
+    viewport.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    return () => {
+      viewport.removeEventListener('touchstart', onTouchStart);
+      viewport.removeEventListener('touchmove', onTouchMove);
+      viewport.removeEventListener('touchend', onTouchEnd);
+      viewport.removeEventListener('touchcancel', onTouchEnd);
+    };
   }, [isMobileLanding]);
 
   useEffect(() => {
@@ -382,6 +455,29 @@ export default function LandingTestePage() {
     );
   };
 
+  const renderStepCard = (step, { reveal = false } = {}) => {
+    const illustrationSrc = STEP_ILLUSTRATIONS[step.icon];
+
+    return (
+      <article key={step.step} className="lt-step-card" {...(reveal ? { 'data-lt-reveal': true } : {})}>
+        <span className="lt-step-card__num">{step.step}</span>
+        <div className="lt-step-card__illus" aria-hidden>
+          {illustrationSrc ? (
+            <img
+              src={illustrationSrc}
+              alt=""
+              className="lt-step-card__illus-img"
+              loading="lazy"
+              decoding="async"
+            />
+          ) : null}
+        </div>
+        <h3 className="lt-step-card__title">{step.title}</h3>
+        <p className="lt-step-card__text">{step.text}</p>
+      </article>
+    );
+  };
+
   return (
     <div className="lt-page" ref={pageRef}>
       <div className="lt-cursor-glow" ref={glowRef} aria-hidden />
@@ -526,13 +622,18 @@ export default function LandingTestePage() {
         </section>
 
         {!isMobileLanding ? (
-        <section className="lt-pain" data-lt-reveal>
-          <div className="lt-container lt-pain__inner">
-            <h2 className="lt-section-title">{PAIN_SECTION.title}</h2>
-            <p className="lt-section-text">{PAIN_SECTION.text}</p>
-          </div>
-        </section>
+          <>
+            <SectionDivider />
+            <section className="lt-pain" data-lt-reveal>
+              <div className="lt-container lt-pain__inner">
+                <h2 className="lt-section-title">{PAIN_SECTION.title}</h2>
+                <p className="lt-section-text">{PAIN_SECTION.text}</p>
+              </div>
+            </section>
+          </>
         ) : null}
+
+        <SectionDivider />
 
         <section
           className="lt-scroll-text"
@@ -540,6 +641,7 @@ export default function LandingTestePage() {
           aria-label="Benefícios em destaque"
           aria-live={isMobileLanding ? 'polite' : undefined}
         >
+          <SectionDivider dark />
           <div className="lt-scroll-text__inner">
             {SCROLL_PHRASES.map((phrase, i) => (
               <p
@@ -553,6 +655,8 @@ export default function LandingTestePage() {
             ))}
           </div>
         </section>
+
+        <SectionDivider />
 
         <section id="beneficios" className="lt-benefits">
           <div className="lt-container">
@@ -642,6 +746,8 @@ export default function LandingTestePage() {
           </div>
         </section>
 
+        <SectionDivider />
+
         <section id="como-funciona" className="lt-steps">
           <div className="lt-container">
             <header className="lt-section-head" data-lt-reveal>
@@ -649,49 +755,69 @@ export default function LandingTestePage() {
               <p className="lt-section-text">Três passos para colocar sua agenda online.</p>
             </header>
 
-            <div className="lt-steps__grid">
-              {STEPS.map((step) => {
-                const illustrationSrc = STEP_ILLUSTRATIONS[step.icon];
-                return (
-                  <article key={step.step} className="lt-step-card" data-lt-reveal>
-                    <span className="lt-step-card__num">{step.step}</span>
-                    <div className="lt-step-card__illus" aria-hidden>
-                      {illustrationSrc ? (
-                        <img
-                          src={illustrationSrc}
-                          alt=""
-                          className="lt-step-card__illus-img"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : null}
-                    </div>
-                    <h3 className="lt-step-card__title">{step.title}</h3>
-                    <p className="lt-step-card__text">{step.text}</p>
-                  </article>
-                );
-              })}
-            </div>
+            {isMobileLanding ? (
+              <div className="lt-steps__carousel">
+                <div
+                  ref={stepsViewportRef}
+                  className="lt-steps__viewport"
+                  aria-live="polite"
+                  aria-roledescription="carrossel"
+                  aria-label="Passos para usar a Slooti"
+                >
+                  <div
+                    className="lt-steps__track"
+                    style={{ transform: `translateX(-${activeStep * 100}%)` }}
+                  >
+                    {STEPS.map((step) => renderStepCard(step))}
+                  </div>
+                </div>
+
+                <div className="lt-steps__dots" role="tablist" aria-label="Passos">
+                  {STEPS.map((step, index) => (
+                    <button
+                      key={step.step}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeStep === index}
+                      aria-label={`Passo ${step.step}: ${step.title}`}
+                      className={`lt-steps__dot${activeStep === index ? ' is-active' : ''}`}
+                      onClick={() => setActiveStep(index)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="lt-steps__grid">
+                {STEPS.map((step) => renderStepCard(step, { reveal: true }))}
+              </div>
+            )}
           </div>
         </section>
 
-        <section className="lt-metrics" ref={metricsRef} data-lt-reveal>
-          <div className="lt-container lt-metrics__grid">
-            {METRICS.map((m) => (
-              <div key={m.label} className="lt-metric">
-                <span
-                  className="lt-metric__value"
-                  data-lt-counter={m.value}
-                  data-lt-prefix={m.prefix}
-                  data-lt-suffix={m.suffix}
-                >
-                  {m.prefix}0{m.suffix}
-                </span>
-                <span className="lt-metric__label">{m.label}</span>
+        {!isMobileLanding ? (
+          <>
+            <SectionDivider />
+            <section className="lt-metrics" ref={metricsRef} data-lt-reveal>
+              <div className="lt-container lt-metrics__grid">
+                {METRICS.map((m) => (
+                  <div key={m.label} className="lt-metric">
+                    <span
+                      className="lt-metric__value"
+                      data-lt-counter={m.value}
+                      data-lt-prefix={m.prefix}
+                      data-lt-suffix={m.suffix}
+                    >
+                      {m.prefix}0{m.suffix}
+                    </span>
+                    <span className="lt-metric__label">{m.label}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
+          </>
+        ) : null}
+
+        <SectionDivider />
 
         <section id="planos" className="lt-pricing">
           <div className="lt-container">
@@ -777,6 +903,8 @@ export default function LandingTestePage() {
           </div>
         </section>
 
+        <SectionDivider />
+
         <section id="faq" className="lt-faq">
           <div className="lt-container lt-faq__inner">
             <header className="lt-section-head" data-lt-reveal>
@@ -806,6 +934,8 @@ export default function LandingTestePage() {
             </div>
           </div>
         </section>
+
+        <SectionDivider />
 
         <section className="lt-final-cta" data-lt-reveal>
           <div className="lt-container lt-final-cta__inner">

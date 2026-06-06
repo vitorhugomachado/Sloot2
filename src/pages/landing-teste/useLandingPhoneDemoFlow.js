@@ -11,13 +11,6 @@ import {
 const RESET_DELAY_MS = 10_000;
 const SUBMIT_FEEDBACK_MS = 400;
 
-function scrollEmbedBookingFlowToTop() {
-  if (typeof document === 'undefined') return;
-  document
-    .querySelector('.lt-phone__embed .booking-preview--v2 .bp-flow__scroll')
-    ?.scrollTo({ top: 0, behavior: 'auto' });
-}
-
 export function useLandingPhoneDemoFlow() {
   const allWorkingDayIsosInHorizon = useMemo(() => getDemoWorkingDayIsos(5), []);
 
@@ -32,9 +25,6 @@ export function useLandingPhoneDemoFlow() {
 
   const goToStep = useCallback((nextStep) => {
     setStep(nextStep);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(scrollEmbedBookingFlowToTop);
-    });
   }, []);
 
   const resetDemo = useCallback(() => {
@@ -49,9 +39,6 @@ export function useLandingPhoneDemoFlow() {
     setSelectedDate(allWorkingDayIsosInHorizon[0] || toIsoLocal(new Date()));
     setSelectedTime(null);
     setIsSubmitting(false);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(scrollEmbedBookingFlowToTop);
-    });
   }, [allWorkingDayIsosInHorizon]);
 
   useEffect(() => {

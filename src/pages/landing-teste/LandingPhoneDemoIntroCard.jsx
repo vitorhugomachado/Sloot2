@@ -23,18 +23,28 @@ export default function LandingPhoneDemoIntroCard({ onStart, onClose }) {
         </button>
 
         <div className="lt-demo-intro__body">
-          <div className="lt-demo-intro__logo-wrap" aria-hidden>
-            <SlootiLogo size="xl" onDark={false} className="lt-demo-intro__logo" />
+          <div className="lt-demo-intro__block lt-demo-intro__block--brand">
+            <div className="lt-demo-intro__logo-wrap" aria-hidden>
+              <SlootiLogo size="xl" onDark={false} className="lt-demo-intro__logo" />
+            </div>
           </div>
 
-          <h2 id="lt-demo-intro-title" className="lt-demo-intro__title">
-            Faça um agendamento em menos de{' '}
-            <span className="lt-demo-intro__highlight">30 segundos</span>
-          </h2>
+          <div className="lt-demo-intro__rule" aria-hidden />
 
-          <p className="lt-demo-intro__subtitle">
-            Este é um ambiente de teste para você experimentar como seus clientes agendam.
-          </p>
+          <div className="lt-demo-intro__block">
+            <h2 id="lt-demo-intro-title" className="lt-demo-intro__title">
+              <span className="lt-demo-intro__title-line">Faça um agendamento em menos de </span>
+              <span className="lt-demo-intro__title-line lt-demo-intro__title-line--accent">
+                30 segundos
+              </span>
+            </h2>
+
+            <p className="lt-demo-intro__subtitle">
+              Este é um ambiente de teste para você experimentar como seus clientes agendam.
+            </p>
+          </div>
+
+          <div className="lt-demo-intro__rule" aria-hidden />
 
           <ul className="lt-demo-intro__steps">
             {STEPS.map((item) => (
@@ -47,15 +57,19 @@ export default function LandingPhoneDemoIntroCard({ onStart, onClose }) {
             ))}
           </ul>
 
-          <button type="button" className="lt-demo-intro__cta" onClick={onStart}>
-            Iniciar agendamento teste
-            <span aria-hidden>→</span>
-          </button>
+          <div className="lt-demo-intro__rule" aria-hidden />
 
-          <p className="lt-demo-intro__footer">
-            <Lock size={16} strokeWidth={2} aria-hidden />
-            Ambiente seguro e apenas para testes
-          </p>
+          <div className="lt-demo-intro__block lt-demo-intro__block--actions">
+            <button type="button" className="lt-demo-intro__cta" onClick={onStart}>
+              Iniciar agendamento teste
+              <span aria-hidden>→</span>
+            </button>
+
+            <p className="lt-demo-intro__footer">
+              <Lock size={16} strokeWidth={2} aria-hidden />
+              Ambiente seguro e apenas para testes
+            </p>
+          </div>
         </div>
       </div>
     </div>

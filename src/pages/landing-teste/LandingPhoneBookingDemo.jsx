@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import BookingPreviewServiceStep from '../preview/BookingPreviewServiceStep';
 import BookingPreviewBarberStep from '../preview/BookingPreviewBarberStep';
 import BookingPreviewDateTimeStep from '../preview/BookingPreviewDateTimeStep';
@@ -9,13 +8,6 @@ import { useLandingPhoneDemoFlow } from './useLandingPhoneDemoFlow';
 import '../preview/booking-preview.css';
 import '../preview/booking-preview-v2.css';
 import './landing-phone-demo-intro.css';
-
-function scrollEmbedBookingFlowToTop() {
-  if (typeof document === 'undefined') return;
-  document
-    .querySelector('.lt-phone__embed .booking-preview--v2 .bp-flow__scroll')
-    ?.scrollTo({ top: 0, behavior: 'auto' });
-}
 
 const noop = () => {};
 
@@ -46,10 +38,6 @@ export default function LandingPhoneBookingDemo() {
     dismissIntro,
     getSlotsForDay,
   } = flow;
-
-  useEffect(() => {
-    scrollEmbedBookingFlowToTop();
-  }, [step]);
 
   const wrapClass = 'booking-preview booking-preview--v2 booking-preview--embed';
 

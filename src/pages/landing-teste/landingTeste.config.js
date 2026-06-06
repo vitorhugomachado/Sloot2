@@ -183,8 +183,8 @@ export const PLANS = [
   },
 ];
 
-/** Ordem do carrossel mobile — Equipe primeiro. */
-export const MOBILE_PLANS = ['equipe', 'solo', 'premium']
+/** Ordem do carrossel mobile — Solo | Equipe (centro) | Premium. */
+export const MOBILE_PLANS = ['solo', 'equipe', 'premium']
   .map((id) => PLANS.find((plan) => plan.id === id))
   .filter(Boolean);
 

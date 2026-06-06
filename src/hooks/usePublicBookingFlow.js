@@ -13,8 +13,14 @@ export const INITIAL_VISIBLE_BOOKING_DAYS = 5;
 export const LOAD_MORE_BOOKING_DAYS = 5;
 export const MAX_BOOKING_HORIZON_DAYS = 60;
 
+/** Demo de agendamento dentro do mockup da landing — sem scroll automático da página. */
+export function isLandingPhoneEmbed() {
+  return typeof document !== 'undefined' && document.querySelector('.lt-phone__embed') != null;
+}
+
 export function scrollBookingFlowToTop() {
   if (typeof window === 'undefined') return;
+  if (isLandingPhoneEmbed()) return;
   window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   document.querySelector('.booking-preview--v2 .bp-flow__scroll')?.scrollTo({ top: 0, behavior: 'auto' });
 }
@@ -22,6 +28,7 @@ export function scrollBookingFlowToTop() {
 /** Rolagem suave até o rodapé com o botão Continuar (passos serviço / barbeiro). */
 export function scrollToContinueButton() {
   if (typeof window === 'undefined') return;
+  if (isLandingPhoneEmbed()) return;
   const run = () => {
     const flow = document.querySelector('.booking-preview--v2 .bp-flow');
     const footer = flow?.querySelector('.bp-flow__footer');
