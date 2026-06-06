@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Calendar, Check, Clock, Link2, Menu, Scissors, Sparkles, User, X } from 'lucide-react';
 import SlootiLogo from '../../components/SlootiLogo';
-import { LANDING_WHATSAPP_URL } from '../landing/landingContact.config';
+import { LANDING_WHATSAPP_URL } from './landingContact.config';
 import PhoneMockup from './PhoneMockup';
 import TiltCard from './TiltCard';
 import STEP_ILLUSTRATIONS from './LandingStepIcons';
