@@ -4,11 +4,62 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
+export function getLandingHeaderOffset() {
+  const page = document.querySelector('.lt-page');
+  if (!page) return 64;
+  const styles = getComputedStyle(page);
+  const headerH = parseFloat(styles.getPropertyValue('--lt-header-h')) || 48;
+  return headerH + 16;
+}
+
+export function scrollToLandingSection(id, onDone) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  const offset = getLandingHeaderOffset();
+  const top = Math.max(0, window.scrollY + el.getBoundingClientRect().top - offset);
+
+  window.scrollTo({ top, behavior: 'smooth' });
+
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    window.removeEventListener('scroll', onScroll);
+    ScrollTrigger.refresh();
+    onDone?.();
+  };
+
+  const onScroll = () => {
+    if (Math.abs(window.scrollY - top) < 3 || (top < 3 && window.scrollY < 3)) {
+      finish();
+    }
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.setTimeout(finish, 900);
+}
+
 export function useHeaderBlur() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
+    let ticking = false;
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        setScrolled((prev) => {
+          if (y > 32) return true;
+          if (y < 2) return false;
+          return prev;
+        });
+        ticking = false;
+      });
+    };
+
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -170,50 +221,6 @@ export function useScrollPhrases(sectionRef, phraseRefs, isMobileLanding = false
 
     return () => ctx.revert();
   }, [sectionRef, phraseRefs, isMobileLanding]);
-}
-
-export function useAnimatedCounters(sectionRef) {
-  useEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return undefined;
-
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const counters = section.querySelectorAll('[data-lt-counter]');
-
-    const animate = (el) => {
-      const target = Number(el.dataset.ltCounter);
-      const prefix = el.dataset.ltPrefix || '';
-      const suffix = el.dataset.ltSuffix || '';
-      if (reduceMotion) {
-        el.textContent = `${prefix}${target}${suffix}`;
-        return;
-      }
-      const obj = { val: 0 };
-      gsap.to(obj, {
-        val: target,
-        duration: 2,
-        ease: 'power2.out',
-        onUpdate: () => {
-          el.textContent = `${prefix}${Math.round(obj.val)}${suffix}`;
-        },
-      });
-    };
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            animate(entry.target);
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.4 },
-    );
-
-    counters.forEach((c) => observer.observe(c));
-    return () => observer.disconnect();
-  }, [sectionRef]);
 }
 
 export function useBackgroundOrbs(pageRef) {

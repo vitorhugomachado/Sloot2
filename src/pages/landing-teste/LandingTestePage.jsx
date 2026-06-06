@@ -6,6 +6,7 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 import PhoneMockup from './PhoneMockup';
 import TiltCard from './TiltCard';
 import STEP_ILLUSTRATIONS from './LandingStepIcons';
+import AnimatedMetricValue from './AnimatedMetricValue';
 import {
   BENEFITS,
   BILLING_OPTIONS,
@@ -22,23 +23,18 @@ import {
   STEPS,
 } from './landingTeste.config';
 import {
-  useAnimatedCounters,
   useBackgroundOrbs,
   useCursorGlow,
   useHeaderBlur,
   useHeroEntrance,
+  scrollToLandingSection,
   useScrollPhrases,
   useScrollReveal,
 } from './useLandingTesteEffects';
 import './landing-teste.css';
 
-function scrollToId(id) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
 function scrollToSection(id, onDone) {
-  scrollToId(id);
-  onDone?.();
+  scrollToLandingSection(id, onDone);
 }
 
 const BENEFITS_CAROUSEL_MS = 4500;
@@ -87,7 +83,6 @@ export default function LandingTestePage() {
   const pageRef = useRef(null);
   const heroRef = useRef(null);
   const scrollSectionRef = useRef(null);
-  const metricsRef = useRef(null);
   const phraseRefs = useRef([]);
   const [wordIndex, setWordIndex] = useState(0);
   const [openFaq, setOpenFaq] = useState(-1);
@@ -113,7 +108,6 @@ export default function LandingTestePage() {
   useHeroEntrance(heroRef);
   useScrollReveal(pageRef);
   useScrollPhrases(scrollSectionRef, phraseRefs, isMobileLanding);
-  useAnimatedCounters(metricsRef);
   useBackgroundOrbs(pageRef);
 
   useEffect(() => {
@@ -134,6 +128,23 @@ export default function LandingTestePage() {
     mq.addEventListener('change', closeNav);
     return () => mq.removeEventListener('change', closeNav);
   }, []);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setMobileNavOpen(false);
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [mobileNavOpen]);
 
   useEffect(() => {
     setActivePlan(isMobileLanding ? 1 : 0);
@@ -490,88 +501,95 @@ export default function LandingTestePage() {
         <span className="lt-bg-orb lt-bg-orb--3" />
       </div>
 
-      <main>
+      <header className={`lt-header${scrolled ? ' is-scrolled' : ''}`}>
+        <div className="lt-header__inner">
+          <a
+            href="#topo"
+            className="lt-header__logo"
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToSection('topo', () => setMobileNavOpen(false));
+            }}
+          >
+            <SlootiLogo size="lg" onDark={false} />
+          </a>
+
+          <nav className="lt-header__nav" aria-label="Navegação principal">
+            {NAV_LINKS.map((link) => (
+              <button
+                key={link.id}
+                type="button"
+                className="lt-header__link"
+                onClick={() => scrollToSection(link.id)}
+              >
+                {link.label}
+              </button>
+            ))}
+          </nav>
+
+          <button
+            type="button"
+            className="lt-header__menu-btn"
+            aria-expanded={mobileNavOpen}
+            aria-controls="lt-mobile-nav"
+            aria-label={mobileNavOpen ? 'Fechar menu' : 'Abrir menu'}
+            onClick={() => setMobileNavOpen((open) => !open)}
+          >
+            {mobileNavOpen ? <X size={20} strokeWidth={1.75} /> : <Menu size={20} strokeWidth={1.75} />}
+          </button>
+
+          <nav
+            id="lt-mobile-nav"
+            className={`lt-header__nav-mobile${mobileNavOpen ? ' is-open' : ''}`}
+            aria-label="Navegação mobile"
+            hidden={!mobileNavOpen}
+          >
+            {NAV_LINKS.map((link) => (
+              <button
+                key={link.id}
+                type="button"
+                className="lt-header__nav-mobile-link"
+                onClick={() => scrollToSection(link.id, () => setMobileNavOpen(false))}
+              >
+                {link.label}
+              </button>
+            ))}
+            <a
+              href={LANDING_WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lt-btn lt-btn--primary lt-header__nav-mobile-cta"
+              onClick={() => setMobileNavOpen(false)}
+            >
+              Falar agora
+            </a>
+          </nav>
+
+          {mobileNavOpen ? (
+            <button
+              type="button"
+              className="lt-header__backdrop"
+              aria-label="Fechar menu"
+              onClick={() => setMobileNavOpen(false)}
+            />
+          ) : null}
+
+          <a
+            href={LANDING_WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="lt-btn lt-btn--primary lt-btn--sm lt-header__cta"
+          >
+            Falar agora
+          </a>
+        </div>
+      </header>
+
+      <main className="lt-main">
         <div className="lt-top-shell">
           <span className="lt-top-shell__glow lt-top-shell__glow--tr" aria-hidden />
           <span className="lt-top-shell__glow lt-top-shell__glow--bl" aria-hidden />
           <div className="lt-top-shell__arcs" aria-hidden />
-
-          <header className={`lt-header${scrolled ? ' is-scrolled' : ''}`}>
-            <div className="lt-header__inner">
-              <a href="#topo" className="lt-header__logo" onClick={(e) => { e.preventDefault(); scrollToId('topo'); }}>
-                <SlootiLogo size="lg" onDark={false} />
-              </a>
-
-              <nav className="lt-header__nav" aria-label="Navegação principal">
-                {NAV_LINKS.map((link) => (
-                  <button
-                    key={link.id}
-                    type="button"
-                    className="lt-header__link"
-                    onClick={() => scrollToId(link.id)}
-                  >
-                    {link.label}
-                  </button>
-                ))}
-              </nav>
-
-              <button
-                type="button"
-                className="lt-header__menu-btn"
-                aria-expanded={mobileNavOpen}
-                aria-controls="lt-mobile-nav"
-                aria-label={mobileNavOpen ? 'Fechar menu' : 'Abrir menu'}
-                onClick={() => setMobileNavOpen((open) => !open)}
-              >
-                {mobileNavOpen ? <X size={20} strokeWidth={1.75} /> : <Menu size={20} strokeWidth={1.75} />}
-              </button>
-
-              <nav
-                id="lt-mobile-nav"
-                className={`lt-header__nav-mobile${mobileNavOpen ? ' is-open' : ''}`}
-                aria-label="Navegação mobile"
-                hidden={!mobileNavOpen}
-              >
-                {NAV_LINKS.map((link) => (
-                  <button
-                    key={link.id}
-                    type="button"
-                    className="lt-header__nav-mobile-link"
-                    onClick={() => scrollToSection(link.id, () => setMobileNavOpen(false))}
-                  >
-                    {link.label}
-                  </button>
-                ))}
-                <a
-                  href={LANDING_WHATSAPP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="lt-btn lt-btn--primary lt-header__nav-mobile-cta"
-                  onClick={() => setMobileNavOpen(false)}
-                >
-                  Falar agora
-                </a>
-              </nav>
-
-              {mobileNavOpen ? (
-                <button
-                  type="button"
-                  className="lt-header__backdrop"
-                  aria-label="Fechar menu"
-                  onClick={() => setMobileNavOpen(false)}
-                />
-              ) : null}
-
-              <a
-                href={LANDING_WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="lt-btn lt-btn--primary lt-btn--sm lt-header__cta"
-              >
-                Falar agora
-              </a>
-            </div>
-          </header>
 
           <section id="topo" className="lt-hero" ref={heroRef}>
             <div className="lt-hero__inner">
@@ -600,7 +618,7 @@ export default function LandingTestePage() {
                   <button
                     type="button"
                     className="lt-btn lt-btn--ghost lt-btn--glass"
-                    onClick={() => scrollToId('como-funciona')}
+                    onClick={() => scrollToSection('como-funciona')}
                   >
                     Como funciona
                   </button>
@@ -790,18 +808,15 @@ export default function LandingTestePage() {
         {!isMobileLanding ? (
           <>
             <SectionDivider />
-            <section className="lt-metrics" ref={metricsRef} data-lt-reveal>
+            <section className="lt-metrics" data-lt-reveal>
               <div className="lt-container lt-metrics__grid">
                 {METRICS.map((m) => (
                   <div key={m.label} className="lt-metric">
-                    <span
-                      className="lt-metric__value"
-                      data-lt-counter={m.value}
-                      data-lt-prefix={m.prefix}
-                      data-lt-suffix={m.suffix}
-                    >
-                      {m.prefix}0{m.suffix}
-                    </span>
+                    <AnimatedMetricValue
+                      value={m.value}
+                      prefix={m.prefix}
+                      suffix={m.suffix}
+                    />
                     <span className="lt-metric__label">{m.label}</span>
                   </div>
                 ))}
@@ -951,9 +966,44 @@ export default function LandingTestePage() {
 
       <footer className="lt-footer">
         <div className="lt-container lt-footer__inner">
-          <SlootiLogo size="md" onDark={false} />
-          <p className="lt-footer__text">Sistema de agendamento para barbearias modernas.</p>
-          <p className="lt-footer__copy">© {new Date().getFullYear()} Slooti. Todos os direitos reservados.</p>
+          <div className="lt-footer__brand">
+            <a
+              href="#topo"
+              className="lt-footer__logo"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToSection('topo');
+              }}
+            >
+              <SlootiLogo size="md" onDark />
+            </a>
+            <p className="lt-footer__text">Sistema de agendamento para barbearias modernas.</p>
+          </div>
+
+          <nav className="lt-footer__nav" aria-label="Navegação do rodapé">
+            {NAV_LINKS.map((link) => (
+              <button
+                key={link.id}
+                type="button"
+                className="lt-footer__link"
+                onClick={() => scrollToSection(link.id)}
+              >
+                {link.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="lt-footer__actions">
+            <a
+              href={LANDING_WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lt-btn lt-btn--primary lt-btn--sm"
+            >
+              Falar agora
+            </a>
+            <p className="lt-footer__copy">© {new Date().getFullYear()} Slooti. Todos os direitos reservados.</p>
+          </div>
         </div>
       </footer>
     </div>

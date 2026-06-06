@@ -18,16 +18,25 @@
   --lt-radius-lg: 28px;
   --lt-shadow: 0 20px 60px rgba(10, 10, 10, 0.06);
   --lt-shadow-hover: 0 28px 80px rgba(10, 10, 10, 0.1);
-  --lt-header-h: 48px;
+  --lt-header-bar: 48px;
+  --lt-header-h: calc(var(--lt-header-bar) + env(safe-area-inset-top, 0px));
   --lt-hero-offset: clamp(40px, 6vw, 72px);
   --lt-page-bg: #f5f4f4;
 
   position: relative;
   overflow-x: hidden;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   background: var(--lt-page-bg);
   color: var(--lt-black);
   font-family: 'Manrope', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+.lt-main {
+  flex: 1 0 auto;
+  width: 100%;
 }
 
 /* Manrope em toda a página, inclusive demo no celular (booking preview usa Inter por padrão) */
@@ -196,27 +205,34 @@
     radial-gradient(circle at 100% 100%, transparent 88%, rgba(255, 255, 255, 0.22) 88.5%, transparent 89%);
 }
 
-/* Header — menu fixo acima do hero */
+/* Header — fixo em toda a página */
 .lt-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 100;
+  z-index: 200;
+  box-sizing: border-box;
   height: var(--lt-header-h);
-  background: transparent;
-  transition: background 0.35s ease, backdrop-filter 0.35s ease;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background 0.35s ease, backdrop-filter 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+  border-bottom: 1px solid rgba(10, 10, 10, 0.04);
 }
 
 .lt-header.is-scrolled {
-  background: rgba(255, 255, 255, 0.38);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom-color: var(--lt-border);
+  box-shadow: 0 8px 32px rgba(10, 10, 10, 0.06);
 }
 
 .lt-header__inner {
   width: min(1160px, calc(100% - 48px));
-  height: 100%;
+  height: var(--lt-header-bar);
   margin-inline: auto;
   display: flex;
   align-items: center;
@@ -268,19 +284,13 @@
 
 @media (max-width: 960px) {
   .lt-page {
-    --lt-header-h: calc(48px + env(safe-area-inset-top, 0px));
     --lt-hero-offset: clamp(52px, 11vw, 80px);
   }
 
-  .lt-header {
-    height: var(--lt-header-h);
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-
   .lt-header.is-scrolled {
-    background: rgba(255, 255, 255, 0.42);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
 
   .lt-header__inner {
@@ -372,7 +382,7 @@
   top: var(--lt-header-h);
   left: 0;
   right: 0;
-  z-index: 99;
+  z-index: 199;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -421,7 +431,7 @@
 .lt-header__backdrop {
   position: fixed;
   inset: var(--lt-header-h) 0 0;
-  z-index: 98;
+  z-index: 198;
   border: none;
   padding: 0;
   background: rgba(10, 10, 10, 0.28);
@@ -892,7 +902,7 @@
 .lt-pain {
   position: relative;
   z-index: 1;
-  padding: 96px 0;
+  padding: 32px 0 72px;
 }
 
 .lt-pain__inner {
@@ -942,7 +952,7 @@
 .lt-benefits {
   position: relative;
   z-index: 1;
-  padding: clamp(8px, 2vw, 24px) 0 clamp(64px, 8vw, 96px);
+  padding: clamp(8px, 2vw, 24px) 0 clamp(16px, 3vw, 28px);
   background: transparent;
 }
 
@@ -1414,7 +1424,11 @@
 .lt-pricing {
   position: relative;
   z-index: 1;
-  padding: 120px 0;
+  padding: 72px 0 120px;
+}
+
+.lt-pricing .lt-section-head {
+  margin-bottom: 36px;
 }
 
 .lt-pricing__billing {
@@ -1422,7 +1436,7 @@
   grid-template-columns: repeat(2, minmax(5.75rem, 1fr));
   gap: 4px;
   padding: 4px;
-  margin-top: 24px;
+  margin-top: 16px;
   border-radius: 999px;
   border: 1px solid var(--lt-border);
   background: rgba(10, 10, 10, 0.04);
@@ -1823,14 +1837,14 @@
 
 .lt-faq__item {
   border-radius: var(--lt-radius);
-  background: #fff;
-  border: 1px solid var(--lt-border);
+  background: var(--lt-black);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: hidden;
   transition: box-shadow 0.25s;
 }
 
 .lt-faq__item.is-open {
-  box-shadow: var(--lt-shadow);
+  box-shadow: 0 16px 40px rgba(255, 106, 0, 0.18);
 }
 
 .lt-faq__question {
@@ -1846,7 +1860,7 @@
   font-size: 1rem;
   font-weight: 600;
   text-align: left;
-  color: var(--lt-black);
+  color: #fff;
   cursor: pointer;
 }
 
@@ -1855,7 +1869,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--lt-gray-light);
+  background: var(--lt-orange);
   position: relative;
   transition: background 0.25s, transform 0.25s;
 }
@@ -1868,7 +1882,7 @@
   left: 50%;
   width: 12px;
   height: 2px;
-  background: var(--lt-black);
+  background: #fff;
   transform: translate(-50%, -50%);
   transition: transform 0.25s;
 }
@@ -1878,7 +1892,7 @@
 }
 
 .lt-faq__item.is-open .lt-faq__icon {
-  background: var(--lt-orange-soft);
+  background: var(--lt-orange);
   transform: rotate(45deg);
 }
 
@@ -1901,7 +1915,7 @@
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.65;
-  color: var(--lt-gray);
+  color: rgba(255, 255, 255, 0.72);
 }
 
 /* Final CTA */
@@ -1939,28 +1953,107 @@
 .lt-footer {
   position: relative;
   z-index: 1;
-  padding: 48px 0 56px;
-  border-top: 1px solid var(--lt-border);
+  flex-shrink: 0;
+  width: 100%;
+  margin-top: auto;
+  padding: 56px 0 calc(40px + env(safe-area-inset-bottom, 0px));
+  background: var(--lt-black);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .lt-footer__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: 32px 40px;
+  align-items: start;
+}
+
+.lt-footer__brand {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
-  text-align: center;
+  text-align: left;
+}
+
+.lt-footer__logo {
+  text-decoration: none;
 }
 
 .lt-footer__text {
   font-size: 0.95rem;
-  color: var(--lt-gray);
+  color: rgba(255, 255, 255, 0.72);
   margin: 0;
+  max-width: 280px;
+  line-height: 1.6;
+}
+
+.lt-footer__nav {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.lt-footer__link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 6px 0;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.88);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.lt-footer__link:hover {
+  color: var(--lt-orange);
+}
+
+.lt-footer__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
 }
 
 .lt-footer__copy {
   font-size: 0.82rem;
-  color: rgba(107, 114, 128, 0.8);
-  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.48);
+  margin: 0;
+  text-align: right;
+}
+
+@media (max-width: 860px) {
+  .lt-footer__inner {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    text-align: center;
+  }
+
+  .lt-footer__brand,
+  .lt-footer__nav,
+  .lt-footer__actions {
+    align-items: center;
+  }
+
+  .lt-footer__text {
+    max-width: none;
+    text-align: center;
+  }
+
+  .lt-footer__nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 20px;
+  }
+
+  .lt-footer__copy {
+    text-align: center;
+  }
 }
 
 /* Reduced motion */
@@ -2040,13 +2133,24 @@
 
   .lt-pain,
   .lt-steps,
-  .lt-pricing,
   .lt-faq {
     padding: 72px 0;
   }
 
+  .lt-pricing {
+    padding: 48px 0 72px;
+  }
+
+  .lt-pricing .lt-section-head {
+    margin-bottom: 28px;
+  }
+
+  .lt-pain {
+    padding: 24px 0 56px;
+  }
+
   .lt-benefits {
-    padding-bottom: 56px;
+    padding-bottom: 20px;
   }
 
   .lt-metrics {
@@ -2186,9 +2290,12 @@
 
   .lt-pain,
   .lt-steps,
-  .lt-pricing,
   .lt-faq {
     padding: 56px 0;
+  }
+
+  .lt-pricing {
+    padding: 40px 0 56px;
   }
 
   .lt-footer {
