@@ -1181,7 +1181,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  min-height: 340px;
+  min-height: 280px;
   padding: 28px 28px 32px;
   border-radius: 28px;
   background: #fff;
@@ -1218,7 +1218,7 @@
   align-self: stretch;
   width: 100%;
   flex: 1;
-  min-height: 140px;
+  min-height: 220px;
   margin: 20px 0 24px;
   background: #fff;
 }
@@ -1226,13 +1226,12 @@
 .lt-step-card__illus svg,
 .lt-step-card__illus-img {
   display: block;
-  width: 108px;
-  height: 108px;
+  width: 220px;
+  height: 150px;
   max-width: 100%;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
-  background-color: #fff;
-  mix-blend-mode: multiply;
+  background-color: transparent;
 }
 
 .lt-step-card__title {
@@ -1274,7 +1273,7 @@
   .lt-steps__track .lt-step-card {
     flex: 0 0 100%;
     width: 100%;
-    min-height: 300px;
+    min-height: 320px;
     align-items: flex-start;
     text-align: left;
     padding: 24px 22px 28px;
@@ -1296,14 +1295,16 @@
   .lt-steps__track .lt-step-card__illus {
     justify-content: center;
     align-self: stretch;
-    min-height: 120px;
+    min-height: 150px;
     margin: 16px 0 20px;
   }
 
   .lt-steps__track .lt-step-card__illus svg,
   .lt-steps__track .lt-step-card__illus-img {
-    width: 96px;
-    height: 96px;
+    width: min(220px, 100%);
+    height: auto;
+    aspect-ratio: 220 / 150;
+    max-height: 150px;
   }
 
   .lt-steps__track .lt-step-card__title {

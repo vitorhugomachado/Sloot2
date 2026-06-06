@@ -467,6 +467,8 @@ export default function LandingTestePage() {
               src={illustrationSrc}
               alt=""
               className="lt-step-card__illus-img"
+              width={220}
+              height={150}
               loading="lazy"
               decoding="async"
             />
