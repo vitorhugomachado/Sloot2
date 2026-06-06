@@ -28,6 +28,7 @@ import {
 import { Menu, LogOut } from 'lucide-react';
 import SlootiLogo from './components/SlootiLogo';
 import LandingPage from './pages/landing/LandingPage';
+import LandingTestePage from './pages/landing-teste/LandingTestePage';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Clients = lazy(() => import('./pages/Clients'));
@@ -439,6 +440,7 @@ function App() {
       <Route path="/cadastro" element={<Navigate to="/" replace />} />
       <Route path="/telateste" element={<BookingPreviewShell />} />
       <Route path="/telaloginteste" element={<LoginPreviewShell />} />
+      <Route path="/landingteste" element={<LandingTestePage />} />
       <Route path="/cliente/*" element={<Navigate to={defaultHome} replace />} />
       <Route path="/barbeiros/*" element={<Navigate to={defaultLogin} replace />} />
       <Route path="/:tenantSlug/*" element={<TenantShell />} />

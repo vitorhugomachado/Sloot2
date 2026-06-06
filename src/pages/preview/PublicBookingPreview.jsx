@@ -14,8 +14,17 @@ import './booking-preview.css';
 import './booking-preview-v2.css';
 import './booking-preview-desktop.css';
 
+function scrollEmbedBookingFlowToTop() {
+  if (typeof document === 'undefined') return;
+  document
+    .querySelector('.lt-phone__embed .booking-preview--v2 .bp-flow__scroll')
+    ?.scrollTo({ top: 0, behavior: 'auto' });
+}
+
 export default function PublicBookingPreview({
   showPreviewBanner = true,
+  forceMobile = false,
+  embedMode = false,
   portalUrl: portalUrlProp,
   onOpenPortal,
   loginRequestBump = 0,
@@ -23,10 +32,14 @@ export default function PublicBookingPreview({
   const { slug } = useTenant();
   const navigate = useNavigate();
   const flow = usePublicBookingFlow();
-  const isDesktop = useMediaQuery(BOOKING_DESKTOP_MIN_WIDTH);
+  const isWideScreen = useMediaQuery(BOOKING_DESKTOP_MIN_WIDTH);
+  const isDesktop = !forceMobile && isWideScreen;
   const officialUrl = `/${slug}`;
   const portalUrl = portalUrlProp || `/${slug}/portal`;
-  const openPortal = onOpenPortal || (() => navigate(portalUrl));
+  const openPortal = onOpenPortal
+    || (embedMode
+      ? () => window.open(portalUrl, '_blank', 'noopener,noreferrer')
+      : () => navigate(portalUrl));
 
   useEffect(() => {
     loadGoogleIdentityScript();
@@ -70,15 +83,18 @@ export default function PublicBookingPreview({
   } = flow;
 
   useEffect(() => {
-    if (!isDesktop) scrollBookingFlowToTop();
-  }, [step, isDesktop]);
+    if (isDesktop) return;
+    if (embedMode) scrollEmbedBookingFlowToTop();
+    else scrollBookingFlowToTop();
+  }, [step, isDesktop, embedMode]);
 
   useEffect(() => {
     if (!loginRequestBump) return;
     if (isDesktop) return;
     goToStep(4);
-    scrollBookingFlowToTop();
-  }, [loginRequestBump, isDesktop, goToStep]);
+    if (embedMode) scrollEmbedBookingFlowToTop();
+    else scrollBookingFlowToTop();
+  }, [loginRequestBump, isDesktop, goToStep, embedMode]);
 
   const previewBanner = showPreviewBanner ? (
     <div className="booking-preview__banner">
@@ -88,7 +104,12 @@ export default function PublicBookingPreview({
     </div>
   ) : null;
 
-  const wrapClass = `booking-preview booking-preview--v2${isDesktop ? ' booking-preview--desktop' : ''}`;
+  const wrapClass = [
+    'booking-preview',
+    'booking-preview--v2',
+    isDesktop ? 'booking-preview--desktop' : '',
+    embedMode ? 'booking-preview--embed' : '',
+  ].filter(Boolean).join(' ');
 
   if (step === 5) {
     return (
