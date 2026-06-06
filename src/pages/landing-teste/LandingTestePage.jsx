@@ -488,92 +488,92 @@ export default function LandingTestePage() {
         <span className="lt-bg-orb lt-bg-orb--3" />
       </div>
 
-      <header className={`lt-header${scrolled ? ' is-scrolled' : ''}`}>
-        <div className="lt-header__inner">
-          <a href="#topo" className="lt-header__logo" onClick={(e) => { e.preventDefault(); scrollToId('topo'); }}>
-            <SlootiLogo size="lg" onDark={false} />
-          </a>
-
-          <nav className="lt-header__nav" aria-label="Navegação principal">
-            {NAV_LINKS.map((link) => (
-              <button
-                key={link.id}
-                type="button"
-                className="lt-header__link"
-                onClick={() => scrollToId(link.id)}
-              >
-                {link.label}
-              </button>
-            ))}
-          </nav>
-
-          <button
-            type="button"
-            className="lt-header__menu-btn"
-            aria-expanded={mobileNavOpen}
-            aria-controls="lt-mobile-nav"
-            aria-label={mobileNavOpen ? 'Fechar menu' : 'Abrir menu'}
-            onClick={() => setMobileNavOpen((open) => !open)}
-          >
-            {mobileNavOpen ? <X size={20} strokeWidth={1.75} /> : <Menu size={20} strokeWidth={1.75} />}
-          </button>
-
-          <nav
-            id="lt-mobile-nav"
-            className={`lt-header__nav-mobile${mobileNavOpen ? ' is-open' : ''}`}
-            aria-label="Navegação mobile"
-            hidden={!mobileNavOpen}
-          >
-            {NAV_LINKS.map((link) => (
-              <button
-                key={link.id}
-                type="button"
-                className="lt-header__nav-mobile-link"
-                onClick={() => scrollToSection(link.id, () => setMobileNavOpen(false))}
-              >
-                {link.label}
-              </button>
-            ))}
-            <a
-              href={LANDING_WHATSAPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="lt-btn lt-btn--primary lt-header__nav-mobile-cta"
-              onClick={() => setMobileNavOpen(false)}
-            >
-              Falar agora
-            </a>
-          </nav>
-
-          {mobileNavOpen ? (
-            <button
-              type="button"
-              className="lt-header__backdrop"
-              aria-label="Fechar menu"
-              onClick={() => setMobileNavOpen(false)}
-            />
-          ) : null}
-
-          <a
-            href={LANDING_WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lt-btn lt-btn--primary lt-btn--sm lt-header__cta"
-          >
-            Falar agora
-          </a>
-        </div>
-      </header>
-
       <main>
-        <section id="topo" className="lt-hero" ref={heroRef}>
-          <div className="lt-hero-card">
-            <span className="lt-hero-card__glow lt-hero-card__glow--tr" aria-hidden />
-            <span className="lt-hero-card__glow lt-hero-card__glow--bl" aria-hidden />
-            <div className="lt-hero-card__arcs" aria-hidden />
+        <div className="lt-top-shell">
+          <span className="lt-top-shell__glow lt-top-shell__glow--tr" aria-hidden />
+          <span className="lt-top-shell__glow lt-top-shell__glow--bl" aria-hidden />
+          <div className="lt-top-shell__arcs" aria-hidden />
 
-            <div className="lt-hero-card__inner">
-              <div className="lt-hero-card__content">
+          <header className={`lt-header${scrolled ? ' is-scrolled' : ''}`}>
+            <div className="lt-header__inner">
+              <a href="#topo" className="lt-header__logo" onClick={(e) => { e.preventDefault(); scrollToId('topo'); }}>
+                <SlootiLogo size="lg" onDark={false} />
+              </a>
+
+              <nav className="lt-header__nav" aria-label="Navegação principal">
+                {NAV_LINKS.map((link) => (
+                  <button
+                    key={link.id}
+                    type="button"
+                    className="lt-header__link"
+                    onClick={() => scrollToId(link.id)}
+                  >
+                    {link.label}
+                  </button>
+                ))}
+              </nav>
+
+              <button
+                type="button"
+                className="lt-header__menu-btn"
+                aria-expanded={mobileNavOpen}
+                aria-controls="lt-mobile-nav"
+                aria-label={mobileNavOpen ? 'Fechar menu' : 'Abrir menu'}
+                onClick={() => setMobileNavOpen((open) => !open)}
+              >
+                {mobileNavOpen ? <X size={20} strokeWidth={1.75} /> : <Menu size={20} strokeWidth={1.75} />}
+              </button>
+
+              <nav
+                id="lt-mobile-nav"
+                className={`lt-header__nav-mobile${mobileNavOpen ? ' is-open' : ''}`}
+                aria-label="Navegação mobile"
+                hidden={!mobileNavOpen}
+              >
+                {NAV_LINKS.map((link) => (
+                  <button
+                    key={link.id}
+                    type="button"
+                    className="lt-header__nav-mobile-link"
+                    onClick={() => scrollToSection(link.id, () => setMobileNavOpen(false))}
+                  >
+                    {link.label}
+                  </button>
+                ))}
+                <a
+                  href={LANDING_WHATSAPP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="lt-btn lt-btn--primary lt-header__nav-mobile-cta"
+                  onClick={() => setMobileNavOpen(false)}
+                >
+                  Falar agora
+                </a>
+              </nav>
+
+              {mobileNavOpen ? (
+                <button
+                  type="button"
+                  className="lt-header__backdrop"
+                  aria-label="Fechar menu"
+                  onClick={() => setMobileNavOpen(false)}
+                />
+              ) : null}
+
+              <a
+                href={LANDING_WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="lt-btn lt-btn--primary lt-btn--sm lt-header__cta"
+              >
+                Falar agora
+              </a>
+            </div>
+          </header>
+
+          <section id="topo" className="lt-hero" ref={heroRef}>
+            <div className="lt-hero__inner">
+              <div className="lt-hero__content">
                   <h1 className="lt-hero__title" data-lt-hero>
                   Agendamentos inteligentes para barbearias{' '}
                   <span className="lt-hero__word" key={wordIndex}>
@@ -611,8 +611,90 @@ export default function LandingTestePage() {
                 </div>
               ) : null}
             </div>
-          </div>
-        </section>
+          </section>
+
+          <section id="beneficios" className="lt-benefits">
+            <div className="lt-container">
+              <header className="lt-section-head" data-lt-reveal>
+                <h2 className="lt-section-title">Tudo que sua barbearia precisa</h2>
+                <p className="lt-section-text">
+                  Ferramentas pensadas para simplificar a rotina e elevar a experiência do cliente.
+                </p>
+              </header>
+
+              <div ref={bindBenefitsCarouselRef} className="lt-benefits__carousel" data-lt-reveal>
+                <div
+                  className="lt-benefits__stage"
+                  aria-live="polite"
+                  aria-roledescription="carrossel"
+                  aria-label="Benefícios da plataforma"
+                >
+                  <div className="lt-benefits__track">
+                    {BENEFITS.map((item, index) => {
+                      const Icon = BENEFIT_ICONS[item.icon];
+                      const offset = getCircularOffset(index, activeBenefit, BENEFITS.length);
+                      const isActive = offset === 0;
+                      const isAdjacent = Math.abs(offset) === 1;
+
+                      return (
+                        <article
+                          key={item.title}
+                          className={`lt-benefit-card${isActive ? ' is-active' : ''}${isAdjacent ? ' is-adjacent' : ''}`}
+                          style={getBenefitCardStyle(index, activeBenefit)}
+                          onClick={() => {
+                            if (isAdjacent) goToBenefit(index);
+                          }}
+                          aria-hidden={!isActive && Math.abs(offset) > 1}
+                        >
+                          <span className="lt-benefit-card__icon" aria-hidden>
+                            {Icon ? <Icon size={22} strokeWidth={1.75} /> : null}
+                          </span>
+                          <h3 className="lt-benefit-card__title">{item.title}</h3>
+                          <p className="lt-benefit-card__text">{item.text}</p>
+                          <span className="lt-benefit-card__shine" aria-hidden />
+                        </article>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="lt-benefits__nav-row">
+                  <button
+                    type="button"
+                    className="lt-benefits__nav"
+                    aria-label="Benefício anterior"
+                    onClick={prevBenefit}
+                  >
+                    <ChevronLeft size={22} strokeWidth={2.25} aria-hidden />
+                  </button>
+
+                  <div className="lt-benefits__dots" role="tablist" aria-label="Benefícios">
+                    {BENEFITS.map((item, index) => (
+                      <button
+                        key={item.title}
+                        type="button"
+                        role="tab"
+                        aria-selected={activeBenefit === index}
+                        aria-label={item.title}
+                        className={`lt-benefits__dot${activeBenefit === index ? ' is-active' : ''}`}
+                        onClick={() => goToBenefit(index)}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="lt-benefits__nav"
+                    aria-label="Próximo benefício"
+                    onClick={nextBenefit}
+                  >
+                    <ChevronRight size={22} strokeWidth={2.25} aria-hidden />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
 
         {!isMobileLanding ? (
           <>
@@ -651,95 +733,11 @@ export default function LandingTestePage() {
 
         <SectionDivider />
 
-        <section id="beneficios" className="lt-benefits">
-          <div className="lt-container">
-            <header className="lt-section-head" data-lt-reveal>
-              <h2 className="lt-section-title">Tudo que sua barbearia precisa</h2>
-              <p className="lt-section-text">
-                Ferramentas pensadas para simplificar a rotina e elevar a experiência do cliente.
-              </p>
-            </header>
-
-            <div ref={bindBenefitsCarouselRef} className="lt-benefits__carousel" data-lt-reveal>
-              <div
-                className="lt-benefits__stage"
-                aria-live="polite"
-                aria-roledescription="carrossel"
-                aria-label="Benefícios da plataforma"
-              >
-                <div className="lt-benefits__track">
-                  {BENEFITS.map((item, index) => {
-                    const Icon = BENEFIT_ICONS[item.icon];
-                    const offset = getCircularOffset(index, activeBenefit, BENEFITS.length);
-                    const isActive = offset === 0;
-                    const isAdjacent = Math.abs(offset) === 1;
-
-                    return (
-                      <article
-                        key={item.title}
-                        className={`lt-benefit-card${isActive ? ' is-active' : ''}${isAdjacent ? ' is-adjacent' : ''}`}
-                        style={getBenefitCardStyle(index, activeBenefit)}
-                        onClick={() => {
-                          if (isAdjacent) goToBenefit(index);
-                        }}
-                        aria-hidden={!isActive && Math.abs(offset) > 1}
-                      >
-                        <span className="lt-benefit-card__icon" aria-hidden>
-                          {Icon ? <Icon size={22} strokeWidth={1.75} /> : null}
-                        </span>
-                        <h3 className="lt-benefit-card__title">{item.title}</h3>
-                        <p className="lt-benefit-card__text">{item.text}</p>
-                        <span className="lt-benefit-card__shine" aria-hidden />
-                      </article>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="lt-benefits__nav-row">
-                <button
-                  type="button"
-                  className="lt-benefits__nav"
-                  aria-label="Benefício anterior"
-                  onClick={prevBenefit}
-                >
-                  <ChevronLeft size={22} strokeWidth={2.25} aria-hidden />
-                </button>
-
-                <div className="lt-benefits__dots" role="tablist" aria-label="Benefícios">
-                  {BENEFITS.map((item, index) => (
-                    <button
-                      key={item.title}
-                      type="button"
-                      role="tab"
-                      aria-selected={activeBenefit === index}
-                      aria-label={item.title}
-                      className={`lt-benefits__dot${activeBenefit === index ? ' is-active' : ''}`}
-                      onClick={() => goToBenefit(index)}
-                    />
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  className="lt-benefits__nav"
-                  aria-label="Próximo benefício"
-                  onClick={nextBenefit}
-                >
-                  <ChevronRight size={22} strokeWidth={2.25} aria-hidden />
-                </button>
-              </div>
-            </div>
-
-            {isMobileLanding ? (
-              <div className="lt-benefits__phone" data-lt-reveal>
-                <PhoneMockup />
-              </div>
-            ) : null}
-          </div>
-        </section>
-
-        <SectionDivider />
+        {isMobileLanding ? (
+          <section className="lt-mobile-phone" data-lt-reveal aria-label="Demonstração do agendamento">
+            <PhoneMockup />
+          </section>
+        ) : null}
 
         <section id="como-funciona" className="lt-steps">
           <div className="lt-container">

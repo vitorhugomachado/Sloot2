@@ -19,6 +19,7 @@
   --lt-shadow: 0 20px 60px rgba(10, 10, 10, 0.06);
   --lt-shadow-hover: 0 28px 80px rgba(10, 10, 10, 0.1);
   --lt-header-h: 48px;
+  --lt-hero-offset: clamp(40px, 6vw, 72px);
   --lt-page-bg: #f5f4f4;
 
   position: relative;
@@ -137,7 +138,65 @@
   background: rgba(10, 10, 10, 0.04);
 }
 
-/* Header */
+/* Top shell — header + hero unificados, largura infinita */
+.lt-top-shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+  background: linear-gradient(
+    168deg,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 252, 248, 0.76) 36%,
+    rgba(255, 246, 238, 0.62) 68%,
+    rgba(245, 244, 244, 0.72) 100%
+  );
+}
+
+.lt-top-shell__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(48px);
+  pointer-events: none;
+}
+
+.lt-top-shell__glow--tr {
+  top: -12%;
+  right: -6%;
+  width: 260px;
+  height: 260px;
+  background: rgba(255, 106, 0, 0.2);
+}
+
+.lt-top-shell__glow--bl {
+  bottom: -18%;
+  left: -8%;
+  width: 220px;
+  height: 220px;
+  background: rgba(255, 106, 0, 0.12);
+}
+
+.lt-top-shell__arcs {
+  position: absolute;
+  right: -40px;
+  bottom: -40px;
+  width: 280px;
+  height: 280px;
+  pointer-events: none;
+  opacity: 0.45;
+  background:
+    radial-gradient(circle at 100% 100%, transparent 58%, rgba(255, 255, 255, 0.55) 58.5%, transparent 59%),
+    radial-gradient(circle at 100% 100%, transparent 68%, rgba(255, 255, 255, 0.4) 68.5%, transparent 69%),
+    radial-gradient(circle at 100% 100%, transparent 78%, rgba(255, 255, 255, 0.3) 78.5%, transparent 79%),
+    radial-gradient(circle at 100% 100%, transparent 88%, rgba(255, 255, 255, 0.22) 88.5%, transparent 89%);
+}
+
+/* Header — menu fixo acima do hero */
 .lt-header {
   position: fixed;
   top: 0;
@@ -145,14 +204,14 @@
   right: 0;
   z-index: 100;
   height: var(--lt-header-h);
-  transition: background 0.35s ease, box-shadow 0.35s ease, backdrop-filter 0.35s ease;
+  background: transparent;
+  transition: background 0.35s ease, backdrop-filter 0.35s ease;
 }
 
 .lt-header.is-scrolled {
-  background: rgba(245, 244, 244, 0.72);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 1px 0 var(--lt-border);
+  background: rgba(255, 255, 255, 0.38);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .lt-header__inner {
@@ -210,21 +269,23 @@
 @media (max-width: 960px) {
   .lt-page {
     --lt-header-h: calc(48px + env(safe-area-inset-top, 0px));
+    --lt-hero-offset: clamp(52px, 11vw, 80px);
   }
 
   .lt-header {
+    height: var(--lt-header-h);
     padding-top: env(safe-area-inset-top, 0px);
   }
 
   .lt-header.is-scrolled {
-    background: rgba(245, 244, 244, 0.88);
+    background: rgba(255, 255, 255, 0.42);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 1px 0 rgba(10, 10, 10, 0.05);
   }
 
   .lt-header__inner {
     width: min(1160px, calc(100% - 20px));
+    height: 48px;
     gap: 10px;
   }
 
@@ -475,85 +536,32 @@
 .lt-hero {
   position: relative;
   z-index: 1;
-  padding: calc(var(--lt-header-h) + 64px) 0 96px;
+  margin: 0;
+  padding:
+    calc(var(--lt-header-h) + var(--lt-hero-offset))
+    clamp(24px, 4vw, 48px)
+    clamp(16px, 3vw, 32px);
+  background: transparent;
 }
 
-/* Hero glass card — largura infinita (full-bleed) */
-.lt-hero-card {
-  --lt-hero-card-inset: max(24px, calc((100vw - 1160px) / 2));
-
-  position: relative;
-  overflow: hidden;
-  width: 100vw;
-  margin-inline: calc(50% - 50vw);
-  padding-block: clamp(36px, 5vw, 56px);
-  padding-inline: var(--lt-hero-card-inset);
-  border-radius: 0;
-  background: rgba(255, 255, 255, 0.62);
-  border-block: 1px solid rgba(255, 255, 255, 0.75);
-  box-shadow:
-    0 24px 64px rgba(10, 10, 10, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-}
-
-.lt-hero-card__inner {
+.lt-hero__inner {
   position: relative;
   z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
   gap: clamp(24px, 4vw, 48px);
   align-items: center;
-  width: 100%;
+  width: min(1160px, 100%);
   max-width: 1160px;
   margin-inline: auto;
   padding: 0;
 }
 
-.lt-hero-card__content {
+.lt-hero__content {
   position: relative;
   z-index: 1;
   min-width: 0;
   overflow: visible;
-}
-
-.lt-hero-card__glow {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(48px);
-  pointer-events: none;
-}
-
-.lt-hero-card__glow--tr {
-  top: -18%;
-  right: -8%;
-  width: 260px;
-  height: 260px;
-  background: rgba(255, 106, 0, 0.22);
-}
-
-.lt-hero-card__glow--bl {
-  bottom: -22%;
-  left: -10%;
-  width: 220px;
-  height: 220px;
-  background: rgba(255, 106, 0, 0.14);
-}
-
-.lt-hero-card__arcs {
-  position: absolute;
-  right: -40px;
-  bottom: -40px;
-  width: 280px;
-  height: 280px;
-  pointer-events: none;
-  opacity: 0.45;
-  background:
-    radial-gradient(circle at 100% 100%, transparent 58%, rgba(255, 255, 255, 0.55) 58.5%, transparent 59%),
-    radial-gradient(circle at 100% 100%, transparent 68%, rgba(255, 255, 255, 0.4) 68.5%, transparent 69%),
-    radial-gradient(circle at 100% 100%, transparent 78%, rgba(255, 255, 255, 0.3) 78.5%, transparent 79%),
-    radial-gradient(circle at 100% 100%, transparent 88%, rgba(255, 255, 255, 0.22) 88.5%, transparent 89%);
 }
 
 .lt-hero__title {
@@ -611,21 +619,18 @@
 
 @media (max-width: 960px) {
   .lt-hero {
-    padding-bottom: 0;
+    padding:
+      calc(var(--lt-header-h) + var(--lt-hero-offset))
+      20px
+      12px;
   }
 
-  .lt-hero-card {
-    --lt-hero-card-inset: 24px;
-    padding-block: 32px 36px;
-    padding-inline: 24px;
-  }
-
-  .lt-hero-card__inner {
+  .lt-hero__inner {
     grid-template-columns: 1fr;
     gap: 36px;
   }
 
-  .lt-hero-card__glow--bl {
+  .lt-top-shell__glow--bl {
     bottom: 8%;
     height: 280px;
     width: 280px;
@@ -933,11 +938,16 @@
   color: transparent;
 }
 
-/* Benefits */
+/* Benefits — continuação do top shell */
 .lt-benefits {
   position: relative;
   z-index: 1;
-  padding: 120px 0;
+  padding: clamp(8px, 2vw, 24px) 0 clamp(64px, 8vw, 96px);
+  background: transparent;
+}
+
+.lt-top-shell .lt-benefits .lt-section-head {
+  margin-bottom: clamp(24px, 4vw, 36px);
 }
 
 .lt-benefits__carousel {
@@ -1137,16 +1147,17 @@
   opacity: 1;
 }
 
-.lt-benefits__phone {
+/* Mobile phone — entre scroll-text e como funciona */
+.lt-mobile-phone {
   display: none;
 }
 
 @media (max-width: 960px) {
-  .lt-benefits__phone {
+  .lt-mobile-phone {
     display: flex;
     justify-content: center;
-    margin-top: 36px;
-    padding-bottom: 8px;
+    padding: clamp(40px, 10vw, 56px) 20px clamp(32px, 8vw, 48px);
+    background: var(--lt-page-bg);
   }
 }
 
@@ -1981,16 +1992,11 @@
   }
 
   .lt-hero {
-    padding: calc(var(--lt-header-h) + 28px) 0 0;
-  }
-
-  .lt-hero-card {
-    --lt-hero-card-inset: 16px;
-    padding-block: 24px 32px;
     padding-inline: 16px;
+    padding-bottom: 28px;
   }
 
-  .lt-hero-card__inner {
+  .lt-hero__inner {
     gap: 28px;
   }
 
@@ -2032,11 +2038,14 @@
   }
 
   .lt-pain,
-  .lt-benefits,
   .lt-steps,
   .lt-pricing,
   .lt-faq {
     padding: 72px 0;
+  }
+
+  .lt-benefits {
+    padding-bottom: 56px;
   }
 
   .lt-metrics {
@@ -2152,8 +2161,11 @@
     font-size: 0.6875rem;
   }
 
-  .lt-hero-card {
-    --lt-hero-card-inset: 12px;
+  .lt-header__inner {
+    width: calc(100% - 16px);
+  }
+
+  .lt-hero {
     padding-inline: 12px;
   }
 
@@ -2172,7 +2184,6 @@
   }
 
   .lt-pain,
-  .lt-benefits,
   .lt-steps,
   .lt-pricing,
   .lt-faq {
