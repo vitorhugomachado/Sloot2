@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Calendar, Check, Clock, Link2, Menu, Scissors, Sparkles, User, X } from 'lucide-react';
+import { Calendar, Check, ChevronLeft, ChevronRight, Clock, Link2, Menu, Scissors, Sparkles, User, X } from 'lucide-react';
 import SlootiLogo from '../../components/SlootiLogo';
 import { LANDING_WHATSAPP_URL } from './landingContact.config';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import PhoneMockup from './PhoneMockup';
 import TiltCard from './TiltCard';
 import STEP_ILLUSTRATIONS from './LandingStepIcons';
@@ -13,7 +14,9 @@ import {
   getPlanPriceDisplay,
   HERO_ROTATING_WORDS,
   METRICS,
+  MOBILE_PLANS,
   NAV_LINKS,
+  PAIN_SECTION,
   PLANS,
   SCROLL_PHRASES,
   STEPS,
@@ -38,6 +41,8 @@ function scrollToSection(id, onDone) {
   onDone?.();
 }
 
+const BENEFITS_CAROUSEL_MS = 4500;
+
 const BENEFIT_ICONS = {
   calendar: Calendar,
   link: Link2,
@@ -46,6 +51,28 @@ const BENEFIT_ICONS = {
   sparkles: Sparkles,
   clock: Clock,
 };
+
+function getCircularOffset(index, activeIndex, total) {
+  let offset = index - activeIndex;
+  if (offset > total / 2) offset -= total;
+  if (offset < -total / 2) offset += total;
+  return offset;
+}
+
+function getBenefitCardStyle(index, activeIndex) {
+  const offset = getCircularOffset(index, activeIndex, BENEFITS.length);
+  const abs = Math.abs(offset);
+
+  return {
+    '--lt-benefit-x': `${offset * 58}%`,
+    '--lt-benefit-z': `${-abs * 72}px`,
+    '--lt-benefit-rotate': `${offset * -38}deg`,
+    '--lt-benefit-scale': offset === 0 ? 1 : abs === 1 ? 0.9 : 0.78,
+    '--lt-benefit-opacity': abs > 2 ? 0 : offset === 0 ? 1 : abs === 1 ? 0.82 : 0.5,
+    zIndex: 20 - abs,
+    pointerEvents: abs <= 1 ? 'auto' : 'none',
+  };
+}
 
 export default function LandingTestePage() {
   const pageRef = useRef(null);
@@ -57,13 +84,22 @@ export default function LandingTestePage() {
   const [openFaq, setOpenFaq] = useState(-1);
   const [billing, setBilling] = useState(DEFAULT_BILLING);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const isMobileLanding = useMediaQuery('(max-width: 960px)');
+  const [activeBenefit, setActiveBenefit] = useState(0);
+  const [activePlan, setActivePlan] = useState(0);
+  const benefitsTouchStartX = useRef(null);
+  const benefitsTouchStartY = useRef(null);
+  const [benefitsTouchRoot, setBenefitsTouchRoot] = useState(null);
+  const pricingViewportRef = useRef(null);
+  const pricingTouchStartX = useRef(null);
+  const pricingTouchStartY = useRef(null);
 
   const scrolled = useHeaderBlur();
   const glowRef = useCursorGlow(pageRef);
 
   useHeroEntrance(heroRef);
   useScrollReveal(pageRef);
-  useScrollPhrases(scrollSectionRef, phraseRefs);
+  useScrollPhrases(scrollSectionRef, phraseRefs, isMobileLanding);
   useAnimatedCounters(metricsRef);
   useBackgroundOrbs(pageRef);
 
@@ -85,6 +121,266 @@ export default function LandingTestePage() {
     mq.addEventListener('change', closeNav);
     return () => mq.removeEventListener('change', closeNav);
   }, []);
+
+  useEffect(() => {
+    if (!isMobileLanding) {
+      setActivePlan(0);
+    }
+  }, [isMobileLanding]);
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return undefined;
+
+    const id = window.setInterval(() => {
+      setActiveBenefit((current) => (current + 1) % BENEFITS.length);
+    }, BENEFITS_CAROUSEL_MS);
+
+    return () => window.clearInterval(id);
+  }, []);
+
+  const goToBenefit = (index) => {
+    setActiveBenefit((index + BENEFITS.length) % BENEFITS.length);
+  };
+
+  const nextBenefit = () => {
+    setActiveBenefit((current) => (current + 1) % BENEFITS.length);
+  };
+
+  const prevBenefit = () => {
+    setActiveBenefit((current) => (current - 1 + BENEFITS.length) % BENEFITS.length);
+  };
+
+  const bindBenefitsCarouselRef = (node) => {
+    setBenefitsTouchRoot(node);
+  };
+
+  const goToPlan = (index) => {
+    setActivePlan(Math.min(Math.max(index, 0), MOBILE_PLANS.length - 1));
+  };
+
+  useEffect(() => {
+    const viewport = benefitsTouchRoot;
+    if (!viewport) return undefined;
+
+    const onTouchStart = (event) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      benefitsTouchStartX.current = touch.clientX;
+      benefitsTouchStartY.current = touch.clientY;
+    };
+
+    const onTouchMove = (event) => {
+      if (benefitsTouchStartX.current == null || benefitsTouchStartY.current == null) return;
+
+      const touch = event.touches[0];
+      if (!touch) return;
+
+      const deltaX = touch.clientX - benefitsTouchStartX.current;
+      const deltaY = touch.clientY - benefitsTouchStartY.current;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 8) {
+        event.preventDefault();
+      }
+    };
+
+    const onTouchEnd = (event) => {
+      if (benefitsTouchStartX.current == null || benefitsTouchStartY.current == null) return;
+
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+
+      const deltaX = touch.clientX - benefitsTouchStartX.current;
+      const deltaY = touch.clientY - benefitsTouchStartY.current;
+
+      benefitsTouchStartX.current = null;
+      benefitsTouchStartY.current = null;
+
+      if (Math.abs(deltaX) < 32 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+
+      if (deltaX < 0) {
+        setActiveBenefit((current) => (current + 1) % BENEFITS.length);
+      } else {
+        setActiveBenefit((current) => (current - 1 + BENEFITS.length) % BENEFITS.length);
+      }
+    };
+
+    viewport.addEventListener('touchstart', onTouchStart, { passive: true });
+    viewport.addEventListener('touchmove', onTouchMove, { passive: false });
+    viewport.addEventListener('touchend', onTouchEnd, { passive: true });
+    viewport.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    return () => {
+      viewport.removeEventListener('touchstart', onTouchStart);
+      viewport.removeEventListener('touchmove', onTouchMove);
+      viewport.removeEventListener('touchend', onTouchEnd);
+      viewport.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [benefitsTouchRoot]);
+
+  useEffect(() => {
+    if (!isMobileLanding) return undefined;
+
+    const viewport = pricingViewportRef.current;
+    if (!viewport) return undefined;
+
+    const onTouchStart = (event) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      pricingTouchStartX.current = touch.clientX;
+      pricingTouchStartY.current = touch.clientY;
+    };
+
+    const onTouchMove = (event) => {
+      if (pricingTouchStartX.current == null || pricingTouchStartY.current == null) return;
+
+      const touch = event.touches[0];
+      if (!touch) return;
+
+      const deltaX = touch.clientX - pricingTouchStartX.current;
+      const deltaY = touch.clientY - pricingTouchStartY.current;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+        event.preventDefault();
+      }
+    };
+
+    const onTouchEnd = (event) => {
+      if (pricingTouchStartX.current == null || pricingTouchStartY.current == null) return;
+
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+
+      const deltaX = touch.clientX - pricingTouchStartX.current;
+      const deltaY = touch.clientY - pricingTouchStartY.current;
+
+      pricingTouchStartX.current = null;
+      pricingTouchStartY.current = null;
+
+      if (Math.abs(deltaX) < 36 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+
+      if (deltaX < 0) {
+        setActivePlan((current) => Math.min(current + 1, MOBILE_PLANS.length - 1));
+      } else {
+        setActivePlan((current) => Math.max(current - 1, 0));
+      }
+    };
+
+    viewport.addEventListener('touchstart', onTouchStart, { passive: true });
+    viewport.addEventListener('touchmove', onTouchMove, { passive: false });
+    viewport.addEventListener('touchend', onTouchEnd, { passive: true });
+    viewport.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    return () => {
+      viewport.removeEventListener('touchstart', onTouchStart);
+      viewport.removeEventListener('touchmove', onTouchMove);
+      viewport.removeEventListener('touchend', onTouchEnd);
+      viewport.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [isMobileLanding]);
+
+  const renderPlanCard = (plan, { reveal = false, static: isStatic = false } = {}) => {
+    const price = getPlanPriceDisplay(plan, billing);
+    const className = `lt-plan-card${plan.featured ? ' is-featured' : ''}`;
+
+    const cardBody = (
+      <>
+        {plan.badge ? <span className="lt-plan-card__badge">{plan.badge}</span> : null}
+        <h3 className="lt-plan-card__name">{plan.name}</h3>
+        {price.type === 'consult' ? (
+          <p className="lt-plan-card__price lt-plan-card__price--consult">Sob consulta</p>
+        ) : (
+          <div className="lt-plan-card__price-block">
+            <p className={`lt-plan-card__price${price.period ? '' : ' lt-plan-card__price--headline'}`}>
+              {price.headline}
+              {price.period ? <span>{price.period}</span> : null}
+            </p>
+            {price.pill ? (
+              <span className={`lt-plan-card__pill${plan.featured ? ' is-featured' : ''}`}>{price.pill}</span>
+            ) : null}
+            {price.note ? <span className="lt-plan-card__price-note">{price.note}</span> : null}
+          </div>
+        )}
+        <p className="lt-plan-card__desc">{plan.description}</p>
+        {plan.includes ? (
+          <div className="lt-plan-card__feature-groups">
+            <div className="lt-plan-card__feature-group">
+              <p
+                className={`lt-plan-card__feature-label${
+                  plan.includesLabelStyle === 'normal' ? ' lt-plan-card__feature-label--normal' : ''
+                }`}
+              >
+                {plan.includesLabel ?? 'Inclui'}
+              </p>
+              <ul className="lt-plan-card__features lt-plan-card__features--included">
+                {plan.includes.map((item) => (
+                  <li key={item}>
+                    <Check size={16} strokeWidth={2.5} aria-hidden />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {plan.excludes?.length ? (
+              <div className="lt-plan-card__feature-group">
+                <p className="lt-plan-card__feature-label">Não inclui</p>
+                <ul
+                  className={`lt-plan-card__features${
+                    plan.excludesPositive
+                      ? ' lt-plan-card__features--included'
+                      : ' lt-plan-card__features--excluded'
+                  }`}
+                >
+                  {plan.excludes.map((item) => (
+                    <li key={item}>
+                      {plan.excludesPositive ? (
+                        <Check size={16} strokeWidth={2.5} aria-hidden />
+                      ) : (
+                        <X size={16} strokeWidth={2.5} aria-hidden />
+                      )}
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        ) : plan.features ? (
+          <ul className="lt-plan-card__features">
+            {plan.features.map((f) => (
+              <li key={f}>{f}</li>
+            ))}
+          </ul>
+        ) : null}
+        <a
+          href={LANDING_WHATSAPP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`lt-btn${plan.featured ? ' lt-btn--primary lt-btn--shine' : ' lt-btn--ghost'}`}
+        >
+          {price.type === 'consult' ? 'Falar com vendas' : 'Começar agora'}
+        </a>
+      </>
+    );
+
+    if (isStatic) {
+      return (
+        <article key={plan.id} className={className}>
+          {cardBody}
+        </article>
+      );
+    }
+
+    return (
+      <TiltCard
+        key={plan.id}
+        className={className}
+        {...(reveal ? { 'data-lt-reveal': true } : {})}
+      >
+        {cardBody}
+      </TiltCard>
+    );
+  };
 
   return (
     <div className="lt-page" ref={pageRef}>
@@ -123,7 +419,7 @@ export default function LandingTestePage() {
             aria-label={mobileNavOpen ? 'Fechar menu' : 'Abrir menu'}
             onClick={() => setMobileNavOpen((open) => !open)}
           >
-            {mobileNavOpen ? <X size={22} strokeWidth={2} /> : <Menu size={22} strokeWidth={2} />}
+            {mobileNavOpen ? <X size={20} strokeWidth={1.75} /> : <Menu size={20} strokeWidth={1.75} />}
           </button>
 
           <nav
@@ -213,27 +509,37 @@ export default function LandingTestePage() {
                 </div>
               </div>
 
-              <div className="lt-hero__visual" data-lt-hero>
-                <PhoneMockup />
-              </div>
+              {!isMobileLanding ? (
+                <div className="lt-hero__visual" data-lt-hero>
+                  <PhoneMockup />
+                </div>
+              ) : null}
             </div>
+
+            {isMobileLanding ? (
+              <div className="lt-hero-card__pain" data-lt-reveal>
+                <h2 className="lt-section-title">{PAIN_SECTION.title}</h2>
+                <p className="lt-section-text">{PAIN_SECTION.text}</p>
+              </div>
+            ) : null}
           </div>
         </section>
 
+        {!isMobileLanding ? (
         <section className="lt-pain" data-lt-reveal>
           <div className="lt-container lt-pain__inner">
-            <h2 className="lt-section-title">
-              Sua barbearia ainda depende só do WhatsApp?
-            </h2>
-            <p className="lt-section-text">
-              Mensagens perdidas, horários duplicados, clientes esquecidos e uma agenda que depende
-              de você o tempo todo. A Slooti resolve isso com uma página simples onde o cliente
-              agenda sozinho.
-            </p>
+            <h2 className="lt-section-title">{PAIN_SECTION.title}</h2>
+            <p className="lt-section-text">{PAIN_SECTION.text}</p>
           </div>
         </section>
+        ) : null}
 
-        <section className="lt-scroll-text" ref={scrollSectionRef} aria-label="Benefícios em destaque">
+        <section
+          className="lt-scroll-text"
+          ref={scrollSectionRef}
+          aria-label="Benefícios em destaque"
+          aria-live={isMobileLanding ? 'polite' : undefined}
+        >
           <div className="lt-scroll-text__inner">
             {SCROLL_PHRASES.map((phrase, i) => (
               <p
@@ -257,21 +563,82 @@ export default function LandingTestePage() {
               </p>
             </header>
 
-            <div className="lt-benefits__grid">
-              {BENEFITS.map((item) => {
-                const Icon = BENEFIT_ICONS[item.icon];
-                return (
-                <TiltCard key={item.title} className="lt-benefit-card" data-lt-reveal>
-                  <span className="lt-benefit-card__icon" aria-hidden>
-                    {Icon ? <Icon size={22} strokeWidth={1.75} /> : null}
-                  </span>
-                  <h3 className="lt-benefit-card__title">{item.title}</h3>
-                  <p className="lt-benefit-card__text">{item.text}</p>
-                  <span className="lt-benefit-card__shine" aria-hidden />
-                </TiltCard>
-                );
-              })}
+            <div ref={bindBenefitsCarouselRef} className="lt-benefits__carousel" data-lt-reveal>
+              <div
+                className="lt-benefits__stage"
+                aria-live="polite"
+                aria-roledescription="carrossel"
+                aria-label="Benefícios da plataforma"
+              >
+                <div className="lt-benefits__track">
+                  {BENEFITS.map((item, index) => {
+                    const Icon = BENEFIT_ICONS[item.icon];
+                    const offset = getCircularOffset(index, activeBenefit, BENEFITS.length);
+                    const isActive = offset === 0;
+                    const isAdjacent = Math.abs(offset) === 1;
+
+                    return (
+                      <article
+                        key={item.title}
+                        className={`lt-benefit-card${isActive ? ' is-active' : ''}${isAdjacent ? ' is-adjacent' : ''}`}
+                        style={getBenefitCardStyle(index, activeBenefit)}
+                        onClick={() => {
+                          if (isAdjacent) goToBenefit(index);
+                        }}
+                        aria-hidden={!isActive && Math.abs(offset) > 1}
+                      >
+                        <span className="lt-benefit-card__icon" aria-hidden>
+                          {Icon ? <Icon size={22} strokeWidth={1.75} /> : null}
+                        </span>
+                        <h3 className="lt-benefit-card__title">{item.title}</h3>
+                        <p className="lt-benefit-card__text">{item.text}</p>
+                        <span className="lt-benefit-card__shine" aria-hidden />
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="lt-benefits__nav-row">
+                <button
+                  type="button"
+                  className="lt-benefits__nav"
+                  aria-label="Benefício anterior"
+                  onClick={prevBenefit}
+                >
+                  <ChevronLeft size={22} strokeWidth={2.25} aria-hidden />
+                </button>
+
+                <div className="lt-benefits__dots" role="tablist" aria-label="Benefícios">
+                  {BENEFITS.map((item, index) => (
+                    <button
+                      key={item.title}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeBenefit === index}
+                      aria-label={item.title}
+                      className={`lt-benefits__dot${activeBenefit === index ? ' is-active' : ''}`}
+                      onClick={() => goToBenefit(index)}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className="lt-benefits__nav"
+                  aria-label="Próximo benefício"
+                  onClick={nextBenefit}
+                >
+                  <ChevronRight size={22} strokeWidth={2.25} aria-hidden />
+                </button>
+              </div>
             </div>
+
+            {isMobileLanding ? (
+              <div className="lt-benefits__phone" data-lt-reveal>
+                <PhoneMockup />
+              </div>
+            ) : null}
           </div>
         </section>
 
@@ -351,100 +718,62 @@ export default function LandingTestePage() {
               </div>
             </header>
 
-            <div className="lt-pricing__grid">
-              {PLANS.map((plan) => {
-                const price = getPlanPriceDisplay(plan, billing);
-                return (
-                <TiltCard
-                  key={plan.id}
-                  className={`lt-plan-card${plan.featured ? ' is-featured' : ''}`}
-                  data-lt-reveal
+            {isMobileLanding ? (
+              <div className="lt-pricing__carousel">
+                <div
+                  ref={pricingViewportRef}
+                  className="lt-pricing__viewport"
+                  aria-live="polite"
                 >
-                  {plan.badge ? <span className="lt-plan-card__badge">{plan.badge}</span> : null}
-                  <h3 className="lt-plan-card__name">{plan.name}</h3>
-                  {price.type === 'consult' ? (
-                    <p className="lt-plan-card__price lt-plan-card__price--consult">Sob consulta</p>
-                  ) : (
-                    <div className="lt-plan-card__price-block">
-                      <p
-                        className={`lt-plan-card__price${price.period ? '' : ' lt-plan-card__price--headline'}`}
-                      >
-                        {price.headline}
-                        {price.period ? <span>{price.period}</span> : null}
-                      </p>
-                      {price.pill ? (
-                        <span className={`lt-plan-card__pill${plan.featured ? ' is-featured' : ''}`}>
-                          {price.pill}
-                        </span>
-                      ) : null}
-                      {price.note ? (
-                        <span className="lt-plan-card__price-note">{price.note}</span>
-                      ) : null}
-                    </div>
-                  )}
-                  <p className="lt-plan-card__desc">{plan.description}</p>
-                  {plan.includes ? (
-                    <div className="lt-plan-card__feature-groups">
-                      <div className="lt-plan-card__feature-group">
-                        <p
-                          className={`lt-plan-card__feature-label${
-                            plan.includesLabelStyle === 'normal' ? ' lt-plan-card__feature-label--normal' : ''
-                          }`}
-                        >
-                          {plan.includesLabel ?? 'Inclui'}
-                        </p>
-                        <ul className="lt-plan-card__features lt-plan-card__features--included">
-                          {plan.includes.map((item) => (
-                            <li key={item}>
-                              <Check size={16} strokeWidth={2.5} aria-hidden />
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      {plan.excludes?.length ? (
-                        <div className="lt-plan-card__feature-group">
-                          <p className="lt-plan-card__feature-label">Não inclui</p>
-                          <ul
-                            className={`lt-plan-card__features${
-                              plan.excludesPositive
-                                ? ' lt-plan-card__features--included'
-                                : ' lt-plan-card__features--excluded'
-                            }`}
-                          >
-                            {plan.excludes.map((item) => (
-                              <li key={item}>
-                                {plan.excludesPositive ? (
-                                  <Check size={16} strokeWidth={2.5} aria-hidden />
-                                ) : (
-                                  <X size={16} strokeWidth={2.5} aria-hidden />
-                                )}
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : plan.features ? (
-                    <ul className="lt-plan-card__features">
-                      {plan.features.map((f) => (
-                        <li key={f}>{f}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  <a
-                    href={LANDING_WHATSAPP_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`lt-btn${plan.featured ? ' lt-btn--primary lt-btn--shine' : ' lt-btn--ghost'}`}
+                  <div
+                    className="lt-pricing__track"
+                    style={{ transform: `translateX(-${activePlan * 100}%)` }}
                   >
-                    {price.type === 'consult' ? 'Falar com vendas' : 'Começar agora'}
-                  </a>
-                </TiltCard>
-                );
-              })}
-            </div>
+                    {MOBILE_PLANS.map((plan) => renderPlanCard(plan, { static: true }))}
+                  </div>
+                </div>
+
+                <div className="lt-pricing__nav-row">
+                  <button
+                    type="button"
+                    className="lt-pricing__nav"
+                    aria-label="Plano anterior"
+                    disabled={activePlan === 0}
+                    onClick={() => goToPlan(activePlan - 1)}
+                  >
+                    <ChevronLeft size={22} strokeWidth={2.25} aria-hidden />
+                  </button>
+
+                  <div className="lt-pricing__dots" role="tablist" aria-label="Planos">
+                    {MOBILE_PLANS.map((plan, index) => (
+                      <button
+                        key={plan.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={activePlan === index}
+                        aria-label={plan.name}
+                        className={`lt-pricing__dot${activePlan === index ? ' is-active' : ''}`}
+                        onClick={() => goToPlan(index)}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="lt-pricing__nav"
+                    aria-label="Próximo plano"
+                    disabled={activePlan === MOBILE_PLANS.length - 1}
+                    onClick={() => goToPlan(activePlan + 1)}
+                  >
+                    <ChevronRight size={22} strokeWidth={2.25} aria-hidden />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="lt-pricing__grid">
+                {PLANS.map((plan) => renderPlanCard(plan, { reveal: true }))}
+              </div>
+            )}
           </div>
         </section>
 

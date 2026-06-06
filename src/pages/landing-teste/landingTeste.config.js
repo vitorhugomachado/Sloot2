@@ -14,6 +14,12 @@ export const SCROLL_PHRASES = [
   'Mais tempo para atender',
 ];
 
+export const PAIN_SECTION = {
+  title: 'Sua barbearia ainda depende só do WhatsApp?',
+  text:
+    'Mensagens perdidas, horários duplicados, clientes esquecidos e uma agenda que depende de você o tempo todo. A Slooti resolve isso com uma página simples onde o cliente agenda sozinho.',
+};
+
 export const BENEFITS = [
   {
     icon: 'calendar',
@@ -176,6 +182,11 @@ export const PLANS = [
     featured: false,
   },
 ];
+
+/** Ordem do carrossel mobile — Equipe primeiro. */
+export const MOBILE_PLANS = ['equipe', 'solo', 'premium']
+  .map((id) => PLANS.find((plan) => plan.id === id))
+  .filter(Boolean);
 
 export function formatPlanPrice(value, fractionDigits = 0) {
   return value.toLocaleString('pt-BR', {

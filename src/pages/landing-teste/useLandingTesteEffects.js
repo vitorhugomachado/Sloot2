@@ -104,7 +104,7 @@ export function useScrollReveal(pageRef) {
   }, [pageRef]);
 }
 
-export function useScrollPhrases(sectionRef, phraseRefs) {
+export function useScrollPhrases(sectionRef, phraseRefs, isMobileLanding = false) {
   useEffect(() => {
     const section = sectionRef.current;
     const phrases = phraseRefs.current.filter(Boolean);
@@ -116,6 +116,29 @@ export function useScrollPhrases(sectionRef, phraseRefs) {
         p.style.opacity = i === 0 ? '1' : '0';
       });
       return undefined;
+    }
+
+    if (isMobileLanding) {
+      let activeIndex = 0;
+
+      phrases.forEach((phrase, i) => {
+        gsap.set(phrase, { opacity: i === 0 ? 1 : 0, y: 0 });
+      });
+
+      const intervalId = window.setInterval(() => {
+        const current = phrases[activeIndex];
+        activeIndex = (activeIndex + 1) % phrases.length;
+        const next = phrases[activeIndex];
+
+        gsap.to(current, { opacity: 0, y: -28, duration: 0.45, ease: SLOOTI_EASE });
+        gsap.fromTo(
+          next,
+          { opacity: 0, y: 28 },
+          { opacity: 1, y: 0, duration: 0.45, ease: SLOOTI_EASE },
+        );
+      }, 3000);
+
+      return () => window.clearInterval(intervalId);
     }
 
     const isMobile = window.matchMedia('(max-width: 767px)').matches;
@@ -146,7 +169,7 @@ export function useScrollPhrases(sectionRef, phraseRefs) {
     }, section);
 
     return () => ctx.revert();
-  }, [sectionRef, phraseRefs]);
+  }, [sectionRef, phraseRefs, isMobileLanding]);
 }
 
 export function useAnimatedCounters(sectionRef) {
