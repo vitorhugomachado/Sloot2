@@ -3,7 +3,8 @@ const { invalidatePublicCache } = require('../middlewares/publicCache');
 const { tenantIdFromReq, publicTenantShape } = require('../lib/tenantHelpers');
 
 function nullableString(v) {
-  if (v === undefined || v === null) return undefined;
+  if (v === undefined) return undefined;
+  if (v === null) return null;
   const s = String(v).trim();
   return s === '' ? null : s;
 }

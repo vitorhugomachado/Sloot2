@@ -9,11 +9,8 @@ import PlatformDashboardPage from './pages/admin/PlatformDashboardPage';
 import PlatformTenantsPage from './pages/admin/PlatformTenantsPage';
 import PlatformTenantDetailPage from './pages/admin/PlatformTenantDetailPage';
 import PlatformAdminsPage from './pages/admin/PlatformAdminsPage';
-import BookingPreviewShell from './pages/preview/BookingPreviewShell';
-import LoginPreviewShell from './pages/preview/LoginPreviewShell';
-import TenantNotFound from './pages/TenantNotFound';
 import { AppProvider, useApp } from './context/AppContext';
-import { TenantProvider, useTenant, DEFAULT_SLUG } from './context/TenantContext';
+import { TenantProvider, useTenant } from './context/TenantContext';
 import { getPendingCustomer } from './utils/tenantAuthStorage';
 import { isValidPhone } from './utils/phone';
 import {
@@ -27,7 +24,8 @@ import {
 } from './constants/tenantRoutes';
 import { Menu, LogOut } from 'lucide-react';
 import SlootiLogo from './components/SlootiLogo';
-import LandingTestePage from './pages/landing-teste/LandingTestePage';
+import LandingPage from './pages/landing-teste/LandingTestePage';
+import { filterStaffNavModules } from './utils/staffNavModules';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Clients = lazy(() => import('./pages/Clients'));
@@ -206,8 +204,15 @@ function StaffTabPanels({ activeTab }) {
   );
 }
 
+const BookingPreviewShell = import.meta.env.DEV
+  ? lazy(() => import('./pages/preview/BookingPreviewShell'))
+  : null;
+const LoginPreviewShell = import.meta.env.DEV
+  ? lazy(() => import('./pages/preview/LoginPreviewShell'))
+  : null;
+
 const StaffArea = () => {
-  const { logout, currentUser } = useApp();
+  const { logout, currentUser, tenantModules } = useApp();
   const { tab } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -222,10 +227,10 @@ const StaffArea = () => {
 
   const activeTab = tab && VALID_TABS.includes(tab) ? tab : 'dashboard';
 
-  const allowedTabs = React.useMemo(() => {
-    const perms = Array.isArray(currentUser?.permissions) ? currentUser.permissions : [];
-    return VALID_TABS.filter((tabId) => perms.includes(tabId));
-  }, [currentUser?.permissions]);
+  const allowedTabs = React.useMemo(
+    () => filterStaffNavModules(VALID_TABS, currentUser?.permissions, tenantModules),
+    [currentUser?.permissions, tenantModules],
+  );
 
   const firstAllowedTab = allowedTabs[0] || 'dashboard';
 
@@ -308,6 +313,7 @@ const StaffArea = () => {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           user={currentUser}
+          tenantModules={tenantModules}
           isCollapsed={isSidebarCollapsed}
           setIsCollapsed={setIsSidebarCollapsed}
           onLogout={handleLogout}
@@ -352,7 +358,7 @@ function TenantAppContent() {
   }
 
   if (tenantError) {
-    return <TenantNotFound slug={tenantSlug} />;
+    return <Navigate to="/" replace />;
   }
 
   if (bootstrapLoading && !isStaffRoute) {
@@ -408,7 +414,7 @@ function TenantPortalWrapper() {
 function TenantShell() {
   const { tenantSlug } = useParams();
   if (isReservedTenantSlug(tenantSlug)) {
-    return <TenantNotFound slug={tenantSlug} />;
+    return <Navigate to="/" replace />;
   }
   return (
     <TenantProvider key={tenantSlug}>
@@ -420,9 +426,6 @@ function TenantShell() {
 }
 
 function App() {
-  const defaultHome = tenantBookingPath(DEFAULT_SLUG);
-  const defaultLogin = tenantLoginPath(DEFAULT_SLUG);
-
   return (
     <Routes>
       <Route path="/admin" element={<PlatformAdminApp />}>
@@ -437,14 +440,35 @@ function App() {
       </Route>
       <Route path="/platform" element={<Navigate to="/admin" replace />} />
       <Route path="/cadastro" element={<Navigate to="/" replace />} />
-      <Route path="/telateste" element={<BookingPreviewShell />} />
-      <Route path="/telaloginteste" element={<LoginPreviewShell />} />
+      {import.meta.env.DEV && BookingPreviewShell ? (
+        <>
+          <Route
+            path="/telateste"
+            element={(
+              <Suspense fallback={<TabLoadingFallback />}>
+                <BookingPreviewShell />
+              </Suspense>
+            )}
+          />
+          <Route
+            path="/telaloginteste"
+            element={(
+              <Suspense fallback={<TabLoadingFallback />}>
+                <LoginPreviewShell />
+              </Suspense>
+            )}
+          />
+        </>
+      ) : (
+        <>
+          <Route path="/telateste" element={<Navigate to="/" replace />} />
+          <Route path="/telaloginteste" element={<Navigate to="/" replace />} />
+        </>
+      )}
       <Route path="/landingteste" element={<Navigate to="/" replace />} />
-      <Route path="/cliente/*" element={<Navigate to={defaultHome} replace />} />
-      <Route path="/barbeiros/*" element={<Navigate to={defaultLogin} replace />} />
       <Route path="/:tenantSlug/*" element={<TenantShell />} />
-      <Route path="/" element={<LandingTestePage />} />
-      <Route path="*" element={<Navigate to={defaultHome} replace />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

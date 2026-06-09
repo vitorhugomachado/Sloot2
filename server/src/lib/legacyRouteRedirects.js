@@ -1,5 +1,6 @@
 /**
- * Redirects 301 de rotas antigas (/cliente, /barbeiros) para a estrutura nova.
+ * Redirects 301 de rotas antigas com slug explícito (/{slug}/cliente, /{slug}/barbeiros).
+ * Paths na raiz (/cliente, /barbeiros) não redirecionam — o SPA envia para a landing.
  */
 
 function mapClienteRest(rest) {
@@ -22,20 +23,10 @@ function mapBarbeirosRest(rest) {
 
 /**
  * @param {string} path req.path (sem query)
- * @param {string} defaultSlug DEFAULT_TENANT_SLUG
  * @returns {string|null} destino ou null
  */
-function resolveLegacyRedirect(path, defaultSlug) {
+function resolveLegacyRedirect(path) {
   const p = path || '/';
-
-  if (p === '/cliente' || p.startsWith('/cliente/')) {
-    const rest = p.slice('/cliente'.length);
-    return `/${defaultSlug}${mapClienteRest(rest)}`;
-  }
-  if (p === '/barbeiros' || p.startsWith('/barbeiros/')) {
-    const rest = p.slice('/barbeiros'.length);
-    return `/${defaultSlug}${mapBarbeirosRest(rest)}`;
-  }
 
   const tenantMatch = p.match(/^\/([a-z0-9]+(?:-[a-z0-9]+)*)(\/.*)?$/);
   if (!tenantMatch) return null;

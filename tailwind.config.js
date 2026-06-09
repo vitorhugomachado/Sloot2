@@ -12,10 +12,10 @@ export default {
         "gray-border": "#696969",
         white: "#FFFFFF",
         primary: {
-          DEFAULT: "#FF6A00",
-          hover: "#FF8533",
+          DEFAULT: "#FF8533",
+          hover: "#E55F00",
         },
-        accent: "#FF6A00",
+        accent: "#FF8533",
         sidebar: "#000000",
         surface: {
           main: "#F6F5F3",

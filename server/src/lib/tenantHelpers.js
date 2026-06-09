@@ -14,6 +14,9 @@ const RESERVED_SLUGS = new Set([
   'portal',
   'configuracoes',
   'www',
+  'telateste',
+  'telaloginteste',
+  'landingteste',
 ]);
 
 function normalizeSlug(raw) {

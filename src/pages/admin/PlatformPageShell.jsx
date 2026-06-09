@@ -56,7 +56,7 @@ export default function PlatformPageShell({
             {actions ? <div className="dash-header-actions">{actions}</div> : null}
           </div>
         ) : null}
-        {tabs || null}
+        {tabs ? <div className="platform-page-tabs">{tabs}</div> : null}
         {children}
       </div>
     </div>

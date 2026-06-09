@@ -1,33 +1,32 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { UserPlus, Users } from 'lucide-react';
-import { platformTenantFetch } from '../platformAuth';
+import { platformTenantFetch, validateStrongPassword } from '../platformAuth';
 import { PlatformPanel } from '../PlatformPageShell';
 import PlatformEmptyState from './PlatformEmptyState';
-import { ALL_TENANT_MODULES, TENANT_MODULE_LABELS } from '../../../constants/tenantModules';
+import PlatformEmployeePermissionsEditor, {
+  EMPLOYEE_ASSIGNABLE_MODULES,
+  normalizePermissionList,
+} from './PlatformEmployeePermissionsEditor';
 
-function normalizePermissionList(raw) {
-  if (raw == null) return [];
-  if (Array.isArray(raw)) return raw.filter((x) => typeof x === 'string');
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
+const EMPTY_CREATE = { name: '', email: '', password: '', role: 'Barbeiro' };
 
-const EMPTY_FORM = { name: '', email: '', password: '', role: 'Barbeiro' };
-
-export default function PlatformTenantTeamTab({ tenantId, onToast, onError }) {
+export default function PlatformTenantTeamTab({
+  tenantId,
+  tenantEnabledModules = EMPLOYEE_ASSIGNABLE_MODULES,
+  onToast,
+  onError,
+}) {
   const [barbers, setBarbers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [createForm, setCreateForm] = useState(EMPTY_CREATE);
+  const [profileForm, setProfileForm] = useState({ name: '', email: '', password: '' });
   const [saving, setSaving] = useState(false);
+
+  const enabledForTenant = Array.isArray(tenantEnabledModules) && tenantEnabledModules.length > 0
+    ? tenantEnabledModules
+    : EMPLOYEE_ASSIGNABLE_MODULES;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -43,29 +42,104 @@ export default function PlatformTenantTeamTab({ tenantId, onToast, onError }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const saveBarber = async (e) => {
-    if (e?.preventDefault) e.preventDefault();
+  useEffect(() => {
+    if (!selected) return;
+    setProfileForm({
+      name: selected.name || '',
+      email: selected.email || '',
+      password: '',
+    });
+  }, [selected]);
+
+  const normalizeBarberPermissions = (barber) => {
+    let perms = normalizePermissionList(barber.permissions);
+    if (perms.includes('products') && !perms.includes('inventory') && enabledForTenant.includes('inventory')) {
+      perms = [...perms.filter((p) => p !== 'products'), 'inventory'];
+    }
+    return perms.filter((p) => {
+      if (p === 'products') return enabledForTenant.includes('inventory');
+      if (p === 'users') return enabledForTenant.includes('users');
+      return enabledForTenant.includes(p);
+    });
+  };
+
+  const selectBarber = (barber) => {
+    onError('');
+    setShowForm(false);
+    setSelected({
+      ...barber,
+      permissions: normalizeBarberPermissions(barber),
+    });
+  };
+
+  const createBarber = async (e) => {
+    e.preventDefault();
     setSaving(true);
     onError('');
     try {
-      if (selected && !showForm) {
-        await platformTenantFetch(tenantId, `/barbers/${selected.id}/permissions`, {
-          method: 'PATCH',
-          body: JSON.stringify({ permissions: selected.permissions }),
-        });
-        onToast('Permissões atualizadas.');
-      } else {
-        await platformTenantFetch(tenantId, '/barbers', {
-          method: 'POST',
-          body: JSON.stringify(form),
-        });
-        onToast('Profissional criado.');
-        setForm(EMPTY_FORM);
-        setShowForm(false);
-      }
+      await platformTenantFetch(tenantId, '/barbers', {
+        method: 'POST',
+        body: JSON.stringify(createForm),
+      });
+      onToast('Profissional criado.');
+      setCreateForm(EMPTY_CREATE);
+      setShowForm(false);
       await load();
     } catch (err) {
-      onError(err.message || 'Erro ao salvar.');
+      onError(err.message || 'Erro ao criar profissional.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveProfile = async (e) => {
+    e.preventDefault();
+    if (!selected) return;
+    setSaving(true);
+    onError('');
+    try {
+      const body = { name: profileForm.name.trim(), email: profileForm.email.trim() };
+      if (profileForm.password.trim()) {
+        const pwdErr = validateStrongPassword(profileForm.password);
+        if (pwdErr) {
+          onError(pwdErr);
+          setSaving(false);
+          return;
+        }
+        body.password = profileForm.password;
+      }
+      await platformTenantFetch(tenantId, `/barbers/${selected.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      });
+      onToast('Dados do profissional atualizados.');
+      setProfileForm((prev) => ({ ...prev, password: '' }));
+      await load();
+    } catch (err) {
+      onError(err.message || 'Erro ao salvar profissional.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const savePermissions = async () => {
+    if (!selected || selected.role === 'Gerente') return;
+    const perms = normalizeBarberPermissions(selected);
+    if (perms.length === 0) {
+      onError('Selecione pelo menos um módulo para o funcionário.');
+      return;
+    }
+    setSaving(true);
+    onError('');
+    try {
+      await platformTenantFetch(tenantId, `/barbers/${selected.id}/permissions`, {
+        method: 'PATCH',
+        body: JSON.stringify({ permissions: perms }),
+      });
+      onToast('Permissões atualizadas.');
+      await load();
+    } catch (err) {
+      onError(err.message || 'Erro ao salvar permissões.');
     } finally {
       setSaving(false);
     }
@@ -88,11 +162,16 @@ export default function PlatformTenantTeamTab({ tenantId, onToast, onError }) {
   };
 
   const togglePermission = (moduleId) => {
-    if (!selected) return;
+    if (!selected || selected.role === 'Gerente') return;
     const perms = normalizePermissionList(selected.permissions);
     const next = perms.includes(moduleId)
       ? perms.filter((p) => p !== moduleId)
       : [...perms, moduleId];
+    if (next.length === 0) {
+      onError('O funcionário precisa de pelo menos um módulo activo.');
+      return;
+    }
+    onError('');
     setSelected({ ...selected, permissions: next });
   };
 
@@ -109,6 +188,9 @@ export default function PlatformTenantTeamTab({ tenantId, onToast, onError }) {
           </button>
         )}
       >
+        <p className="platform-field-hint" style={{ marginBottom: '1rem' }}>
+          Clique num funcionário para editar dados, senha e módulos de acesso.
+        </p>
         {barbers.length === 0 ? (
           <PlatformEmptyState
             icon={Users}
@@ -137,7 +219,7 @@ export default function PlatformTenantTeamTab({ tenantId, onToast, onError }) {
                   <tr
                     key={b.id}
                     className={selected?.id === b.id ? 'platform-table-row--selected' : ''}
-                    onClick={() => setSelected({ ...b, permissions: normalizePermissionList(b.permissions) })}
+                    onClick={() => selectBarber(b)}
                   >
                     <td>{b.name}</td>
                     <td>{b.email}</td>
@@ -164,18 +246,18 @@ export default function PlatformTenantTeamTab({ tenantId, onToast, onError }) {
 
       {showForm && (
         <PlatformPanel title="Novo profissional">
-          <form className="platform-form" onSubmit={saveBarber}>
+          <form className="platform-form" onSubmit={createBarber}>
             <label>
               Nome
-              <input className="booking-reserve-form__field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <input className="booking-reserve-form__field" value={createForm.name} onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} required />
             </label>
             <label>
               E-mail
-              <input type="email" className="booking-reserve-form__field" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+              <input type="email" className="booking-reserve-form__field" value={createForm.email} onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} required />
             </label>
             <label>
               Senha inicial
-              <input type="password" className="booking-reserve-form__field" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Padrão: 123" />
+              <input type="password" className="booking-reserve-form__field" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} placeholder="Padrão: 123" />
             </label>
             <div className="platform-modal-actions">
               <button type="button" className="dash-action-btn secondary" onClick={() => setShowForm(false)}>Cancelar</button>
@@ -185,25 +267,49 @@ export default function PlatformTenantTeamTab({ tenantId, onToast, onError }) {
         </PlatformPanel>
       )}
 
+      {selected && !showForm && (
+        <PlatformPanel title={`Editar — ${selected.name}`}>
+          <form className="platform-form" onSubmit={saveProfile}>
+            <label>
+              Nome
+              <input className="booking-reserve-form__field" value={profileForm.name} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} required />
+            </label>
+            <label>
+              E-mail
+              <input type="email" className="booking-reserve-form__field" value={profileForm.email} onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })} required />
+            </label>
+            <label>
+              Nova senha (opcional)
+              <input type="password" className="booking-reserve-form__field" value={profileForm.password} onChange={(e) => setProfileForm({ ...profileForm, password: e.target.value })} placeholder="Deixe vazio para manter" autoComplete="new-password" />
+              <span className="platform-field-hint">Mín. 8 caracteres, maiúscula, minúscula e número.</span>
+            </label>
+            <div className="platform-modal-actions">
+              <button type="submit" className="dash-action-btn primary" disabled={saving}>
+                {saving ? 'Salvando…' : 'Salvar dados'}
+              </button>
+            </div>
+          </form>
+        </PlatformPanel>
+      )}
+
       {selected && !showForm && selected.role !== 'Gerente' && (
-        <PlatformPanel title={`Permissões — ${selected.name}`}>
-          <div className="platform-form" style={{ gap: '0.5rem' }}>
-            {ALL_TENANT_MODULES.filter((m) => m !== 'users').map((moduleId) => (
-              <label key={moduleId} className="platform-checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={normalizePermissionList(selected.permissions).includes(moduleId)}
-                  onChange={() => togglePermission(moduleId)}
-                />
-                {TENANT_MODULE_LABELS[moduleId]}
-              </label>
-            ))}
-          </div>
-          <div className="platform-modal-actions" style={{ marginTop: '1rem' }}>
-            <button type="button" className="dash-action-btn primary" disabled={saving} onClick={saveBarber}>
-              {saving ? 'Salvando…' : 'Salvar permissões'}
-            </button>
-          </div>
+        <PlatformPanel title={`Módulos — ${selected.name}`}>
+          <PlatformEmployeePermissionsEditor
+            employeeName={selected.name}
+            permissions={normalizeBarberPermissions(selected)}
+            tenantEnabledModules={enabledForTenant}
+            onToggle={togglePermission}
+            onSave={savePermissions}
+            saving={saving}
+          />
+        </PlatformPanel>
+      )}
+
+      {selected?.role === 'Gerente' && !showForm && (
+        <PlatformPanel title="Acesso do Gerente">
+          <p className="platform-field-hint">
+            O Gerente acede a todos os módulos activos da barbearia. Use os toggles em <strong>Resumo</strong> ou <strong>Módulos</strong> para limitar funcionalidades da empresa.
+          </p>
         </PlatformPanel>
       )}
     </>

@@ -84,6 +84,10 @@ export default function StaffLoginFormCard({
         >
           {isSubmitting ? 'Entrando…' : 'Entrar'}
         </button>
+
+        <p className="staff-login-card__help">
+          Esqueceu a senha? Peça ao gerente da barbearia ou ao suporte Slooti para redefinir o acesso.
+        </p>
       </form>
     </div>
   );

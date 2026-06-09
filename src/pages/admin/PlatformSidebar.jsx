@@ -72,23 +72,23 @@ export default function PlatformSidebar({ isCollapsed, setIsCollapsed, onLogout 
 
       <nav className="nav-menu">
         <NavLink to="/admin" end className={navClass}>
-          <LayoutDashboard size={20} />
-          <span>Visão geral</span>
+          <LayoutDashboard size={20} aria-hidden />
+          <span className="nav-item-label">Visão geral</span>
         </NavLink>
         <NavLink to="/admin/barbearias" className={navClass}>
-          <Store size={20} />
-          <span>Barbearias</span>
+          <Store size={20} aria-hidden />
+          <span className="nav-item-label">Barbearias</span>
         </NavLink>
         <NavLink to="/admin/admins" className={navClass}>
-          <Users size={20} />
-          <span>Admins</span>
+          <Users size={20} aria-hidden />
+          <span className="nav-item-label">Admins</span>
         </NavLink>
       </nav>
 
       <div className="sidebar-footer">
         <button type="button" className="sidebar-logout-btn" onClick={onLogout} title="Sair">
-          <LogOut size={20} />
-          {!isCollapsed && <span>Sair</span>}
+          <LogOut size={20} aria-hidden />
+          <span className="nav-item-label">Sair</span>
         </button>
       </div>
     </aside>

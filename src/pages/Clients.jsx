@@ -26,7 +26,7 @@ const STATUS_BADGE = {
   Ativo: { bg: 'rgba(34,197,94,0.15)', color: '#16a34a' },
   Inativo: { bg: 'rgba(220,38,38,0.12)', color: '#dc2626' },
   Pendente: { bg: 'rgba(234,179,8,0.18)', color: '#a16207' },
-  Novo: { bg: 'rgba(255, 106, 0, 0.12)', color: '#FF6A00' }
+  Novo: { bg: 'var(--accent-soft)', color: 'var(--accent-color)' }
 };
 
 const formatPhone = (raw) => {

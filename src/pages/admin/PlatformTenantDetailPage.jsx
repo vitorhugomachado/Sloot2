@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link, NavLink, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
-import { ArrowLeft, Copy, ExternalLink, Eye, EyeOff, Mail, MapPin, Phone } from 'lucide-react';
+import { Link, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
+import { ArrowLeft, Copy, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import {
   platformFetch,
+  platformTenantFetch,
   resolvePlatformTenantId,
   slugify,
   tenantPublicUrls,
@@ -13,16 +14,18 @@ import PlatformPageShell, { PlatformKpiCard, PlatformPanel } from './PlatformPag
 import PlatformStatusBadge from './PlatformStatusBadge';
 import PlatformToast from './PlatformToast';
 import { copyWithToast } from './platformCopy';
-import { ALL_TENANT_MODULES, TENANT_MODULE_LABELS } from '../../constants/tenantModules';
+import { ALL_TENANT_MODULES } from '../../constants/tenantModules';
 import {
   PLATFORM_TENANT_TABS,
   VALID_PLATFORM_TENANT_TABS,
   DEFAULT_PLATFORM_TENANT_TAB,
   platformTenantTabPath,
 } from './tenant/platformTenantTabs';
+import PlatformTenantTabNav from './tenant/PlatformTenantTabNav';
 import PlatformTenantTeamTab from './tenant/PlatformTenantTeamTab';
 import PlatformTenantSettingsTab from './tenant/PlatformTenantSettingsTab';
 import PlatformTenantInventoryTab from './tenant/PlatformTenantInventoryTab';
+import PlatformTenantModulesEditor from './tenant/PlatformTenantModulesEditor';
 
 function formatDate(value) {
   if (!value) return '—';
@@ -31,19 +34,6 @@ function formatDate(value) {
   } catch {
     return '—';
   }
-}
-
-function InfoRow({ label, value, icon }) {
-  if (!value) return null;
-  return (
-    <div className="platform-info-row">
-      {icon ? <span className="platform-info-row__icon" aria-hidden>{icon}</span> : null}
-      <div>
-        <span className="platform-info-row__label">{label}</span>
-        <span className="platform-info-row__value">{value}</span>
-      </div>
-    </div>
-  );
 }
 
 export default function PlatformTenantDetailPage({ onLogout }) {
@@ -65,6 +55,7 @@ export default function PlatformTenantDetailPage({ onLogout }) {
   const [savingManager, setSavingManager] = useState(false);
   const [enabledModules, setEnabledModules] = useState([...ALL_TENANT_MODULES]);
   const [savingModules, setSavingModules] = useState(false);
+  const [savingContact, setSavingContact] = useState(false);
 
   const setTabError = useCallback((msg) => setError(msg), []);
   const setTabToast = useCallback((msg) => setToast(msg), []);
@@ -87,6 +78,8 @@ export default function PlatformTenantDetailPage({ onLogout }) {
         phone: data.phone || '',
         email: data.email || '',
         address: data.address || '',
+        tagline: data.tagline || '',
+        slogan: data.slogan || '',
       });
       setManagerForm({
         name: data.manager?.name || '',
@@ -208,6 +201,35 @@ export default function PlatformTenantDetailPage({ onLogout }) {
     });
   };
 
+  const saveContact = async (e) => {
+    e.preventDefault();
+    setSavingContact(true);
+    setError('');
+    try {
+      await platformFetch(`/tenants/${tenantId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          phone: tenantForm.phone,
+          email: tenantForm.email,
+          address: tenantForm.address,
+        }),
+      });
+      await platformTenantFetch(tenantId, '/business', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          tagline: tenantForm.tagline,
+          slogan: tenantForm.slogan,
+        }),
+      });
+      await loadTenant();
+      setToast('Contacto actualizado.');
+    } catch (err) {
+      setError(err.message || 'Erro ao salvar contacto');
+    } finally {
+      setSavingContact(false);
+    }
+  };
+
   const saveModules = async () => {
     setSavingModules(true);
     setError('');
@@ -228,22 +250,14 @@ export default function PlatformTenantDetailPage({ onLogout }) {
   const urls = tenant ? tenantPublicUrls(tenant.slug) : null;
   const tabLabel = PLATFORM_TENANT_TABS.find((t) => t.id === activeTab)?.label || activeTab;
 
-  const tabProps = { tenantId, onToast: setTabToast, onError: setTabError };
+  const tabProps = {
+    tenantId,
+    tenantEnabledModules: enabledModules,
+    onToast: setTabToast,
+    onError: setTabError,
+  };
 
-  const tabNav = tenant ? (
-    <div className="dash-toggle-group platform-tab-nav" role="tablist" aria-label="Seções da barbearia">
-      {PLATFORM_TENANT_TABS.map((tab) => (
-        <NavLink
-          key={tab.id}
-          to={platformTenantTabPath(tenantId, tab.id)}
-          role="tab"
-          className={({ isActive }) => `dash-toggle-btn${isActive ? ' active' : ''}`}
-        >
-          {tab.label}
-        </NavLink>
-      ))}
-    </div>
-  ) : null;
+  const tabNav = tenant ? <PlatformTenantTabNav tenantId={tenantId} /> : null;
 
   const breadcrumb = (
     <nav className="platform-breadcrumb" aria-label="Navegação">
@@ -303,27 +317,50 @@ export default function PlatformTenantDetailPage({ onLogout }) {
                 </div>
 
                 <PlatformPanel title="Contacto">
-                  <div className="platform-info-grid">
-                    <InfoRow label="E-mail" value={tenant.email} icon={<Mail size={16} />} />
-                    <InfoRow label="Telefone" value={tenant.phone} icon={<Phone size={16} />} />
-                    <InfoRow label="Endereço" value={tenant.address} icon={<MapPin size={16} />} />
-                    {(tenant.tagline || tenant.slogan) && (
-                      <InfoRow label="Tagline" value={tenant.tagline || tenant.slogan} />
-                    )}
-                  </div>
-                  <p className="platform-field-hint">
-                    Criada em {formatDate(tenant.createdAt)} · Atualizada em {formatDate(tenant.updatedAt)}
+                  <form className="platform-form" onSubmit={saveContact}>
+                    <label>
+                      E-mail
+                      <input type="email" className="booking-reserve-form__field" value={tenantForm.email} onChange={(e) => setTenantForm({ ...tenantForm, email: e.target.value })} />
+                    </label>
+                    <label>
+                      Telefone
+                      <input className="booking-reserve-form__field" value={tenantForm.phone} onChange={(e) => setTenantForm({ ...tenantForm, phone: e.target.value })} />
+                    </label>
+                    <label>
+                      Endereço
+                      <input className="booking-reserve-form__field" value={tenantForm.address} onChange={(e) => setTenantForm({ ...tenantForm, address: e.target.value })} />
+                    </label>
+                    <label>
+                      Tagline
+                      <input className="booking-reserve-form__field" value={tenantForm.tagline} onChange={(e) => setTenantForm({ ...tenantForm, tagline: e.target.value })} />
+                    </label>
+                    <label>
+                      Slogan
+                      <input className="booking-reserve-form__field" value={tenantForm.slogan} onChange={(e) => setTenantForm({ ...tenantForm, slogan: e.target.value })} />
+                    </label>
+                    <div className="platform-modal-actions">
+                      <button type="submit" className="dash-action-btn primary" disabled={savingContact}>
+                        {savingContact ? 'Salvando…' : 'Salvar contacto'}
+                      </button>
+                    </div>
+                  </form>
+                  <p className="platform-field-hint" style={{ marginTop: '0.75rem' }}>
+                    Criada em {formatDate(tenant.createdAt)} · Actualizada em {formatDate(tenant.updatedAt)}
                   </p>
                 </PlatformPanel>
 
-                <PlatformPanel title="Módulos ativos">
-                  <div className="platform-module-badges">
-                    {(tenant.enabledModules || []).map((moduleId) => (
-                      <span key={moduleId} className="platform-module-badge">
-                        {TENANT_MODULE_LABELS[moduleId] || moduleId}
-                      </span>
-                    ))}
-                  </div>
+                <PlatformPanel title="Módulos da barbearia">
+                  <PlatformTenantModulesEditor
+                    enabledModules={enabledModules}
+                    onToggle={toggleModule}
+                    onSave={saveModules}
+                    saving={savingModules}
+                    hint="Clique para ligar ou desligar cada módulo para toda a empresa. Mínimo de 1 módulo activo."
+                  />
+                  <p className="platform-field-hint" style={{ marginTop: '0.75rem' }}>
+                    Para permissões individuais por funcionário, use a aba{' '}
+                    <Link to={platformTenantTabPath(tenantId, 'equipe')}>Equipe</Link>.
+                  </p>
                 </PlatformPanel>
 
                 <PlatformPanel title="Acesso rápido">
@@ -452,26 +489,12 @@ export default function PlatformTenantDetailPage({ onLogout }) {
             {activeTab === 'modulos' && (
               <div role="tabpanel">
                 <PlatformPanel title="Módulos da barbearia">
-                  <p className="platform-field-hint" style={{ marginBottom: '1rem' }}>
-                    Módulos desligados deixam de aparecer para toda a equipa. As alterações aplicam-se no próximo reload ou login da equipa.
-                  </p>
-                  <div className="platform-form" style={{ gap: '0.75rem' }}>
-                    {ALL_TENANT_MODULES.map((moduleId) => (
-                      <label key={moduleId} className="platform-checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={enabledModules.includes(moduleId)}
-                          onChange={() => toggleModule(moduleId)}
-                        />
-                        {TENANT_MODULE_LABELS[moduleId]}
-                      </label>
-                    ))}
-                  </div>
-                  <div className="platform-modal-actions" style={{ marginTop: '1rem' }}>
-                    <button type="button" className="dash-action-btn primary" disabled={savingModules} onClick={saveModules}>
-                      {savingModules ? 'Salvando…' : 'Salvar módulos'}
-                    </button>
-                  </div>
+                  <PlatformTenantModulesEditor
+                    enabledModules={enabledModules}
+                    onToggle={toggleModule}
+                    onSave={saveModules}
+                    saving={savingModules}
+                  />
                 </PlatformPanel>
               </div>
             )}

@@ -84,6 +84,8 @@ Depois acede a `https://TEU-DOMINIO/admin` e faz login.
 | URL já em uso | Outro tenant com o mesmo slug |
 | Reset senha cliente | Sem Supabase — só login normal na página `/{slug}` |
 
-Links antigos (`/{slug}/cliente`, `/{slug}/barbeiros/login`, etc.) redireccionam automaticamente para as URLs novas.
+Links antigos **com slug** (`/{slug}/cliente`, `/{slug}/barbeiros/login`, etc.) redireccionam automaticamente para as URLs novas.
+
+Paths na raiz (`/cliente`, `/barbeiros`) **não** apontam para um tenant padrão — o visitante vai para a landing (`/`). O link público correto é `https://slooti.com.br/{slug-da-barbearia}`.
 
 Ver deploy: [DEPLOY-RAILWAY.md](./DEPLOY-RAILWAY.md).

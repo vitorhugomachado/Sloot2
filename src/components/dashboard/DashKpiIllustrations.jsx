@@ -1,7 +1,7 @@
 /** Ilustrações line-art dos cards KPI (mockup Soft UI). */
 const stroke = '#0F172A';
 const strokeMuted = '#64748B';
-const blue = '#FF6A00';
+const brandOrange = '#FF8533';
 const green = '#10B981';
 
 export function RevenueIllustration({ className = '' }) {
@@ -15,17 +15,17 @@ export function RevenueIllustration({ className = '' }) {
       <path d="M10 14 Q16 8 22 16" stroke={pink} strokeWidth="2" strokeLinecap="round" />
       <path d="M72 10 Q78 18 70 22" stroke={orange} strokeWidth="2" strokeLinecap="round" />
       <path d="M4 38 Q10 32 14 40" stroke={teal} strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M80 36 Q86 30 82 42" stroke={blue} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M80 36 Q86 30 82 42" stroke={brandOrange} strokeWidth="1.8" strokeLinecap="round" />
 
       {/* Linha de crescimento */}
       <path
         d="M6 44 L20 34 L32 40 L50 24 L68 14 L78 8"
-        stroke={blue}
+        stroke={brandOrange}
         strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path d="M72 10 L78 8 L76 16" stroke={blue} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M72 10 L78 8 L76 16" stroke={brandOrange} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
 
       {/* Base */}
       <line x1="8" y1="58" x2="80" y2="58" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
@@ -67,11 +67,11 @@ export function OccupancyCalendarIllustration({ className = '' }) {
       <path d="M20 10 v8 M44 10 v8" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
       <rect x="14" y="8" width="8" height="10" rx="2" stroke={stroke} strokeWidth="1.4" fill="#f9fafb" />
       <rect x="42" y="8" width="8" height="10" rx="2" stroke={stroke} strokeWidth="1.4" fill="#f9fafb" />
-      <circle cx="22" cy="36" r="3" fill={blue} opacity="0.9" />
+      <circle cx="22" cy="36" r="3" fill={brandOrange} opacity="0.9" />
       <circle cx="32" cy="36" r="3" fill="#CBD5E1" />
       <circle cx="42" cy="36" r="3" fill="#CBD5E1" />
       <circle cx="22" cy="48" r="3" fill="#CBD5E1" />
-      <circle cx="32" cy="48" r="3" fill={blue} opacity="0.7" />
+      <circle cx="32" cy="48" r="3" fill={brandOrange} opacity="0.7" />
       <circle cx="42" cy="48" r="3" fill="#CBD5E1" />
     </svg>
   );
@@ -92,9 +92,9 @@ export function TicketAverageIllustration({ className = '' }) {
     <svg className={className} viewBox="0 0 88 72" fill="none" aria-hidden>
       <line x1="6" y1="56" x2="82" y2="56" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
       <rect x="10" y="42" width="11" height="14" rx="2.5" fill="#fff" stroke={stroke} strokeWidth="1.8" />
-      <rect x="25" y="28" width="11" height="28" rx="2.5" fill={blue} stroke={stroke} strokeWidth="1.8" />
+      <rect x="25" y="28" width="11" height="28" rx="2.5" fill={brandOrange} stroke={stroke} strokeWidth="1.8" />
       <rect x="40" y="34" width="11" height="22" rx="2.5" fill="#fff" stroke={stroke} strokeWidth="1.8" />
-      <rect x="55" y="20" width="11" height="36" rx="2.5" fill={blue} stroke={stroke} strokeWidth="1.8" />
+      <rect x="55" y="20" width="11" height="36" rx="2.5" fill={brandOrange} stroke={stroke} strokeWidth="1.8" />
       <polyline
         points="15.5,38 30.5,24 45.5,28 60.5,14"
         stroke={stroke}
@@ -102,10 +102,10 @@ export function TicketAverageIllustration({ className = '' }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="15.5" cy="38" r="3.5" fill={blue} stroke={stroke} strokeWidth="1.8" />
-      <circle cx="30.5" cy="24" r="3.5" fill={blue} stroke={stroke} strokeWidth="1.8" />
-      <circle cx="45.5" cy="28" r="3.5" fill={blue} stroke={stroke} strokeWidth="1.8" />
-      <circle cx="60.5" cy="14" r="3.5" fill={blue} stroke={stroke} strokeWidth="1.8" />
+      <circle cx="15.5" cy="38" r="3.5" fill={brandOrange} stroke={stroke} strokeWidth="1.8" />
+      <circle cx="30.5" cy="24" r="3.5" fill={brandOrange} stroke={stroke} strokeWidth="1.8" />
+      <circle cx="45.5" cy="28" r="3.5" fill={brandOrange} stroke={stroke} strokeWidth="1.8" />
+      <circle cx="60.5" cy="14" r="3.5" fill={brandOrange} stroke={stroke} strokeWidth="1.8" />
     </svg>
   );
 }
@@ -121,7 +121,7 @@ export function UpcomingEmptyIllustration({ className = '' }) {
       <path d="M24 28 Q34 14 46 26" stroke={teal} strokeWidth="2.2" strokeLinecap="round" />
       <path d="M196 22 Q208 36 200 48" stroke={pink} strokeWidth="2.2" strokeLinecap="round" />
       <path d="M48 52 Q38 42 52 34" stroke={orange} strokeWidth="2" strokeLinecap="round" opacity="0.85" />
-      <path d="M168 38 Q182 28 188 44" stroke={blue} strokeWidth="2" strokeLinecap="round" opacity="0.9" />
+      <path d="M168 38 Q182 28 188 44" stroke={brandOrange} strokeWidth="2" strokeLinecap="round" opacity="0.9" />
       <path d="M210 72 Q222 62 218 78" stroke={teal} strokeWidth="1.8" strokeLinecap="round" opacity="0.75" />
 
       {/* Mesa */}
@@ -154,7 +154,7 @@ export function UpcomingEmptyIllustration({ className = '' }) {
       <line x1="142" y1="46" x2="142" y2="54" stroke={strokeMuted} strokeWidth="1.4" />
 
       {/* Cabeçalho azul */}
-      <rect x="98" y="54" width="60" height="14" rx="3" fill={blue} />
+      <rect x="98" y="54" width="60" height="14" rx="3" fill={brandOrange} />
       <rect x="98" y="54" width="60" height="14" rx="3" stroke={stroke} strokeWidth="1.4" fill="none" opacity="0.15" />
 
       {/* Página com grelha 4×4 */}

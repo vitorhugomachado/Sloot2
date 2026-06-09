@@ -16,6 +16,7 @@ import { isBarberScheduleOpen, parseDurationMinutes } from '../utils/barberAvail
 import { getAppointmentStatusStyle, getSchedulerStatusClass, isInServiceStatus } from '../utils/appointmentStatus';
 import { STAFF_SCHEDULER_TIME_SLOTS } from '../utils/publicBookingSlots';
 import { toIsoLocal } from '../utils/dateLocal';
+import { getStaffBookingFormError } from '../utils/staffBookingForm';
 import { API_URL } from '../config/apiUrl';
 
 /** Altura dinâmica das linhas da grade conforme agendamentos no horário (semana visível). */
@@ -122,6 +123,7 @@ const Scheduler = () => {
   const [clientSearchQuery, setClientSearchQuery] = useState('');
   const [clientSearchResults, setClientSearchResults] = useState([]);
   const [clientSearchLoading, setClientSearchLoading] = useState(false);
+  const [bookingFormError, setBookingFormError] = useState(null);
   const debouncedClientSearch = useDebounce(clientSearchQuery, 300);
 
   const appointmentActions = useAppointmentActions({
@@ -275,6 +277,7 @@ const Scheduler = () => {
       date: date || selectedDate,
       customerId: null,
     });
+    setBookingFormError(null);
     setIsModalOpen(true);
   };
 
@@ -369,8 +372,19 @@ const Scheduler = () => {
   }, [isModalOpen, formData.date, bookingFormBarberId, appointments, slotAvailabilityOpts]);
 
   const handleSaveAppointment = async () => {
-    const phoneOk = String(formData.phone || '').replace(/\D/g, '').length >= 8;
-    if (!formData.customer.trim() || !phoneOk || !formData.serviceId || !formData.barberId) return;
+    const validationError = getStaffBookingFormError({
+      customer: formData.customer,
+      phone: formData.phone,
+      serviceId: formData.serviceId,
+      barberId: formData.barberId,
+      time: formData.time,
+      availableTimes: availableBookingTimes,
+    });
+    if (validationError) {
+      setBookingFormError(validationError);
+      return;
+    }
+    setBookingFormError(null);
     const effectiveTime =
       availableBookingTimes.length > 0
         ? availableBookingTimes.includes(formData.time)
@@ -760,7 +774,7 @@ const Scheduler = () => {
                    border: '1px solid var(--border-color)',
                    boxShadow: 'none'
                  }}>
-                 <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', background: selectedBarberId === String(barber.id) ? 'rgba(255, 255, 255, 0.45)' : 'var(--icon-bg)', color: selectedBarberId === String(barber.id) ? 'var(--accent-text)' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem' }}>
+                 <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', background: selectedBarberId === String(barber.id) ? 'rgba(255, 255, 255, 0.45)' : 'var(--icon-bg)', color: selectedBarberId === String(barber.id) ? '#1A1A1A' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem' }}>
                    {barber.foto_perfil ? <img src={barber.foto_perfil} alt={barber.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : barber.name.charAt(0)}
                  </div>
                  {barber.name.split(' ')[0]}
@@ -1180,7 +1194,10 @@ const Scheduler = () => {
                 placeholder="Nome do cliente *"
                 autoComplete="name"
                 value={formData.customer}
-                onChange={(e) => setFormData({ ...formData, customer: e.target.value, customerId: null })}
+                onChange={(e) => {
+                  setBookingFormError(null);
+                  setFormData({ ...formData, customer: e.target.value, customerId: null });
+                }}
               />
               <input
                 type="tel"
@@ -1190,12 +1207,18 @@ const Scheduler = () => {
                 inputMode="tel"
                 required
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value, customerId: null })}
+                onChange={(e) => {
+                  setBookingFormError(null);
+                  setFormData({ ...formData, phone: e.target.value, customerId: null });
+                }}
               />
               <select
                 className="booking-reserve-form__field"
                 value={formData.serviceId}
-                onChange={(e) => setFormData({ ...formData, serviceId: e.target.value })}
+                onChange={(e) => {
+                  setBookingFormError(null);
+                  setFormData({ ...formData, serviceId: e.target.value });
+                }}
               >
                 <option value="">Serviço *</option>
                 {services.map((s) => (
@@ -1212,7 +1235,10 @@ const Scheduler = () => {
                 <select
                   className="booking-reserve-form__field"
                   value={formData.barberId}
-                  onChange={(e) => setFormData({ ...formData, barberId: e.target.value })}
+                  onChange={(e) => {
+                    setBookingFormError(null);
+                    setFormData({ ...formData, barberId: e.target.value });
+                  }}
                 >
                   <option value="">Profissional *</option>
                   {activeBarbers.map((b) => (
@@ -1258,19 +1284,15 @@ const Scheduler = () => {
                   Não há horários livres neste dia para o profissional selecionado.
                 </p>
               )}
+              {bookingFormError && (
+                <p className="booking-reserve-form__error" role="alert">
+                  {bookingFormError}
+                </p>
+              )}
               <button
                 type="button"
                 className="btn-primary booking-reserve-form__submit"
                 onClick={handleSaveAppointment}
-                disabled={
-                  !formData.customer.trim() ||
-                  String(formData.phone || '').replace(/\D/g, '').length < 8 ||
-                  !formData.serviceId ||
-                  !formData.barberId ||
-                  !formData.time ||
-                  availableBookingTimes.length === 0 ||
-                  !availableBookingTimes.includes(formData.time)
-                }
               >
                 Confirmar Reserva
               </button>

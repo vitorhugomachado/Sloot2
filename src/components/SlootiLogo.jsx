@@ -1,5 +1,5 @@
 /**
- * Wordmark slooti — Manrope ExtraLight, "i" com pingo laranja #FF6A00.
+ * Wordmark slooti — Manrope ExtraLight, "i" com pingo laranja #FF8533.
  */
 export default function SlootiLogo({
   size = 'md',

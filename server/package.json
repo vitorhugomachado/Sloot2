@@ -11,6 +11,11 @@
     "rename:test-clients": "node scripts/rename_test_clients.js",
     "seed:june02-90": "node scripts/seed_june02_90pct.js",
     "create:platform-admin": "node scripts/create_platform_admin.js",
+    "seed:pilot-tenant": "node scripts/seed_pilot_tenant.js",
+    "smoke:mobile": "node scripts/smoke-mobile-flows.js",
+    "smoke:platform-admin": "node scripts/smoke-platform-admin.js",
+    "smoke:platform-admin-ui": "node scripts/smoke-platform-admin-ui.mjs",
+    "smoke:platform-admin-e2e": "node scripts/smoke-platform-admin-e2e-ui.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "prisma": {

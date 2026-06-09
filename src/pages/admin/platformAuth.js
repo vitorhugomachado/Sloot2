@@ -51,6 +51,7 @@ export async function platformFetch(path, options = {}) {
 
   const url = platformApiUrl(path);
   const res = await fetch(url, { ...options, headers });
+  if (res.status === 204) return null;
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new Error(data.message || `Erro na requisição (${res.status})`);

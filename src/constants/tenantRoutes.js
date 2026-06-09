@@ -14,6 +14,9 @@ export const RESERVED_TENANT_SLUGS = new Set([
   'portal',
   'configuracoes',
   'www',
+  'telateste',
+  'telaloginteste',
+  'landingteste',
 ]);
 
 function norm(slug) {

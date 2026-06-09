@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
+import { isValidPhone, PHONE_ERROR } from '../utils/phone';
 
 const inputStyle = {
   width: '100%',
@@ -50,13 +51,24 @@ const ClientFormModal = ({ open, mode = 'create', initialData, onClose, onSubmit
 
   if (!open) return null;
 
-  const handleField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+  const handleField = (key, value) => {
+    setError(null);
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (!form.name.trim() || !form.phone.trim()) {
-      setError('Nome e telefone são obrigatórios');
+    if (!form.name.trim()) {
+      setError('Informe o nome.');
+      return;
+    }
+    if (!String(form.phone || '').replace(/\D/g, '')) {
+      setError('Informe o telefone.');
+      return;
+    }
+    if (!isValidPhone(form.phone)) {
+      setError(PHONE_ERROR);
       return;
     }
     try {

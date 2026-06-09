@@ -3,7 +3,6 @@ const path = require('path');
 const cors = require('cors');
 const compression = require('compression');
 const apiRoutes = require('./routes/api');
-const { getDefaultTenantSlug } = require('./lib/tenantHelpers');
 const { resolveLegacyRedirect } = require('./lib/legacyRouteRedirects');
 const { isSupabaseAuthConfigured } = require('./lib/supabaseAdmin');
 
@@ -71,10 +70,8 @@ if (serveSpa) {
   const distDir = path.join(__dirname, '../../dist');
   const indexHtml = path.resolve(distDir, 'index.html');
 
-  const defaultSlug = getDefaultTenantSlug();
-
   app.use((req, res, next) => {
-    const dest = resolveLegacyRedirect(req.path, defaultSlug);
+    const dest = resolveLegacyRedirect(req.path);
     if (dest) return res.redirect(301, dest);
     next();
   });

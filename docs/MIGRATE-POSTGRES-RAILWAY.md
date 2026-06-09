@@ -96,7 +96,7 @@ Requer [PostgreSQL client](https://www.postgresql.org/download/windows/) no Wind
 |----------|---------|
 | `relation "Tenant" does not exist` | Redeploy; confirma `DIRECT_URL` definido |
 | Migrate falha no start | `DATABASE_URL` e `DIRECT_URL` iguais ao Postgres Railway |
-| `/cliente` 404 ou tenant errado | Usa o slug do seed (`two-brothers`) ou ajusta `DEFAULT_TENANT_SLUG` |
+| `/cliente` ou `/barbeiros` na raiz | Redireccionam para a landing; use `/{slug}` (ex.: `/two-brothers`) |
 | Reset de senha | Independente do Postgres — continua Supabase Auth + Redirect URLs |
 
 Ver também: [DEPLOY-RAILWAY.md](./DEPLOY-RAILWAY.md), [SUPABASE-RESET-SENHA.md](./SUPABASE-RESET-SENHA.md).

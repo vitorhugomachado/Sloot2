@@ -1,10 +1,11 @@
 import { useRef, useEffect } from 'react';
 import { LayoutDashboard, Calendar, Users, Settings, DollarSign, Shield, Menu, Package, LogOut } from 'lucide-react';
 import SlootiLogo from './SlootiLogo';
+import { isStaffNavModuleVisible } from '../utils/staffNavModules';
 
 const SIDEBAR_LEAVE_MS = 110;
 
-const Sidebar = ({ activeTab, setActiveTab, user, isCollapsed, setIsCollapsed, onLogout }) => {
+const Sidebar = ({ activeTab, setActiveTab, user, tenantModules, isCollapsed, setIsCollapsed, onLogout }) => {
   const leaveCloseTimer = useRef(null);
 
   const clearCloseTimer = () => {
@@ -80,11 +81,7 @@ const Sidebar = ({ activeTab, setActiveTab, user, isCollapsed, setIsCollapsed, o
 
       <nav style={{ flex: 1 }}>
         {menuItems
-          .filter((item) => {
-            const hasDirectPermission = user?.permissions?.includes(item.id);
-            const hasLegacyInventoryPermission = item.id === 'inventory' && user?.permissions?.includes('products');
-            return hasDirectPermission || hasLegacyInventoryPermission;
-          })
+          .filter((item) => isStaffNavModuleVisible(item.id, user?.permissions, tenantModules))
           .map((item) => (
           <a
             key={item.id}

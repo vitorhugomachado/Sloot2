@@ -2,6 +2,7 @@ const prisma = require('../lib/prisma.js');
 const { hashPassword } = require('../utils/auth');
 const { publicTenantShape } = require('../lib/tenantHelpers');
 const { tenantIdFromPlatformReq, tenantWhereFromPlatformReq } = require('../lib/platformTenantReq');
+const { normalizeModuleList, intersectPermissions } = require('../lib/tenantModules');
 const { invalidatePublicCache } = require('../middlewares/publicCache');
 const { parseStaffDateRangeFromQuery } = require('../lib/bookingHorizon');
 const { buildClientsIndex, findClientByKey } = require('../controllers/clientController');
@@ -68,7 +69,8 @@ const barberSelect = {
 };
 
 function nullableString(v) {
-  if (v === undefined || v === null) return undefined;
+  if (v === undefined) return undefined;
+  if (v === null) return null;
   const s = String(v).trim();
   return s === '' ? null : s;
 }
@@ -245,15 +247,24 @@ const updateBarberPermissions = async (req, res) => {
     const barberId = Number(req.params.barberId);
     const existing = await findBarberInTenant(req, barberId);
     if (!existing) return res.status(404).json({ message: 'Profissional não encontrado.' });
+    if (existing.role === 'Gerente') {
+      return res.status(400).json({ message: 'Permissões do Gerente não podem ser alteradas aqui.' });
+    }
 
     const permissions = req.body?.permissions;
     if (!Array.isArray(permissions)) {
       return res.status(400).json({ message: 'permissions deve ser um array.' });
     }
 
+    const tenantModules = normalizeModuleList(req.tenant?.enabledModules);
+    const sanitized = intersectPermissions(permissions, tenantModules);
+    if (sanitized.length === 0) {
+      return res.status(400).json({ message: 'Selecione pelo menos um módulo válido para o funcionário.' });
+    }
+
     const barber = await prisma.barber.update({
       where: { id: barberId },
-      data: { permissions },
+      data: { permissions: sanitized },
       select: barberSelect,
     });
     res.json(barber);

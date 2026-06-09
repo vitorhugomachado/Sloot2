@@ -110,7 +110,7 @@ async function main() {
   });
 
   console.log('\nLogin de teste (qualquer barbeiro novo): senha 123');
-  console.log(`Cliente: /${slug}/cliente ou /telateste?tenant=${slug}\n`);
+  console.log(`Cliente: /${slug}\n`);
 }
 
 main()

@@ -9,6 +9,7 @@ import { parseDurationMinutes } from '../utils/barberAvailability';
 import { getAppointmentStatusConfig, isInServiceStatus } from '../utils/appointmentStatus';
 import { normalizePhoneForWhatsApp, openWhatsAppConfirm } from '../utils/appointmentWhatsApp';
 import { STAFF_DASHBOARD_TIME_SLOTS } from '../utils/publicBookingSlots';
+import { getStaffBookingFormError } from '../utils/staffBookingForm';
 
 const EMPTY_DIRECT_SALE = {
   customerName: '',
@@ -160,6 +161,7 @@ const Dashboard = () => {
   const [formData, setFormData] = useState({
     customer: '', phone: '', serviceId: '', barberId: '', time: '09:00', date: focusDate
   });
+  const [bookingFormError, setBookingFormError] = useState(null);
   const [saleForm, setSaleForm] = useState(EMPTY_DIRECT_SALE);
 
   const activeBarbers = useMemo(
@@ -305,6 +307,7 @@ const Dashboard = () => {
   const openNewAppModal = (barberId = '', time = '09:00') => {
     const defaultBarberId = isBarber ? String(currentUser.id) : String(barberId);
     setFormData({ customer: '', phone: '', serviceId: '', barberId: defaultBarberId, time, date: focusDate });
+    setBookingFormError(null);
     setIsModalOpen(true);
   };
 
@@ -357,8 +360,19 @@ const Dashboard = () => {
   }, [isModalOpen, formData.date, dashboardBookingBarberId, appointments]);
 
   const handleSaveAppointment = () => {
-    const phoneOk = String(formData.phone || '').replace(/\D/g, '').length >= 8;
-    if (!formData.customer.trim() || !phoneOk || !formData.serviceId || !formData.barberId) return;
+    const validationError = getStaffBookingFormError({
+      customer: formData.customer,
+      phone: formData.phone,
+      serviceId: formData.serviceId,
+      barberId: formData.barberId,
+      time: formData.time,
+      availableTimes: availableDashboardBookingTimes,
+    });
+    if (validationError) {
+      setBookingFormError(validationError);
+      return;
+    }
+    setBookingFormError(null);
     const effectiveTime =
       availableDashboardBookingTimes.length > 0
         ? availableDashboardBookingTimes.includes(formData.time)
@@ -949,7 +963,10 @@ const Dashboard = () => {
                 placeholder="Nome do cliente *"
                 autoComplete="name"
                 value={formData.customer}
-                onChange={(e) => setFormData({ ...formData, customer: e.target.value })}
+                onChange={(e) => {
+                  setBookingFormError(null);
+                  setFormData({ ...formData, customer: e.target.value });
+                }}
               />
               <input
                 type="tel"
@@ -959,12 +976,18 @@ const Dashboard = () => {
                 inputMode="tel"
                 required
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => {
+                  setBookingFormError(null);
+                  setFormData({ ...formData, phone: e.target.value });
+                }}
               />
               <select
                 className="booking-reserve-form__field"
                 value={formData.serviceId}
-                onChange={(e) => setFormData({ ...formData, serviceId: e.target.value })}
+                onChange={(e) => {
+                  setBookingFormError(null);
+                  setFormData({ ...formData, serviceId: e.target.value });
+                }}
               >
                 <option value="">Serviço *</option>
                 {services.map((s) => (
@@ -981,7 +1004,10 @@ const Dashboard = () => {
                 <select
                   className="booking-reserve-form__field"
                   value={formData.barberId}
-                  onChange={(e) => setFormData({ ...formData, barberId: e.target.value })}
+                  onChange={(e) => {
+                    setBookingFormError(null);
+                    setFormData({ ...formData, barberId: e.target.value });
+                  }}
                 >
                   <option value="">Profissional *</option>
                   {activeBarbers.map((b) => (
@@ -1027,19 +1053,15 @@ const Dashboard = () => {
                   Não há horários livres neste dia para o profissional selecionado.
                 </p>
               )}
+              {bookingFormError && (
+                <p className="booking-reserve-form__error" role="alert">
+                  {bookingFormError}
+                </p>
+              )}
               <button
                 type="button"
                 className="btn-primary booking-reserve-form__submit"
                 onClick={handleSaveAppointment}
-                disabled={
-                  !formData.customer.trim() ||
-                  String(formData.phone || '').replace(/\D/g, '').length < 8 ||
-                  !formData.serviceId ||
-                  !formData.barberId ||
-                  !formData.time ||
-                  availableDashboardBookingTimes.length === 0 ||
-                  !availableDashboardBookingTimes.includes(formData.time)
-                }
               >
                 Confirmar Reserva
               </button>
