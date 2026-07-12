@@ -1,6 +1,6 @@
 const prisma = require('../lib/prisma');
 const { tenantIdFromReq } = require('../lib/tenantHelpers');
-const { getVapidPublicKey, isWebPushConfigured } = require('../lib/webPush');
+const { getVapidPublicKey, isWebPushConfigured, sendPushNotification } = require('../lib/webPush');
 
 const STAFF_ROLES = new Set(['Gerente', 'Barbeiro']);
 
@@ -110,9 +110,55 @@ const unsubscribePush = async (req, res) => {
   }
 };
 
+const testPush = async (req, res) => {
+  try {
+    if (!isWebPushConfigured()) {
+      return res.status(503).json({ message: 'Notificações push não configuradas no servidor.' });
+    }
+
+    const tenantId = tenantIdFromReq(req);
+    const barberId = Number(req.user.id);
+    const tenantSlug = req.tenantSlug || '';
+
+    const subscriptions = await prisma.pushSubscription.findMany({
+      where: { tenantId, barberId },
+    });
+
+    if (!subscriptions.length) {
+      return res.status(404).json({
+        message: 'Nenhuma assinatura neste navegador. Clique em Ativar e permita as notificações.',
+      });
+    }
+
+    const payload = {
+      title: 'Teste Slooti',
+      body: 'As notificações push estão funcionando!',
+      url: tenantSlug ? `/${tenantSlug}/dashboard` : '/',
+      tag: 'slooti-push-test',
+    };
+
+    const results = await Promise.all(
+      subscriptions.map((sub) => sendPushNotification(sub, payload)),
+    );
+
+    const sent = results.some((r) => r.ok);
+    if (!sent) {
+      return res.status(500).json({
+        message: 'Não foi possível entregar a notificação de teste. Tente desativar e ativar novamente.',
+      });
+    }
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('testPush error:', error);
+    res.status(500).json({ message: 'Erro ao enviar notificação de teste.' });
+  }
+};
+
 module.exports = {
   requireStaff,
   getVapidPublicKeyHandler,
   subscribePush,
   unsubscribePush,
+  testPush,
 };

@@ -48,11 +48,15 @@ async function sendNewAppointmentPush({ tenantId, appointment, tenantSlug }) {
   const subscriptions = await prisma.pushSubscription.findMany({
     where: {
       tenantId,
-      barber: {
-        deletedAt: null,
-        status: 'Ativo',
-        OR: [{ role: 'Gerente' }, { id: appointment.barberId }],
-      },
+      OR: [
+        {
+          barberId: Number(appointment.barberId),
+          barber: { deletedAt: null, status: 'Ativo' },
+        },
+        {
+          barber: { role: 'Gerente', deletedAt: null, status: 'Ativo' },
+        },
+      ],
     },
   });
 

@@ -90,9 +90,27 @@ export function getStaffPushStatus({ supported, permission, preferenceEnabled, l
   if (!supported) return 'unsupported';
   if (permission === 'denied') return 'denied';
   if (loading) return 'loading';
-  if (error) return 'error';
   if (preferenceEnabled && permission === 'granted') return 'enabled';
+  if (error) return 'error';
   return 'disabled';
+}
+
+function bytesEqual(a, b) {
+  if (!a || !b || a.byteLength !== b.byteLength) return false;
+  const av = a instanceof Uint8Array ? a : new Uint8Array(a);
+  const bv = b instanceof Uint8Array ? b : new Uint8Array(b);
+  for (let i = 0; i < av.length; i += 1) {
+    if (av[i] !== bv[i]) return false;
+  }
+  return true;
+}
+
+export function subscriptionUsesVapidKey(subscription, publicKey) {
+  if (!subscription || !publicKey) return false;
+  const expected = urlBase64ToUint8Array(publicKey);
+  const current = subscription.options?.applicationServerKey;
+  if (!current) return false;
+  return bytesEqual(current, expected);
 }
 
 export {

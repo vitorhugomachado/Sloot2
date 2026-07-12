@@ -52,6 +52,7 @@ const {
   getVapidPublicKeyHandler,
   subscribePush,
   unsubscribePush,
+  testPush,
 } = require('../controllers/pushController');
 const requirePlatformTenant = require('../middlewares/requirePlatformTenant');
 const platformTenantOpsRoutes = require('./platformTenantOpsRoutes');
@@ -102,6 +103,7 @@ router.patch('/appointments/:id', authMiddleware, requireTenantModule('scheduler
 
 router.get('/push/vapid-public-key', authMiddleware, requireStaff, getVapidPublicKeyHandler);
 router.post('/push/subscribe', authMiddleware, requireStaff, subscribePush);
+router.post('/push/test', authMiddleware, requireStaff, testPush);
 router.delete('/push/unsubscribe', authMiddleware, requireStaff, unsubscribePush);
 
 router.post('/services', authMiddleware, createService);

@@ -11,11 +11,13 @@ export default function SettingsNotificationsSection({ apiFetch, tenantSlug, isS
     preferenceEnabled,
     enable,
     disable,
+    testPush,
   } = useStaffPushNotifications({ apiFetch, tenantSlug, isStaffSession });
 
   const isEnabled = status === 'enabled';
   const isDenied = status === 'denied';
   const isUnsupported = status === 'unsupported';
+  const isWarning = Boolean(error) && isEnabled;
 
   const handleToggle = async () => {
     if (loading) return;
@@ -95,7 +97,21 @@ export default function SettingsNotificationsSection({ apiFetch, tenantSlug, isS
             ) : null}
 
             {error ? (
-              <p style={{ margin: '12px 0 0', fontSize: '0.85rem', color: '#ef4444' }}>{error}</p>
+              <p style={{ margin: '12px 0 0', fontSize: '0.85rem', color: isWarning ? '#b45309' : '#ef4444' }}>{error}</p>
+            ) : null}
+
+            {isEnabled ? (
+              <div style={{ marginTop: '12px' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => testPush()}
+                  disabled={loading}
+                  style={{ padding: '8px 14px', fontSize: '0.82rem' }}
+                >
+                  Enviar notificação de teste
+                </button>
+              </div>
             ) : null}
 
             {isDenied ? (

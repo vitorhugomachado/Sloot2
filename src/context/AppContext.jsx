@@ -9,6 +9,7 @@ import {
   shouldLeadAppointmentsPoll,
   releaseAppointmentsPollLeadership,
 } from '../utils/appointmentsPollLeader';
+import { notifyStaffNewOnlineAppointments } from '../utils/staffInAppNotifications';
 import { mergeAppointmentsWithActivity, mergeAppointmentActivity } from '../utils/appointmentActivity';
 import {
   getAppointmentServiceRevenue,
@@ -81,6 +82,7 @@ export const AppProvider = ({ children }) => {
   /** Evita que respostas PUT fora de ordem sobrescrevam permissões mais recentes. */
   const barberPermissionsRequestSeq = useRef(new Map());
   const prevTenantSlugRef = useRef(tenantSlug);
+  const inAppAppointmentTrackerRef = useRef({ initialized: false, knownIds: new Set() });
 
   const resolveAuthToken = useCallback(
     (authScope) => {
@@ -190,6 +192,9 @@ export const AppProvider = ({ children }) => {
     const custTok = getCustomerToken(tenantSlug, tenant.id);
     const tenantSlugChanged = prevTenantSlugRef.current !== tenantSlug;
     prevTenantSlugRef.current = tenantSlug;
+    if (tenantSlugChanged) {
+      inAppAppointmentTrackerRef.current = { initialized: false, knownIds: new Set() };
+    }
 
     setToken(staffTok);
     setCustomerToken((prev) => custTok || prev);
@@ -310,6 +315,7 @@ export const AppProvider = ({ children }) => {
 
     const mergeAppointments = (data) => {
       setAppointments((prev) => mergeAppointmentsWithActivity(prev, data));
+      notifyStaffNewOnlineAppointments(data, tenantSlug, inAppAppointmentTrackerRef.current);
     };
 
     const syncAppointments = async () => {

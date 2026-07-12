@@ -7,6 +7,7 @@ import {
   isPushEnvironmentSupported,
   readPushPreference,
   subscriptionToPayload,
+  subscriptionUsesVapidKey,
   urlBase64ToUint8Array,
   writePushPreference,
 } from '../utils/staffPushNotifications';
@@ -107,6 +108,15 @@ export default function useStaffPushNotifications({ apiFetch, tenantSlug, isStaf
       const registration = await getServiceWorkerRegistration();
       let subscription = await registration.pushManager.getSubscription();
 
+      if (subscription && !subscriptionUsesVapidKey(subscription, publicKey)) {
+        try {
+          await subscription.unsubscribe();
+        } catch (unsubErr) {
+          console.warn('Failed to remove stale push subscription:', unsubErr);
+        }
+        subscription = null;
+      }
+
       if (!subscription) {
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
@@ -130,10 +140,43 @@ export default function useStaffPushNotifications({ apiFetch, tenantSlug, isStaf
 
       writePushPreference(tenantSlug, true);
       setPreferenceEnabled(true);
+      setError('');
+
+      try {
+        new Notification('Notificações ativadas', {
+          body: 'Você será avisado quando clientes agendarem online.',
+          icon: '/favicon.svg',
+        });
+      } catch {
+        // push subscription ok — notificação local opcional
+      }
+
       return true;
     } catch (enableError) {
       console.error('enable push notifications failed:', enableError);
-      setError(humanizePushSubscribeError(enableError));
+      const msg = humanizePushSubscribeError(enableError);
+
+      if (
+        Notification.permission === 'granted'
+        && /push service not available|registration failed/i.test(String(enableError?.message || ''))
+      ) {
+        writePushPreference(tenantSlug, true);
+        setPreferenceEnabled(true);
+        setError(
+          `${msg} Ativamos alertas na aba aberta como alternativa — mantenha o Slooti aberto para receber avisos.`,
+        );
+        try {
+          new Notification('Alertas na aba ativados', {
+            body: 'Com o Slooti aberto, você verá avisos de novos agendamentos online.',
+            icon: '/favicon.svg',
+          });
+        } catch {
+          // ignore
+        }
+        return true;
+      }
+
+      setError(msg);
       return false;
     } finally {
       setLoading(false);
@@ -179,6 +222,27 @@ export default function useStaffPushNotifications({ apiFetch, tenantSlug, isStaf
     [supported, permission, preferenceEnabled, loading, error],
   );
 
+  const testPush = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await apiFetch(`${API_URL}/push/test`, {
+        method: 'POST',
+        authScope: 'staff',
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Falha ao enviar notificação de teste.');
+      }
+      return true;
+    } catch (testError) {
+      setError(testError.message || 'Falha no teste de notificação.');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [apiFetch]);
+
   return {
     supported,
     environmentBlockReason,
@@ -189,6 +253,7 @@ export default function useStaffPushNotifications({ apiFetch, tenantSlug, isStaf
     status,
     enable,
     disable,
+    testPush,
     refreshPermission,
   };
 }

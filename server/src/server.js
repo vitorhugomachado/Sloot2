@@ -5,9 +5,16 @@ const app = require('./app');
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 
+const { isWebPushConfigured } = require('./lib/webPush');
+
 const server = app.listen(PORT, HOST, () => {
   const mode = process.env.NODE_ENV === 'production' ? 'produção' : 'desenvolvimento';
   console.log(`slooti — ${mode} — porta ${PORT} (HOST=${HOST}) — API multi-tenant (Tenant, sem BusinessInfo)`);
+  if (isWebPushConfigured()) {
+    console.log('[push] Web Push configurado (VAPID).');
+  } else {
+    console.warn('[push] VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY ausentes — notificações push desativadas.');
+  }
   if (process.env.NODE_ENV === 'production') {
     console.log(`SPA + API na mesma origem; health: /health`);
   } else {
