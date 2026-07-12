@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { API_URL } from '../config/apiUrl';
 import {
+  getPushEnvironmentBlockReason,
   getStaffPushStatus,
+  humanizePushSubscribeError,
   isPushEnvironmentSupported,
   readPushPreference,
   subscriptionToPayload,
@@ -25,6 +27,7 @@ export default function useStaffPushNotifications({ apiFetch, tenantSlug, isStaf
   const subscriptionRef = useRef(null);
 
   const supported = isPushEnvironmentSupported();
+  const environmentBlockReason = useMemo(() => getPushEnvironmentBlockReason(), []);
 
   const refreshPermission = useCallback(() => {
     if (typeof Notification !== 'undefined') {
@@ -72,7 +75,7 @@ export default function useStaffPushNotifications({ apiFetch, tenantSlug, isStaf
 
   const enable = useCallback(async () => {
     if (!supported) {
-      setError('Seu navegador não suporta notificações push.');
+      setError(environmentBlockReason || 'Seu navegador não suporta notificações push.');
       return false;
     }
 
@@ -130,13 +133,13 @@ export default function useStaffPushNotifications({ apiFetch, tenantSlug, isStaf
       return true;
     } catch (enableError) {
       console.error('enable push notifications failed:', enableError);
-      setError(enableError.message || 'Erro ao ativar notificações.');
+      setError(humanizePushSubscribeError(enableError));
       return false;
     } finally {
       setLoading(false);
       refreshPermission();
     }
-  }, [apiFetch, refreshPermission, supported, tenantSlug]);
+  }, [apiFetch, environmentBlockReason, refreshPermission, supported, tenantSlug]);
 
   const disable = useCallback(async () => {
     setLoading(true);
@@ -178,6 +181,7 @@ export default function useStaffPushNotifications({ apiFetch, tenantSlug, isStaf
 
   return {
     supported,
+    environmentBlockReason,
     permission,
     preferenceEnabled,
     loading,

@@ -830,8 +830,8 @@ export default function LandingTestePage() {
         <section id="planos" className="lt-pricing">
           <div className="lt-container">
             <header className="lt-section-head" data-lt-reveal>
-              <h2 className="lt-section-title">Planos</h2>
-              <p className="lt-section-text">Escolha o plano ideal para o momento da sua barbearia.</p>
+              <h2 className="lt-section-title">Plano</h2>
+              <p className="lt-section-text">Um plano. Tudo incluso. R$ 89,90/mês.</p>
 
               <div className="lt-pricing__billing" role="tablist" aria-label="Período de cobrança">
                 {BILLING_OPTIONS.map((option) => {
@@ -853,6 +853,11 @@ export default function LandingTestePage() {
             </header>
 
             {isMobileLanding ? (
+              MOBILE_PLANS.length === 1 ? (
+                <div className="lt-pricing__single" data-lt-reveal>
+                  {renderPlanCard(MOBILE_PLANS[0], { static: true })}
+                </div>
+              ) : (
               <div className="lt-pricing__carousel">
                 <div
                   ref={pricingViewportRef}
@@ -903,8 +908,9 @@ export default function LandingTestePage() {
                   </button>
                 </div>
               </div>
+              )
             ) : (
-              <div className="lt-pricing__grid">
+              <div className={`lt-pricing__grid${PLANS.length === 1 ? ' lt-pricing__grid--single' : ''}`}>
                 {PLANS.map((plan) => renderPlanCard(plan, { reveal: true }))}
               </div>
             )}

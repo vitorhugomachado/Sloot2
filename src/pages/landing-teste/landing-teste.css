@@ -1477,6 +1477,20 @@
   align-items: stretch;
 }
 
+.lt-pricing__grid--single {
+  grid-template-columns: minmax(0, 520px);
+  justify-content: center;
+}
+
+.lt-pricing__grid--single .lt-plan-card.is-featured {
+  transform: none;
+}
+
+.lt-pricing__single {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
 .lt-plan-card {
   position: relative;
   display: flex;

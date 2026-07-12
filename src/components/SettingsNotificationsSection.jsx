@@ -4,6 +4,7 @@ import useStaffPushNotifications from '../hooks/useStaffPushNotifications';
 export default function SettingsNotificationsSection({ apiFetch, tenantSlug, isStaffSession, variant = 'desktop' }) {
   const {
     supported,
+    environmentBlockReason,
     status,
     loading,
     error,
@@ -86,6 +87,12 @@ export default function SettingsNotificationsSection({ apiFetch, tenantSlug, isS
                 {loading ? 'Aguarde…' : isEnabled ? 'Desativar' : 'Ativar'}
               </button>
             </div>
+
+            {isUnsupported && environmentBlockReason ? (
+              <p style={{ margin: '12px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                {environmentBlockReason}
+              </p>
+            ) : null}
 
             {error ? (
               <p style={{ margin: '12px 0 0', fontSize: '0.85rem', color: '#ef4444' }}>{error}</p>

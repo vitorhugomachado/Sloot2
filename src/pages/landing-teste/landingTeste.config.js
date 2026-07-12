@@ -3,7 +3,7 @@ export const HERO_ROTATING_WORDS = ['modernas', 'organizadas', 'profissionais', 
 export const NAV_LINKS = [
   { id: 'beneficios', label: 'Benefícios' },
   { id: 'como-funciona', label: 'Como funciona' },
-  { id: 'planos', label: 'Planos' },
+  { id: 'planos', label: 'Plano' },
   { id: 'faq', label: 'FAQ' },
 ];
 
@@ -81,7 +81,7 @@ export const METRICS = [
   { value: 3, suffix: ' min', label: 'para configurar', prefix: '' },
 ];
 
-export const DEFAULT_BILLING = 'annual';
+export const DEFAULT_BILLING = 'monthly';
 
 export const BILLING_OPTIONS = [
   { id: 'annual', label: 'Anual' },
@@ -90,103 +90,43 @@ export const BILLING_OPTIONS = [
 
 export const PLANS = [
   {
-    id: 'solo',
-    name: 'Plano Solo',
+    id: 'completo',
+    name: 'Plano Slooti Completo',
     pricing: {
-      monthly: 59.9,
+      monthly: 89.9,
       annualInstallments: 12,
-      annualInstallmentValue: 45.75,
-      annualCash: 549,
+      annualInstallmentValue: 69.9,
+      annualCash: 799,
     },
-    description: 'Para barbearias com um barbeiro que querem agendar online sem complicação.',
+    description:
+      'Tudo incluso: agendamento online para seus clientes e gestão completa da barbearia em um único plano.',
+    includesLabel: 'Tudo incluso',
+    includesLabelStyle: 'normal',
     includes: [
-      '1 barbeiro',
       'Agendamento online 24h',
-      'Clientes ilimitados',
-      'Link personalizado de agendamento',
-      'Histórico de atendimentos',
-      'Bloqueio de horários',
-      'Painel administrativo',
-    ],
-    excludes: [
-      'Mais de 1 barbeiro',
-      'Controle de comissões',
-      'Dashboard gerencial',
-      'Relatórios financeiros',
-      'Suporte prioritário',
-    ],
-    featured: false,
-  },
-  {
-    id: 'equipe',
-    name: 'Plano Equipe',
-    pricing: {
-      monthly: 99.9,
-      annualInstallments: 12,
-      annualInstallmentValue: 74.92,
-      annualCash: 899,
-    },
-    description: 'Para barbearias com equipe que precisam de controle, comissões e visão do negócio.',
-    includesLabel: 'Inclui tudo do plano Solo',
-    includesLabelStyle: 'normal',
-    includes: [
-      'Até 3 barbeiros',
-      'Agenda individual por barbeiro',
-      'Clientes ilimitados',
-      'Controle de comissões',
-      'Dashboard gerencial',
-      'Relatórios de faturamento',
-      'Relatórios de serviços',
-      'Histórico completo',
-    ],
-    excludes: [
-      'Mais de 3 barbeiros',
-      'Múltiplas unidades',
-      'Ranking de barbeiros',
-      'Relatórios avançados',
-      'Suporte prioritário',
-    ],
-    featured: true,
-    badge: 'Mais popular',
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    pricing: {
-      monthly: 249.9,
-      annualInstallments: 12,
-      annualInstallmentValue: 199.92,
-      annualCash: 2399,
-      annualNoteFormat: 'year',
-    },
-    description: 'Para redes e barbearias com múltiplas filiais que precisam de visão completa do negócio.',
-    includesLabel: 'Inclui tudo do Equipe',
-    includesLabelStyle: 'normal',
-    includes: [
+      'Página exclusiva com link personalizado',
+      'Área do cliente com histórico, confirmação e avaliações',
       'Barbeiros ilimitados',
-      'Filiais ilimitadas',
-      'Usuários administrativos ilimitados',
-      'Controle de estoque',
-      'Controle financeiro completo',
-      'Fluxo de caixa',
+      'Clientes ilimitados',
+      'Agenda individual por profissional',
+      'Bloqueio de horários',
+      'Dashboard gerencial e executivo',
+      'Controle de comissões',
+      'Financeiro completo e fluxo de caixa',
+      'Controle de estoque e vendas',
       'Ranking de barbeiros',
-      'Relatórios avançados',
-      'Exportação Excel/PDF',
-      'Dashboard executivo',
+      'Clientes inativos e retenção',
       'Permissões por usuário',
-      'Lista de clientes inativos',
-      'Relatório de retenção de clientes',
-      'Recuperação de clientes ausentes',
+      'Exportação de relatórios',
       'Suporte prioritário',
     ],
-    featured: false,
+    excludes: [],
+    featured: true,
+    badge: 'Tudo incluso',
   },
 ];
 
-/** Ordem do carrossel mobile — Solo | Equipe (centro) | Premium. */
-export const MOBILE_PLANS = ['solo', 'equipe', 'premium']
-  .map((id) => PLANS.find((plan) => plan.id === id))
-  .filter(Boolean);
+export const MOBILE_PLANS = [...PLANS];
 
 export function formatPlanPrice(value, fractionDigits = 0) {
   return value.toLocaleString('pt-BR', {
