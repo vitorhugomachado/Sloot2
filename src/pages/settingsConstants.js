@@ -1,9 +1,10 @@
-import { User, Scissors, Settings as SettingsIcon } from 'lucide-react';
+import { User, Scissors, Settings as SettingsIcon, Bell } from 'lucide-react';
 
 export const SETTINGS_TABS = [
   { id: 'barbers', label: 'Profissionais', icon: User },
   { id: 'services', label: 'Serviços', icon: Scissors },
   { id: 'business', label: 'Meu Negócio', icon: SettingsIcon },
+  { id: 'notifications', label: 'Notificações', icon: Bell },
 ];
 
 export const MOBILE_MQ = '(max-width: 768px)';

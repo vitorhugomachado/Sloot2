@@ -47,6 +47,12 @@ const {
 } = require('../controllers/platformController');
 const requireTenantModule = require('../middlewares/requireTenantModule');
 const { getPeriodClosings, createPeriodClosing } = require('../controllers/periodClosingController');
+const {
+  requireStaff,
+  getVapidPublicKeyHandler,
+  subscribePush,
+  unsubscribePush,
+} = require('../controllers/pushController');
 const requirePlatformTenant = require('../middlewares/requirePlatformTenant');
 const platformTenantOpsRoutes = require('./platformTenantOpsRoutes');
 
@@ -93,6 +99,10 @@ router.use('/barbers', barberRoutes);
 router.use('/clients', authMiddleware, requireTenantModule('clients'), clientRoutes);
 router.get('/appointments', authMiddleware, requireTenantModule('scheduler'), getAppointments);
 router.patch('/appointments/:id', authMiddleware, requireTenantModule('scheduler'), updateAppointment);
+
+router.get('/push/vapid-public-key', authMiddleware, requireStaff, getVapidPublicKeyHandler);
+router.post('/push/subscribe', authMiddleware, requireStaff, subscribePush);
+router.delete('/push/unsubscribe', authMiddleware, requireStaff, unsubscribePush);
 
 router.post('/services', authMiddleware, createService);
 router.put('/services/:id', authMiddleware, updateService);

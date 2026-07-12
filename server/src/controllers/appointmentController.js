@@ -4,6 +4,7 @@ const { parseDurationMinutes, validateBarberAppointmentSlot } = require('../util
 const { invalidatePublicCache } = require('../middlewares/publicCache');
 const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
 const { parseDateRangeFromQuery, parseStaffDateRangeFromQuery, publicBookingDateRange } = require('../lib/bookingHorizon');
+const { scheduleNewAppointmentPush } = require('../services/appointmentPushService');
 
 const BLOCKING_STATUSES = ['Agendado', 'Confirmado', 'Em progresso'];
 const includeBarber = { Barber: { select: { name: true } } };
@@ -161,6 +162,11 @@ const createAppointment = async (req, res) => {
       include: includeBarber,
     });
     invalidatePublicCache(req.tenantSlug);
+    scheduleNewAppointmentPush({
+      req,
+      appointment,
+      tenantSlug: req.tenantSlug,
+    });
     res.status(201).json(appointment);
   } catch (error) {
     console.error('Create appointment error:', error);

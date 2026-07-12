@@ -8,6 +8,7 @@ import {
 const WEEKDAY_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const WEEKDAY_FULL = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 import SettingsMobileView from './SettingsMobileView';
+import SettingsNotificationsSection from '../components/SettingsNotificationsSection';
 import PublicCustomerLinkField from '../components/PublicCustomerLinkField';
 import BusinessBrandingForm from '../components/business/BusinessBrandingForm';
 import { compressImageFileToDataUrl } from '../utils/compressImageFile';
@@ -69,6 +70,7 @@ const Settings = () => {
     services, addService, updateService, removeService, 
     businessInfo, updateBusinessInfo,
     fetchBarberScheduleBlocks, createBarberScheduleBlock, deleteBarberScheduleBlock,
+    apiFetch, tenantSlug, token,
   } = useApp();
   
   const [activeTab, setActiveTab] = useState('barbers');
@@ -804,6 +806,9 @@ const Settings = () => {
           setBInfo={setBInfo}
           onSaveBusiness={handleSaveBusinessInfo}
           saving={saving}
+          apiFetch={apiFetch}
+          tenantSlug={tenantSlug}
+          isStaffSession={Boolean(token)}
         />
       ) : (
       <div className="settings-desktop-grid">
@@ -1002,6 +1007,15 @@ const Settings = () => {
                 </button>
               </div>
             </div>
+          )}
+
+          {activeTab === 'notifications' && (
+            <SettingsNotificationsSection
+              apiFetch={apiFetch}
+              tenantSlug={tenantSlug}
+              isStaffSession={Boolean(token)}
+              variant="desktop"
+            />
           )}
         </div>
       </div>

@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import PublicCustomerLinkField from '../components/PublicCustomerLinkField';
 import BusinessBrandingForm from '../components/business/BusinessBrandingForm';
+import SettingsNotificationsSection from '../components/SettingsNotificationsSection';
 import { SETTINGS_TABS, ICON_BLACK, ICON_STROKE } from './settingsConstants';
 
 export default function SettingsMobileView({
@@ -19,6 +20,9 @@ export default function SettingsMobileView({
   setBInfo,
   onSaveBusiness,
   saving,
+  apiFetch,
+  tenantSlug,
+  isStaffSession,
 }) {
   return (
     <>
@@ -222,6 +226,15 @@ export default function SettingsMobileView({
               {saving ? 'Salvando…' : 'Salvar alterações'}
             </button>
           </div>
+        )}
+
+        {activeTab === 'notifications' && (
+          <SettingsNotificationsSection
+            apiFetch={apiFetch}
+            tenantSlug={tenantSlug}
+            isStaffSession={isStaffSession}
+            variant="mobile"
+          />
         )}
       </div>
     </>

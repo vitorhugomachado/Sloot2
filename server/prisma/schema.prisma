@@ -42,6 +42,7 @@ model Tenant {
   scheduleBlocks          BarberScheduleBlock[]
   workingHours            WorkingHours[]
   holidays                Holiday[]
+  pushSubscriptions       PushSubscription[]
 }
 
 model Barber {
@@ -66,6 +67,7 @@ model Barber {
   ProductSale      ProductSale[]
   shifts           WorkingShifts[]
   scheduleBlocks   BarberScheduleBlock[]
+  pushSubscriptions PushSubscription[]
 
   @@unique([tenantId, email], map: "Barber_tenantId_email_key")
   @@index([tenantId], map: "idx_barber_tenant")
@@ -282,6 +284,23 @@ model PlatformAdmin {
   password  String
   status    String   @default("active")
   createdAt DateTime @default(now())
+}
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  barberId  Int
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  barber    Barber   @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, barberId], map: "idx_push_subscription_tenant_barber")
+  @@map("push_subscriptions")
 }
 
 enum booking_status {

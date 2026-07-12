@@ -1114,7 +1114,7 @@ export const AppProvider = ({ children }) => {
       sellProduct, updateBusinessInfo,
       getFinancialStats, getBarberRanking,
       addExpense, removeExpense, updateExpense, refreshMonthClosings, createMonthClosing, refreshPeriodClosings, createPeriodClosing,
-      login, logout, currentUser, tenantModules, token, apiFetch, loading, bootstrapLoading, staffLoading,
+      login, logout, currentUser, tenantModules, token, tenantSlug, apiFetch, loading, bootstrapLoading, staffLoading,
       currentCustomer, isCustomerAuthenticated: customerSessionActive, customerLogin, customerGoogleLogin, customerRegister, customerLogout, refreshCurrentCustomer, syncNavigatedCustomer,
       getCustomerAppointments, updateCustomerProfile,
       customerUpdateAppointmentStatus, customerCancelAppointment,
