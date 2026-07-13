@@ -224,7 +224,7 @@ export default function Landing2Page() {
 
       <header className={`lp2-header${scrolled ? ' is-scrolled' : ''}`}>
         <div className="lp2-header__inner">
-          <a className="lp2-header__brand" href="/paginadevendas" aria-label="Slooti">
+          <a className="lp2-header__brand" href="/" aria-label="Slooti">
             <SlootiLogo className="lp2-header__logo" onDark={false} />
           </a>
           <nav className="lp2-header__nav" aria-label="Navegação">
@@ -513,7 +513,7 @@ export default function Landing2Page() {
 
       <footer className="lp2-footer">
         <div className="lp2-footer__inner">
-          <a href="/paginadevendas" className="lp2-footer__brand" aria-label="Slooti">
+          <a href="/" className="lp2-footer__brand" aria-label="Slooti">
             <SlootiLogo className="lp2-footer__logo" onDark={false} />
           </a>
           <p>Tudo ilimitado. R$89,90. Slooti.</p>
