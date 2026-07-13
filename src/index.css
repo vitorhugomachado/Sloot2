@@ -1321,12 +1321,32 @@ h1, h2, h3, h4, .brand-font {
   }
 
   .scheduler-page .scheduler-barber-filters {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 8px;
+    scrollbar-width: none;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding: 2px 1rem 8px;
+  }
+
+  .scheduler-page .scheduler-barber-filters::-webkit-scrollbar {
+    display: none;
   }
 
   .scheduler-page .scheduler-barber-filters button {
+    flex-shrink: 0;
+    scroll-snap-align: start;
     min-height: 44px;
+  }
+
+  .scheduler-page .scheduler-barber-filters > div {
+    flex-shrink: 0;
   }
 
   .scheduler-page .scheduler-grid-viewport {
@@ -1345,25 +1365,52 @@ h1, h2, h3, h4, .brand-font {
   .scheduler-page .scheduler-mobile-day-chips {
     display: flex;
     flex-direction: row;
-    justify-content: center;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
     gap: 0.45rem;
-    overflow-x: visible;
-    padding: 2px 0 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 2px 0 6px;
     flex-shrink: 0;
     width: 100%;
   }
 
-  /* Semana fixa em grelha (sem carrossel) */
+  .scheduler-page .scheduler-mobile-day-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Faixa de datas com rolagem horizontal no mobile */
   .scheduler-page .scheduler-mobile-day-chips--header {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
     align-self: stretch;
     width: 100%;
-    padding-top: 0;
-    margin-top: 0;
-    gap: 0.35rem;
-    overflow: visible;
-    justify-content: stretch;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding: 2px 1rem 6px;
+    gap: 0.45rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    justify-content: flex-start;
+  }
+
+  .scheduler-page .scheduler-mobile-day-chips--header::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scheduler-page .scheduler-mobile-day-chips--header .scheduler-mobile-day-chip {
+    flex: 0 0 auto;
+    min-width: 52px;
+    width: 52px;
+    max-width: none;
+    scroll-snap-align: center;
   }
 
   .scheduler-page .scheduler-mobile-day-chip {

@@ -49,7 +49,7 @@ const QCancel = ({ size = 18, color = "#ef4444" }) => (
   </svg>
 );
 
-/** Vibração curta para troca de dia (mobile); sem efeito onde `vibrate` não existe. */
+const MOBILE_SCHEDULER_CALENDAR_DAYS = 28;
 function softDayHaptic() {
   if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
   try {
@@ -135,6 +135,7 @@ const Scheduler = () => {
   });
 
   const schedulerWeekPickerRef = useRef(null);
+  const schedulerActiveDayChipRef = useRef(null);
   const appointmentHoverTimerRef = useRef(null);
   const pendingAppointmentHoverIdRef = useRef(null);
   const [appointmentHoverTip, setAppointmentHoverTip] = useState(null);
@@ -256,6 +257,41 @@ const Scheduler = () => {
   startOfWeek.setDate(curr.getDate() - (day - 1));
   
   const days = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+
+  const mobileDayChips = useMemo(() => {
+    if (!isSchedulerNarrow) {
+      return days.map((dayLabel, colIndex) => {
+        const d = new Date(startOfWeek);
+        d.setDate(startOfWeek.getDate() + colIndex);
+        return {
+          iso: toIsoLocal(d),
+          wd: dayLabel.slice(0, 3),
+        };
+      });
+    }
+
+    const rangeStart = new Date(startOfWeek);
+    rangeStart.setDate(startOfWeek.getDate() - 7);
+    const chips = [];
+    for (let i = 0; i < MOBILE_SCHEDULER_CALENDAR_DAYS; i += 1) {
+      const d = new Date(rangeStart);
+      d.setDate(rangeStart.getDate() + i);
+      chips.push({
+        iso: toIsoLocal(d),
+        wd: d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '').slice(0, 3),
+      });
+    }
+    return chips;
+  }, [isSchedulerNarrow, startOfWeek]);
+
+  useEffect(() => {
+    if (!isSchedulerNarrow || !schedulerActiveDayChipRef.current) return;
+    schedulerActiveDayChipRef.current.scrollIntoView({
+      behavior: 'smooth',
+      inline: 'center',
+      block: 'nearest',
+    });
+  }, [selectedDate, isSchedulerNarrow]);
 
   const activeBarbers = useMemo(
     () => barbers.filter((b) => b.role === 'Barbeiro' && b.status === 'Ativo'),
@@ -594,24 +630,24 @@ const Scheduler = () => {
             role="tablist"
             aria-label="Dia da semana"
           >
-            {days.map((dayLabel, i) => {
-              const d = getDayDate(i);
-              const active = d === selectedDate;
+            {mobileDayChips.map(({ iso, wd }) => {
+              const active = iso === selectedDate;
               return (
                 <button
-                  key={d}
+                  key={iso}
                   type="button"
                   role="tab"
                   aria-selected={active}
-                  data-scheduler-day={d}
+                  data-scheduler-day={iso}
+                  ref={active ? schedulerActiveDayChipRef : null}
                   className={`scheduler-mobile-day-chip${active ? ' scheduler-mobile-day-chip--active' : ''}`}
                   onClick={() => {
-                    setSelectedDate(d);
+                    setSelectedDate(iso);
                     softDayHaptic();
                   }}
                 >
-                  <span className="scheduler-mobile-day-chip__wd">{dayLabel.slice(0, 3)}</span>
-                  <span className="scheduler-mobile-day-chip__num">{d.split('-').reverse()[0]}</span>
+                  <span className="scheduler-mobile-day-chip__wd">{wd}</span>
+                  <span className="scheduler-mobile-day-chip__num">{iso.split('-').reverse()[0]}</span>
                 </button>
               );
             })}
@@ -740,7 +776,7 @@ const Scheduler = () => {
 
         {/* Barber Filters — only visible for managers */}
         {!isBarber && (
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', overflowX: 'auto', paddingBottom: '5px', flexWrap: 'wrap' }} className="hide-scrollbar scheduler-barber-filters">
+          <div className="hide-scrollbar scheduler-barber-filters">
              <button 
                onClick={() => {
                  setSelectedBarberId('all');
