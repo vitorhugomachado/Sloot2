@@ -202,7 +202,7 @@
 .lp2-hero__headline {
   margin: 0 0 30px;
   font-size: clamp(38px, 4.6vw, 62px);
-  line-height: 1.06;
+  line-height: 1.22;
   font-weight: 800;
   letter-spacing: -0.035em;
 }
@@ -218,15 +218,23 @@
   position: relative;
   display: inline-grid;
   vertical-align: baseline;
+  overflow: visible;
+  line-height: 1.25;
+  padding-bottom: 0.12em;
 }
 
 .lp2-hero__rotator-word {
   grid-area: 1 / 1;
   white-space: nowrap;
+  line-height: 1.25;
+  padding-bottom: 0.1em;
+  overflow: visible;
   background: linear-gradient(120deg, var(--lp2-orange), #ff9346);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
   opacity: 0;
   transform: translateY(0.55em);
   filter: blur(6px);
