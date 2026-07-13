@@ -13,7 +13,12 @@
     "db:migrate:deploy": "cd server && npx prisma migrate deploy",
     "db:railway:setup": "node server/scripts/railway_db_setup.js",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:unit": "vitest run --exclude server/tests/**",
+    "test:api": "vitest run server/tests",
+    "test:security": "vitest run server/tests/security server/src/utils/auth.test.js server/src/lib/tenantModules.test.js"
   },
   "engines": {
     "node": ">=20"
@@ -40,8 +45,10 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
     "postcss": "^8.5.12",
+    "supertest": "^7.2.2",
     "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3",
-    "vite": "^8.0.1"
+    "vite": "^8.0.1",
+    "vitest": "^4.1.10"
   }
 }

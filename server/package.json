@@ -16,7 +16,7 @@
     "smoke:platform-admin": "node scripts/smoke-platform-admin.js",
     "smoke:platform-admin-ui": "node scripts/smoke-platform-admin-ui.mjs",
     "smoke:platform-admin-e2e": "node scripts/smoke-platform-admin-e2e-ui.mjs",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "cd .. && npm run test:run -- server"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
