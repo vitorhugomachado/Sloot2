@@ -3053,31 +3053,6 @@ button {
   overflow: hidden;
 }
 
-.layout::before,
-.layout::after {
-  content: '';
-  position: fixed;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.layout::before {
-  width: 420px;
-  height: 420px;
-  top: -120px;
-  left: 60px;
-  background: radial-gradient(circle, rgba(255, 133, 51, 0.1) 0%, transparent 70%);
-}
-
-.layout::after {
-  width: 380px;
-  height: 380px;
-  bottom: -80px;
-  right: -40px;
-  background: radial-gradient(circle, rgba(255, 160, 0, 0.08) 0%, transparent 70%);
-}
-
 .sidebar {
   width: 260px;
   background: var(--sidebar-bg);
@@ -3434,9 +3409,7 @@ button {
 .stagger-4 { animation: fadeIn 0.4s ease-out 0.4s both; }
 
 .gradient-text {
-  background: linear-gradient(135deg, var(--brand-400), var(--brand-700));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--brand-600);
 }
 
 /* ============================================
@@ -3821,7 +3794,7 @@ button {
   min-width: 0;
   max-width: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--primary-hover) 0%, var(--accent-color) 100%);
+  background: var(--accent-color);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
@@ -3968,7 +3941,7 @@ button {
   height: 100%;
   border-radius: 10px;
   transition: width 0.8s ease;
-  background: linear-gradient(90deg, var(--primary-hover) 0%, var(--accent-color) 100%);
+  background: var(--accent-color);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
@@ -7911,11 +7884,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 }
 
 .platform-tenant-tab--active {
-  background: linear-gradient(
-    145deg,
-    rgba(255, 133, 51, 0.16) 0%,
-    rgba(255, 133, 51, 0.08) 100%
-  );
+  background: var(--accent-soft);
   color: var(--accent-color, #ff8533);
   border-color: rgba(255, 133, 51, 0.28);
   box-shadow:
@@ -7929,11 +7898,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
 }
 
 .platform-tenant-tab--active:hover {
-  background: linear-gradient(
-    145deg,
-    rgba(255, 133, 51, 0.2) 0%,
-    rgba(255, 133, 51, 0.1) 100%
-  );
+  background: var(--accent-soft);
   color: var(--accent-color, #ff8533);
 }
 
