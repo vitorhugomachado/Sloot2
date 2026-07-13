@@ -4551,36 +4551,185 @@ button {
   }
 
   .dash-page .dash-panel-upcoming .dash-panel-body {
-    overflow-y: auto;
+    overflow: visible;
   }
 
   .dash-page .dash-upcoming-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     max-height: none;
-    overflow: visible;
     margin-top: 0;
-    padding-right: 0;
+    margin-left: -1.25rem;
+    margin-right: -1.25rem;
+    padding: 4px 1.25rem 8px;
   }
 
-  .dash-page .dash-kpi-card,
-  .dash-page .dash-gauge-card {
-    padding: 0.9rem 1rem;
+  .dash-page .dash-upcoming-list::-webkit-scrollbar {
+    display: none;
   }
 
-  .dash-page .dash-kpi-value {
-    font-size: 1.4rem;
+  /* ── Mobile: título mais compacto ── */
+  .dash-page .dash-header h1 {
+    font-size: 1.35rem;
+  }
+
+  /* ── Mobile: seletor de período vira controle segmentado de largura total ── */
+  .dash-page .dash-kpi-section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .dash-page .dash-kpi-section-header .dash-toggle-group {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    overflow: visible;
+  }
+
+  .dash-page .dash-kpi-section-header .dash-toggle-btn {
+    min-height: 40px;
+    padding: 8px 4px;
+    text-align: center;
+  }
+
+  /* ── Mobile: KPIs unificados em um único cartão com linhas compactas ── */
+  .dash-page .dash-kpi-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: var(--dash-card-bg);
+    border: var(--card-border);
+    border-radius: 14px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+  }
+
+  .dash-page .dash-kpi-row > * + * {
+    border-top: 1px solid var(--border-color);
+  }
+
+  .dash-page .dash-kpi-row .dash-kpi-card,
+  .dash-page .dash-kpi-row .dash-gauge-card {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0.85rem 1rem;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    overflow: visible;
+  }
+
+  .dash-page .dash-kpi-row .dash-kpi-card:hover,
+  .dash-page .dash-kpi-row .dash-gauge-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .dash-page .dash-kpi-row .dash-kpi-top {
+    flex: 0 1 auto;
+    max-width: 46%;
+    padding-top: 3px;
+  }
+
+  .dash-page .dash-kpi-row .dash-kpi-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .dash-page .dash-kpi-row .dash-kpi-main {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  .dash-page .dash-kpi-row .dash-kpi-data {
+    align-items: flex-end;
+    text-align: right;
+    min-width: 0;
+  }
+
+  .dash-page .dash-kpi-row .dash-kpi-value {
+    font-size: 1.2rem;
+    letter-spacing: -0.5px;
+  }
+
+  .dash-page .dash-kpi-row .dash-kpi-subtitle {
+    font-size: 0.64rem;
+    margin-top: 1px;
+  }
+
+  .dash-page .dash-kpi-row .dash-occ-bar-track {
+    width: 150px;
+    max-width: 100%;
+    height: 8px;
+    margin-top: 4px;
+  }
+
+  /* ── Mobile: painéis mais compactos ── */
+  .dash-page .dash-panel-header {
+    padding: 1rem 1.25rem 0.75rem;
+  }
+
+  .dash-page .dash-panel-header h3 {
+    font-size: 0.95rem;
+  }
+
+  /* ── Mobile: agenda semanal com rolagem horizontal ── */
+  .dash-page .dash-mini-cal {
+    margin-left: -1.25rem;
+    margin-right: -1.25rem;
+    margin-bottom: 12px;
+  }
+
+  .dash-page .dash-mini-cal-grid--scroll {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 2px 1.25rem 6px;
+  }
+
+  .dash-page .dash-mini-cal-grid--scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dash-page .dash-mini-cal-grid--scroll .dash-mini-cal-col {
+    flex: 0 0 auto;
+    min-width: 58px;
+    width: 58px;
+    scroll-snap-align: center;
   }
 
   .dash-page .dash-upcoming-item {
+    flex: 0 0 auto;
+    width: min(85vw, 288px);
+    scroll-snap-align: center;
     display: grid;
     grid-template-columns: 44px 1fr;
     gap: 10px 12px;
     align-items: start;
     padding: 12px;
-    margin-bottom: 10px;
+    margin-bottom: 0;
     background: var(--panel-bg);
     border: 1px solid var(--card-outline);
     border-radius: var(--card-radius);
-    border-bottom: none;
+    border-bottom: 1px solid var(--card-outline);
     box-sizing: border-box;
   }
 

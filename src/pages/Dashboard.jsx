@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Users, Calendar, Clock, X, ShoppingBag, Plus, LayoutGrid, Play, CheckCircle, XCircle } from 'lucide-react';
 import WhatsAppIcon from '../components/icons/WhatsAppIcon';
 import AppointmentActionModal from '../components/appointments/AppointmentActionModal';
@@ -21,6 +21,7 @@ import { computeOccupancyForPeriod } from '../utils/occupancyStats';
 import { formatRelativeTime } from '../utils/relativeTime';
 import OccupancyGauge from '../components/OccupancyGauge';
 import DashUpcomingEmpty from '../components/dashboard/DashUpcomingEmpty';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 /* ─────────── KPI Card ─────────── */
 const KpiCard = ({ label, value, subtitle, stagger }) => (
@@ -38,37 +39,66 @@ const KpiCard = ({ label, value, subtitle, stagger }) => (
 );
 
 /* ─────────── Mini Calendar ─────────── */
+const MOBILE_CALENDAR_DAYS = 28;
+const DESKTOP_CALENDAR_DAYS = 7;
+const DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
 const MiniCalendar = ({ focusDate, onDateSelect }) => {
+  const isMobileCalendar = useMediaQuery('(max-width: 768px)');
+  const activeDayRef = useRef(null);
   const today = new Date();
   const d = new Date(focusDate + 'T12:00:00');
   const dayOfWeek = d.getDay();
   const startOfWeek = new Date(d);
   startOfWeek.setDate(d.getDate() - dayOfWeek);
 
+  const calendarStart = new Date(startOfWeek);
+  if (isMobileCalendar) {
+    calendarStart.setDate(startOfWeek.getDate() - 7);
+  }
+
+  const totalDays = isMobileCalendar ? MOBILE_CALENDAR_DAYS : DESKTOP_CALENDAR_DAYS;
+
   const days = [];
-  for (let i = 0; i < 7; i++) {
-    const dd = new Date(startOfWeek);
-    dd.setDate(startOfWeek.getDate() + i);
+  for (let i = 0; i < totalDays; i++) {
+    const dd = new Date(calendarStart);
+    dd.setDate(calendarStart.getDate() + i);
     days.push(dd);
   }
-  const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+  useEffect(() => {
+    if (!isMobileCalendar || !activeDayRef.current) return;
+    activeDayRef.current.scrollIntoView({
+      behavior: 'smooth',
+      inline: 'center',
+      block: 'nearest',
+    });
+  }, [focusDate, isMobileCalendar]);
 
   return (
     <div className="dash-mini-cal">
-      <div className="dash-mini-cal-grid">
-        {days.map((dd, i) => {
+      <div
+        className={`dash-mini-cal-grid${isMobileCalendar ? ' dash-mini-cal-grid--scroll' : ''}`}
+        role="list"
+        aria-label="Selecionar data"
+      >
+        {days.map((dd) => {
           const ddStr = toIsoLocal(dd);
           const isActive = ddStr === focusDate;
           const isToday = dd.getDate() === today.getDate() && dd.getMonth() === today.getMonth() && dd.getFullYear() === today.getFullYear();
-          
+
           return (
-            <div 
-              key={i} 
+            <div
+              key={ddStr}
+              ref={isActive ? activeDayRef : null}
               className={`dash-mini-cal-col ${isActive ? 'active' : ''} ${isToday ? 'is-today' : ''}`}
               onClick={() => onDateSelect && onDateSelect(ddStr)}
               style={{ cursor: 'pointer' }}
+              role="listitem"
+              aria-current={isActive ? 'date' : undefined}
+              aria-label={`${DAY_LABELS[dd.getDay()]} ${dd.getDate()}`}
             >
-              <div className="dash-mini-cal-day-label">{dayLabels[i]}</div>
+              <div className="dash-mini-cal-day-label">{DAY_LABELS[dd.getDay()]}</div>
               <div className="dash-mini-cal-day-num">{dd.getDate()}</div>
             </div>
           );
