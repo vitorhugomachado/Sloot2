@@ -28,6 +28,7 @@ import LandingPage from './pages/landing-teste/LandingTestePage';
 import { filterStaffNavModules } from './utils/staffNavModules';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Landing2Page = lazy(() => import('./pages/landing2/Landing2Page'));
 const Clients = lazy(() => import('./pages/Clients'));
 const Scheduler = lazy(() => import('./pages/Scheduler'));
 const PublicBookingPage = lazy(() => import('./pages/public-booking/PublicBookingPage'));
@@ -466,6 +467,15 @@ function App() {
         </>
       )}
       <Route path="/landingteste" element={<Navigate to="/" replace />} />
+      <Route path="/landing2" element={<Navigate to="/paginadevendas" replace />} />
+      <Route
+        path="/paginadevendas"
+        element={(
+          <Suspense fallback={<TabLoadingFallback />}>
+            <Landing2Page />
+          </Suspense>
+        )}
+      />
       <Route path="/:tenantSlug/*" element={<TenantShell />} />
       <Route path="/" element={<LandingPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
