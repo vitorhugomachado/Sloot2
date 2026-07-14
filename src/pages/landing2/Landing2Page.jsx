@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import SlootiLogo from '../../components/SlootiLogo';
 import { LANDING_WHATSAPP_URL } from '../landing-teste/landingContact.config';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import {
   BENTO_CARDS,
   BILLING_OPTIONS,
@@ -188,6 +189,8 @@ export default function Landing2Page() {
   const scrolled = useHeaderState();
   const [wordIndex, setWordIndex] = useState(0);
   const [billing, setBilling] = useState(DEFAULT_BILLING);
+  const isMobileLanding = useMediaQuery('(max-width: 768px)');
+  const storyFrustrations = isMobileLanding ? FRUSTRATIONS.slice(0, 9) : FRUSTRATIONS;
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
@@ -312,7 +315,11 @@ export default function Landing2Page() {
       </section>
 
       {/* ============ SCROLL STORY ============ */}
-      <section ref={storyRef} className="lp2-story" aria-label="Comparação com concorrentes">
+      <section
+        ref={storyRef}
+        className={`lp2-story${isMobileLanding ? ' lp2-story--mobile' : ''}`}
+        aria-label="Comparação com concorrentes"
+      >
         <div className="lp2-story__stage" data-story-stage>
           <div className="lp2-story__word" aria-hidden>
             {STORY_WORD.split('').map((letter, i) => (
@@ -323,16 +330,20 @@ export default function Landing2Page() {
           </div>
 
           <div className="lp2-story__chaos" aria-hidden>
-            {FRUSTRATIONS.map((label, i) => (
+            {storyFrustrations.map((label, i) => (
               <span
                 key={label}
                 className={`lp2-story__chip lp2-story__chip--${(i % 6) + 1}`}
                 data-story-chip
-                style={{
-                  '--cx': `${8 + ((i * 37) % 84)}%`,
-                  '--cy': `${12 + ((i * 53) % 72)}%`,
-                  '--cr': `${((i * 17) % 13) - 6}deg`,
-                }}
+                style={
+                  isMobileLanding
+                    ? undefined
+                    : {
+                        '--cx': `${8 + ((i * 37) % 84)}%`,
+                        '--cy': `${12 + ((i * 53) % 72)}%`,
+                        '--cr': `${((i * 17) % 13) - 6}deg`,
+                      }
+                }
               >
                 {label}
               </span>

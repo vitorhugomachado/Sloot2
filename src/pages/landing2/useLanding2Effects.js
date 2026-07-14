@@ -83,6 +83,7 @@ export function useFloating(scopeRef) {
 /**
  * Scroll story: ILIMITADO quebra em frustrações → caos → explosão → silêncio →
  * "A Slooti faz diferente."
+ * Em mobile (≤768px): chips em coluna legível, sem rotação caótica.
  */
 export function useScrollStory(sectionRef) {
   useEffect(() => {
@@ -93,6 +94,7 @@ export function useScrollStory(sectionRef) {
     const chips = section.querySelectorAll('[data-story-chip]');
     const calm = section.querySelector('[data-story-calm]');
     const stage = section.querySelector('[data-story-stage]');
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
     if (prefersReducedMotion()) {
       gsap.set(letters, { opacity: 0 });
@@ -106,7 +108,7 @@ export function useScrollStory(sectionRef) {
         scrollTrigger: {
           trigger: section,
           start: 'top top',
-          end: '+=340%',
+          end: isMobile ? '+=220%' : '+=340%',
           pin: stage,
           scrub: 0.8,
         },
@@ -118,10 +120,10 @@ export function useScrollStory(sectionRef) {
         tl.to(
           letter,
           {
-            x: dir * (60 + Math.random() * 190),
-            y: (Math.random() - 0.5) * 300,
-            rotate: dir * (14 + Math.random() * 42),
-            opacity: 0.14,
+            x: dir * (isMobile ? 24 + (i % 4) * 10 : 60 + Math.random() * 190),
+            y: isMobile ? (i % 2 === 0 ? -40 : 40) : (Math.random() - 0.5) * 300,
+            rotate: isMobile ? dir * 8 : dir * (14 + Math.random() * 42),
+            opacity: 0.12,
             duration: 1,
             ease: 'power2.inOut',
           },
@@ -129,51 +131,73 @@ export function useScrollStory(sectionRef) {
         );
       });
 
-      // Fase 2 — o caos dos concorrentes toma a tela
+      // Fase 2 — chips
       chips.forEach((chip, i) => {
-        tl.fromTo(
-          chip,
-          { opacity: 0, scale: 0.5, y: 90 },
-          { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: 'back.out(2)' },
-          0.55 + i * 0.07,
-        );
-        tl.to(
-          chip,
-          {
-            rotate: `+=${(Math.random() - 0.5) * 14}`,
-            duration: 0.9,
-            ease: 'sine.inOut',
-          },
-          0.9 + i * 0.05,
-        );
+        if (isMobile) {
+          tl.fromTo(
+            chip,
+            { opacity: 0, y: 28 },
+            { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
+            0.55 + i * 0.08,
+          );
+        } else {
+          tl.fromTo(
+            chip,
+            { opacity: 0, scale: 0.5, y: 90 },
+            { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: 'back.out(2)' },
+            0.55 + i * 0.07,
+          );
+          tl.to(
+            chip,
+            {
+              rotate: `+=${(Math.random() - 0.5) * 14}`,
+              duration: 0.9,
+              ease: 'sine.inOut',
+            },
+            0.9 + i * 0.05,
+          );
+        }
       });
 
-      tl.to(letters, { opacity: 0, duration: 0.4 }, 1.7);
+      tl.to(letters, { opacity: 0, duration: 0.4 }, isMobile ? 1.4 : 1.7);
 
-      // Fase 3 — explosão: tudo voa para fora
+      // Fase 3 — saída
       chips.forEach((chip, i) => {
-        const angle = (i / chips.length) * Math.PI * 2;
-        tl.to(
-          chip,
-          {
-            x: `+=${Math.cos(angle) * 900}`,
-            y: `+=${Math.sin(angle) * 700}`,
-            rotate: `+=${(Math.random() - 0.5) * 200}`,
-            opacity: 0,
-            scale: 0.4,
-            duration: 0.85,
-            ease: 'power4.in',
-          },
-          2.6 + (i % 5) * 0.03,
-        );
+        if (isMobile) {
+          tl.to(
+            chip,
+            {
+              y: -36,
+              opacity: 0,
+              duration: 0.45,
+              ease: 'power2.in',
+            },
+            2.1 + i * 0.04,
+          );
+        } else {
+          const angle = (i / chips.length) * Math.PI * 2;
+          tl.to(
+            chip,
+            {
+              x: `+=${Math.cos(angle) * 900}`,
+              y: `+=${Math.sin(angle) * 700}`,
+              rotate: `+=${(Math.random() - 0.5) * 200}`,
+              opacity: 0,
+              scale: 0.4,
+              duration: 0.85,
+              ease: 'power4.in',
+            },
+            2.6 + (i % 5) * 0.03,
+          );
+        }
       });
 
-      // Fase 4 — silêncio, e a frase
+      // Fase 4 — frase
       tl.fromTo(
         calm,
         { opacity: 0, y: 40, scale: 0.96 },
         { opacity: 1, y: 0, scale: 1, duration: 1.1, ease: EASE_SOFT },
-        3.7,
+        isMobile ? 2.8 : 3.7,
       );
     }, section);
 
