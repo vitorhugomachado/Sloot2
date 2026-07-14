@@ -1,6 +1,6 @@
-/** Número com DDI (ex. 5511999999999). Defina VITE_LANDING_WHATSAPP_PHONE no .env */
+/** Número com DDI (ex. 5544997641168). Defina VITE_LANDING_WHATSAPP_PHONE no .env */
 const WHATSAPP_PHONE = (
-  import.meta.env.VITE_LANDING_WHATSAPP_PHONE || '5511999999999'
+  import.meta.env.VITE_LANDING_WHATSAPP_PHONE || '5544997641168'
 ).replace(/\D/g, '');
 
 function buildWhatsAppUrl(message) {
