@@ -936,6 +936,53 @@ export const AppProvider = ({ children }) => {
     return false;
   };
 
+  const addManualServiceRevenue = async (payload) => {
+    try {
+      const res = await apiFetch(`${API_URL}/finance/manual-service`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        setAppointments((prev) => [
+          ...prev,
+          mergeAppointmentActivity(undefined, saved),
+        ]);
+        return { ok: true, data: saved };
+      }
+      const err = await res.json().catch(() => ({}));
+      return { ok: false, message: err.message || 'Erro ao registar atendimento manual.' };
+    } catch {
+      return { ok: false, message: 'Erro de conexão ao registar atendimento.' };
+    }
+  };
+
+  const addManualProductSale = async (payload) => {
+    try {
+      const res = await apiFetch(`${API_URL}/finance/manual-product`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const body = await res.json();
+        const { sale, product } = body;
+        if (product?.id != null) {
+          setProducts((prev) => prev.map((p) => (p.id === product.id ? product : p)));
+        }
+        if (sale) {
+          setProductSales((prev) => [...prev, sale]);
+        }
+        return { ok: true, data: body };
+      }
+      const err = await res.json().catch(() => ({}));
+      return { ok: false, message: err.message || 'Erro ao registar venda manual.' };
+    } catch {
+      return { ok: false, message: 'Erro de conexão ao registar venda.' };
+    }
+  };
+
   const addExpense = async (newExpense) => {
     const res = await apiFetch(`${API_URL}/expenses`, {
       method: 'POST',
@@ -1120,6 +1167,7 @@ export const AppProvider = ({ children }) => {
       sellProduct, updateBusinessInfo,
       getFinancialStats, getBarberRanking,
       addExpense, removeExpense, updateExpense, refreshMonthClosings, createMonthClosing, refreshPeriodClosings, createPeriodClosing,
+      addManualServiceRevenue, addManualProductSale,
       login, logout, currentUser, tenantModules, token, tenantSlug, apiFetch, loading, bootstrapLoading, staffLoading,
       currentCustomer, isCustomerAuthenticated: customerSessionActive, customerLogin, customerGoogleLogin, customerRegister, customerLogout, refreshCurrentCustomer, syncNavigatedCustomer,
       getCustomerAppointments, updateCustomerProfile,

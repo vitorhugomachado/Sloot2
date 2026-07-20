@@ -211,6 +211,9 @@ const BookingPreviewShell = import.meta.env.DEV
 const LoginPreviewShell = import.meta.env.DEV
   ? lazy(() => import('./pages/preview/LoginPreviewShell'))
   : null;
+const SchedulerWeekPreview = import.meta.env.DEV
+  ? lazy(() => import('./pages/preview/SchedulerWeekPreviewShell'))
+  : null;
 
 const StaffArea = () => {
   const { logout, currentUser, tenantModules } = useApp();
@@ -459,11 +462,22 @@ function App() {
               </Suspense>
             )}
           />
+          {SchedulerWeekPreview ? (
+            <Route
+              path="/agenda-teste"
+              element={(
+                <Suspense fallback={<TabLoadingFallback />}>
+                  <SchedulerWeekPreview />
+                </Suspense>
+              )}
+            />
+          ) : null}
         </>
       ) : (
         <>
           <Route path="/telateste" element={<Navigate to="/" replace />} />
           <Route path="/telaloginteste" element={<Navigate to="/" replace />} />
+          <Route path="/agenda-teste" element={<Navigate to="/" replace />} />
         </>
       )}
       <Route path="/landingteste" element={<Navigate to="/" replace />} />

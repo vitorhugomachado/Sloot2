@@ -11,7 +11,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { buildCommissionReport, indexBarbersById, splitAppointmentCommission, getShopPercent } from '../utils/commission';
 import { getAppointmentRevenueDate, getAppointmentServiceRevenue } from '../utils/appointmentRevenue';
-import { parseLocalDateIso, toIsoLocal } from '../utils/dateLocal';
+import { parseLocalDateIso, toIsoLocal, todayIsoLocal } from '../utils/dateLocal';
 
 // --- SHARED COMPONENTS ---
 
@@ -586,8 +586,54 @@ const DespesasTab = ({ stats, netProfit, repasseServicos, netMargin, onAdd, onEd
   );
 };
 
+const inputStyle = {
+  padding: '12px',
+  borderRadius: '8px',
+  border: '1px solid var(--border-color)',
+  background: 'var(--surface-color)',
+  color: 'var(--text-primary)',
+  width: '100%',
+};
+
+const emptyManualServiceForm = () => ({
+  customer: '',
+  phone: '',
+  service: '',
+  barberId: '',
+  date: todayIsoLocal(),
+  time: '12:00',
+  price: '',
+});
+
+const emptyManualProductForm = () => ({
+  productId: '',
+  quantity: '1',
+  date: todayIsoLocal(),
+  barberId: '',
+  customerName: '',
+});
+
 const ExtratoTab = ({ stats, barbers }) => {
+  const {
+    currentUser,
+    services,
+    products,
+    addManualServiceRevenue,
+    addManualProductSale,
+  } = useApp();
+
   const [searchTerm, setSearchTerm] = useState('');
+  const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
+  const [entryType, setEntryType] = useState('service'); // 'service' | 'product'
+  const [serviceForm, setServiceForm] = useState(emptyManualServiceForm);
+  const [productForm, setProductForm] = useState(emptyManualProductForm);
+  const [saving, setSaving] = useState(false);
+
+  const isGerente = currentUser?.role === 'Gerente';
+  const activeBarbers = useMemo(
+    () => (barbers || []).filter((b) => !b.deletedAt && b.status !== 'Inativo'),
+    [barbers]
+  );
 
   const allTransactions = useMemo(() => {
     const barbersById = indexBarbersById(barbers);
@@ -629,9 +675,92 @@ const ExtratoTab = ({ stats, barbers }) => {
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [stats, searchTerm, barbers]);
 
+  const openRevenueModal = () => {
+    setEntryType('service');
+    setServiceForm(emptyManualServiceForm());
+    setProductForm(emptyManualProductForm());
+    setIsRevenueModalOpen(true);
+  };
+
+  const handleServiceSelect = (serviceName) => {
+    const svc = (services || []).find((s) => s.name === serviceName);
+    setServiceForm((prev) => ({
+      ...prev,
+      service: serviceName,
+      price: svc != null && Number.isFinite(Number(svc.price)) ? String(svc.price) : prev.price,
+    }));
+  };
+
+  const handleSaveRevenue = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      if (entryType === 'service') {
+        if (!serviceForm.customer.trim() || !serviceForm.service || !serviceForm.barberId || !serviceForm.date) {
+          alert('Preencha cliente, serviço, profissional e data.');
+          return;
+        }
+        const price = Number(serviceForm.price);
+        if (!Number.isFinite(price) || price < 0) {
+          alert('Informe um valor válido.');
+          return;
+        }
+        const result = await addManualServiceRevenue({
+          customer: serviceForm.customer.trim(),
+          phone: serviceForm.phone.trim() || undefined,
+          service: serviceForm.service,
+          barberId: Number(serviceForm.barberId),
+          date: serviceForm.date,
+          time: serviceForm.time || '12:00',
+          price,
+        });
+        if (!result.ok) {
+          alert(result.message || 'Não foi possível registar o atendimento.');
+          return;
+        }
+      } else {
+        if (!productForm.productId || !productForm.date) {
+          alert('Preencha produto e data.');
+          return;
+        }
+        const quantity = Number(productForm.quantity);
+        if (!Number.isInteger(quantity) || quantity <= 0) {
+          alert('Informe uma quantidade válida.');
+          return;
+        }
+        const result = await addManualProductSale({
+          productId: Number(productForm.productId),
+          quantity,
+          date: productForm.date,
+          barberId: productForm.barberId ? Number(productForm.barberId) : null,
+          customerName: productForm.customerName.trim() || null,
+        });
+        if (!result.ok) {
+          alert(result.message || 'Não foi possível registar a venda.');
+          return;
+        }
+      }
+      setIsRevenueModalOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="fade-in glass-card" style={{ padding: '2rem' }}>
-      <SectionHeader title="Extrato de Vendas" subTitle="Serviços com repasse e retenção conforme % do profissional; produtos integram na retenção da casa neste extrato." />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+        <SectionHeader title="Extrato de Vendas" subTitle="Serviços com repasse e retenção conforme % do profissional; produtos integram na retenção da casa neste extrato." />
+        {isGerente && (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={openRevenueModal}
+            style={{ height: 'fit-content', padding: '10px 20px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+          >
+            + Lançar receita
+          </button>
+        )}
+      </div>
 
       <div className="finance-extrato-toolbar">
          <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
@@ -641,7 +770,7 @@ const ExtratoTab = ({ stats, barbers }) => {
               style={{ width: '100%', padding: '12px 12px 12px 45px', borderRadius: '10px', border: '1px solid var(--border-color)', outline: 'none', background: 'var(--surface-color)', color: 'var(--text-primary)' }}
             />
          </div>
-         <button style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '9999px', cursor: 'pointer', color: 'var(--text-primary)' }}>
+         <button type="button" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '9999px', cursor: 'pointer', color: 'var(--text-primary)' }}>
            <Download size={16} /> Exportar
          </button>
       </div>
@@ -686,6 +815,163 @@ const ExtratoTab = ({ stats, barbers }) => {
         </table>
         {allTransactions.length === 0 && <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>Nenhum registro encontrado</div>}
       </div>
+
+      {isRevenueModalOpen && (
+        <div className="modal-backdrop">
+          <div className="modal-glass-panel fade-in" style={{ width: '95%', maxWidth: '440px', padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h2 style={{ fontSize: '1.2rem', margin: 0 }}>Lançar receita</h2>
+              <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }} onClick={() => setIsRevenueModalOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem' }}>
+              {[
+                { id: 'service', label: 'Serviço' },
+                { id: 'product', label: 'Produto' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setEntryType(tab.id)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: entryType === tab.id ? '1px solid var(--accent-color, #2563EB)' : '1px solid var(--border-color)',
+                    background: entryType === tab.id ? 'var(--panel-bg)' : 'var(--surface-color)',
+                    color: 'var(--text-primary)',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              {entryType === 'service' ? (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Cliente *"
+                    value={serviceForm.customer}
+                    onChange={(e) => setServiceForm({ ...serviceForm, customer: e.target.value })}
+                    style={inputStyle}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Telefone (opcional)"
+                    value={serviceForm.phone}
+                    onChange={(e) => setServiceForm({ ...serviceForm, phone: e.target.value })}
+                    style={inputStyle}
+                  />
+                  <select
+                    value={serviceForm.service}
+                    onChange={(e) => handleServiceSelect(e.target.value)}
+                    style={inputStyle}
+                  >
+                    <option value="">Serviço *</option>
+                    {(services || []).map((s) => (
+                      <option key={s.id} value={s.name}>{s.name}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={serviceForm.barberId}
+                    onChange={(e) => setServiceForm({ ...serviceForm, barberId: e.target.value })}
+                    style={inputStyle}
+                  >
+                    <option value="">Profissional *</option>
+                    {activeBarbers.map((b) => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="date"
+                    value={serviceForm.date}
+                    onChange={(e) => setServiceForm({ ...serviceForm, date: e.target.value })}
+                    style={inputStyle}
+                  />
+                  <input
+                    type="time"
+                    value={serviceForm.time}
+                    onChange={(e) => setServiceForm({ ...serviceForm, time: e.target.value })}
+                    style={inputStyle}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Valor *"
+                    min="0"
+                    step="0.01"
+                    value={serviceForm.price}
+                    onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
+                    style={inputStyle}
+                  />
+                </>
+              ) : (
+                <>
+                  <select
+                    value={productForm.productId}
+                    onChange={(e) => setProductForm({ ...productForm, productId: e.target.value })}
+                    style={inputStyle}
+                  >
+                    <option value="">Produto *</option>
+                    {(products || []).map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} (estoque: {p.stock})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    placeholder="Quantidade *"
+                    min="1"
+                    step="1"
+                    value={productForm.quantity}
+                    onChange={(e) => setProductForm({ ...productForm, quantity: e.target.value })}
+                    style={inputStyle}
+                  />
+                  <input
+                    type="date"
+                    value={productForm.date}
+                    onChange={(e) => setProductForm({ ...productForm, date: e.target.value })}
+                    style={inputStyle}
+                  />
+                  <select
+                    value={productForm.barberId}
+                    onChange={(e) => setProductForm({ ...productForm, barberId: e.target.value })}
+                    style={inputStyle}
+                  >
+                    <option value="">Profissional (opcional)</option>
+                    {activeBarbers.map((b) => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Cliente (opcional)"
+                    value={productForm.customerName}
+                    onChange={(e) => setProductForm({ ...productForm, customerName: e.target.value })}
+                    style={inputStyle}
+                  />
+                </>
+              )}
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ padding: '14px', opacity: saving ? 0.7 : 1 }}
+                disabled={saving}
+                onClick={handleSaveRevenue}
+              >
+                {saving ? 'A guardar…' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -48,6 +48,10 @@ const {
 const requireTenantModule = require('../middlewares/requireTenantModule');
 const { getPeriodClosings, createPeriodClosing } = require('../controllers/periodClosingController');
 const {
+  createManualService,
+  createManualProduct,
+} = require('../controllers/financeManualController');
+const {
   requireStaff,
   getVapidPublicKeyHandler,
   subscribePush,
@@ -130,5 +134,8 @@ router.put('/business', authMiddleware, requireTenantModule('settings'), updateB
 
 router.get('/period-closings', authMiddleware, requireTenantModule('finance'), getPeriodClosings);
 router.post('/period-closings', authMiddleware, requireTenantModule('finance'), createPeriodClosing);
+
+router.post('/finance/manual-service', authMiddleware, requireTenantModule('finance'), createManualService);
+router.post('/finance/manual-product', authMiddleware, requireTenantModule('finance'), createManualProduct);
 
 module.exports = router;
