@@ -26,9 +26,6 @@ const getAppointments = async (req, res) => {
       ...tenantWhere(req),
       date: { gte: from, lte: to },
     };
-    if (req.user.role !== 'Gerente') {
-      where.barberId = req.user.id;
-    }
 
     const appointments = await prisma.appointment.findMany({
       where,
@@ -94,10 +91,6 @@ const createAppointment = async (req, res) => {
       !Number.isFinite(normalizedPrice)
     ) {
       return res.status(400).json({ message: 'Dados obrigatórios do agendamento ausentes ou inválidos' });
-    }
-
-    if (req.user && req.user.role === 'Barbeiro' && Number(req.user.id) !== normalizedBarberId) {
-      return res.status(403).json({ message: 'Não pode criar agendamento para outro profissional.' });
     }
 
     if (isBookingSlotInPast(String(date), normalizedTime)) {
@@ -228,18 +221,11 @@ const updateAppointment = async (req, res) => {
       return res.json(appointment);
     }
 
-    if (req.user.role !== 'Gerente') {
-      const isOwnerBarber = Number(existing.barberId) === Number(req.user.id);
-      if (!isOwnerBarber) {
-        return res.status(403).json({ message: 'Sem permissão para alterar este agendamento' });
-      }
+    if (req.user.role !== 'Gerente' && req.user.role !== 'Barbeiro') {
+      return res.status(403).json({ message: 'Sem permissão para alterar este agendamento' });
     }
 
     const data = { ...req.body };
-
-    if (req.user.role !== 'Gerente') {
-      delete data.barberId;
-    }
 
     delete data.id;
     delete data.barber;

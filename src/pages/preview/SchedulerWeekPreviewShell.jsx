@@ -5,7 +5,7 @@ import { TenantProvider, useTenant } from '../../context/TenantContext';
 import TabLoadingFallback from '../../components/TabLoadingFallback';
 import { PREVIEW_DEFAULT_SLUG } from '../../constants/previewTenant';
 
-const SchedulerWeekPreview = lazy(() => import('./SchedulerWeekPreview'));
+const SchedulerWeek = lazy(() => import('../SchedulerWeek'));
 
 function PreviewInner() {
   const { loading, error } = useTenant();
@@ -22,7 +22,9 @@ function PreviewInner() {
 
   return (
     <Suspense fallback={<TabLoadingFallback />}>
-      <SchedulerWeekPreview />
+      <div className="swp-preview-shell">
+        <SchedulerWeek />
+      </div>
     </Suspense>
   );
 }

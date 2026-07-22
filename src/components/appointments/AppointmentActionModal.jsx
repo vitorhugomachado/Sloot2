@@ -26,6 +26,7 @@ export default function AppointmentActionModal({
   handleChangeService,
   handleAddCheckoutProduct,
   handleCheckoutProductChange,
+  handleWhatsAppConfirm,
   checkoutServiceTotal,
   checkoutProductsTotal,
   checkoutGrandTotal,
@@ -122,7 +123,7 @@ export default function AppointmentActionModal({
                 className="action-modal-choice-btn action-modal-choice-btn--whatsapp"
                 title="Confirmar horário por WhatsApp"
                 aria-label={`Enviar mensagem para ${app.customer} por WhatsApp`}
-                onClick={() => openWhatsAppConfirm(app)}
+                onClick={() => (handleWhatsAppConfirm ? handleWhatsAppConfirm(app) : openWhatsAppConfirm(app))}
               >
                 <WhatsAppIcon size={18} /> Enviar mensagem no WhatsApp
               </button>

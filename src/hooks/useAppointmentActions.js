@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { todayIsoLocal } from '../utils/dateLocal';
+import { openWhatsAppConfirm } from '../utils/appointmentWhatsApp';
 
 const EMPTY_CHECKOUT_PRODUCT = { productId: '', quantity: 1 };
+const WHATSAPP_CONFIRMABLE = new Set(['Agendado', 'Pendente']);
 
 export function formatCheckoutCurrency(value) {
   return `R$ ${Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
@@ -187,6 +189,23 @@ export function useAppointmentActions({
     resetCheckoutState(app);
   };
 
+  const handleWhatsAppConfirm = async (app, event) => {
+    event?.stopPropagation?.();
+    if (!app || app.status === 'Cancelado' || app.status === 'Finalizado') return false;
+    const opened = openWhatsAppConfirm(app);
+    if (!opened) return false;
+    if (WHATSAPP_CONFIRMABLE.has(String(app.status || '').trim())) {
+      const success = await updateAppointmentStatus(app.id, 'Confirmado');
+      if (success) {
+        setActionModal((prev) => {
+          if (!prev.open || !prev.app || String(prev.app.id) !== String(app.id)) return prev;
+          return { ...prev, app: { ...prev.app, status: 'Confirmado' } };
+        });
+      }
+    }
+    return true;
+  };
+
   return {
     actionModal,
     setActionModal,
@@ -210,6 +229,7 @@ export function useAppointmentActions({
     handleQuickStart,
     handleQuickConfirm,
     handleQuickCancel,
+    handleWhatsAppConfirm,
     formatCheckoutCurrency,
   };
 }

@@ -7,7 +7,7 @@ import { useAppointmentActions, formatCheckoutCurrency } from '../hooks/useAppoi
 import { filterAvailableBookingTimes, isBookingSlotTaken } from '../utils/bookingAvailability';
 import { parseDurationMinutes } from '../utils/barberAvailability';
 import { getAppointmentStatusConfig, isInServiceStatus } from '../utils/appointmentStatus';
-import { normalizePhoneForWhatsApp, openWhatsAppConfirm } from '../utils/appointmentWhatsApp';
+import { normalizePhoneForWhatsApp } from '../utils/appointmentWhatsApp';
 import { STAFF_DASHBOARD_TIME_SLOTS } from '../utils/publicBookingSlots';
 import { getStaffBookingFormError } from '../utils/staffBookingForm';
 
@@ -441,8 +441,7 @@ const Dashboard = () => {
   const formatCurrency = formatCheckoutCurrency;
 
   const openWhatsAppConfirmHandler = (app, event) => {
-    event.stopPropagation();
-    openWhatsAppConfirm(app);
+    appointmentActions.handleWhatsAppConfirm(app, event);
   };
 
   const openReceiptModal = (app) => {

@@ -7253,7 +7253,7 @@ button.settings-action-icon-btn.set-mobile-action-icon--danger {
   font-size: 0.85rem;
   font-weight: 600;
   padding: 8px 18px;
-  border-radius: 12px;
+  border-radius: 999px;
   border: 1px solid var(--border-color);
   background: #ffffff;
   color: var(--text-primary);

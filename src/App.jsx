@@ -30,7 +30,7 @@ import { filterStaffNavModules } from './utils/staffNavModules';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Clients = lazy(() => import('./pages/Clients'));
-const Scheduler = lazy(() => import('./pages/Scheduler'));
+const Scheduler = lazy(() => import('./pages/SchedulerWeek'));
 const PublicBookingPage = lazy(() => import('./pages/public-booking/PublicBookingPage'));
 const CustomerAreaLayout = lazy(() => import('./pages/public-booking/CustomerAreaLayout'));
 const Finance = lazy(() => import('./pages/Finance'));
@@ -323,14 +323,14 @@ const StaffArea = () => {
           onLogout={handleLogout}
         />
         <main className={`main-content ${isSidebarCollapsed ? 'expanded' : ''}`}>
-          <header className="desktop-only" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '20px', marginBottom: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '32px', height: '32px', background: 'var(--accent-color)', color: 'var(--accent-text)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 600 }}>
+          <header className="desktop-only staff-top-header">
+            <div className="staff-top-header__user">
+              <div className="staff-top-header__avatar">
                 {currentUser?.name?.charAt(0).toUpperCase()}
               </div>
-              <span style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'capitalize' }}>{currentUser?.name} ({currentUser?.role})</span>
+              <span className="staff-top-header__name">{currentUser?.name} ({currentUser?.role})</span>
             </div>
-            <button type="button" className="btn-secondary" onClick={handleLogout} style={{ fontSize: '0.8rem' }}>Sair</button>
+            <button type="button" className="staff-top-header__logout" onClick={handleLogout}>Sair</button>
           </header>
           <StaffTabPanels activeTab={activeTab} />
         </main>
