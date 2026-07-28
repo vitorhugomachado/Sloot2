@@ -17,6 +17,9 @@ export const RESERVED_TENANT_SLUGS = new Set([
   'telateste',
   'telaloginteste',
   'landingteste',
+  'landing2',
+  'landing3',
+  'siteteste',
   'paginadevendas',
 ]);
 

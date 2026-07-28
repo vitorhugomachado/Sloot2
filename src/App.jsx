@@ -40,6 +40,7 @@ const Inventory = lazy(() => import('./pages/Inventory'));
 const CustomerPortal = lazy(() => import('./pages/CustomerPortal'));
 const CustomerResetPasswordPage = lazy(() => import('./pages/public-booking/CustomerResetPasswordPage'));
 const CompleteProfileGate = lazy(() => import('./components/CompleteProfileGate'));
+const Landing3Page = lazy(() => import('./pages/landing3/Landing3Page'));
 
 const VALID_TABS = ['dashboard', 'clients', 'scheduler', 'finance', 'users', 'inventory', 'settings'];
 
@@ -482,6 +483,15 @@ function App() {
       )}
       <Route path="/landingteste" element={<Navigate to="/" replace />} />
       <Route path="/landing2" element={<Navigate to="/" replace />} />
+      <Route path="/landing3" element={<Navigate to="/siteteste" replace />} />
+      <Route
+        path="/siteteste"
+        element={(
+          <Suspense fallback={<TabLoadingFallback />}>
+            <Landing3Page />
+          </Suspense>
+        )}
+      />
       <Route path="/paginadevendas" element={<PaginadeVendasRoute />} />
       <Route path="/:tenantSlug/*" element={<TenantShell />} />
       <Route path="/" element={<HomeLanding />} />
