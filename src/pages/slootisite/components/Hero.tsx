@@ -13,8 +13,8 @@ const NAV_ITEMS = [
   },
 ]
 
-/** Teste: vídeo da barbearia no hero. */
-const HERO_VIDEO = '/hero-barbershop-test.mp4'
+/** Hero da home institucional. */
+const HERO_VIDEO = '/hero-barbershop-test.mp4?v=1'
 
 const EASE = [0.16, 1, 0.3, 1] as const
 

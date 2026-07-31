@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { STUDIO_WHATSAPP_URL } from '../../landing-teste/landingContact.config'
 import { WordsPullUpMultiStyle } from './WordsPullUpMultiStyle'
 
-const FEATURE_VIDEO = '/feature-canvas.mp4'
+const FEATURE_VIDEO = '/feature-canvas.mp4?v=202607310013'
 
 const CARD_EASE = [0.22, 1, 0.36, 1] as const
 

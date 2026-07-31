@@ -83,6 +83,11 @@ if (serveSpa) {
       setHeaders(res, filePath) {
         if (filePath.endsWith('index.html')) {
           res.setHeader('Cache-Control', 'no-cache');
+          return;
+        }
+        // Vídeos/imagens de marketing mudam no mesmo path — não marcar immutable
+        if (/\.(mp4|webm|mov|png|jpe?g|webp|gif)$/i.test(filePath)) {
+          res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
         }
       },
     }),
