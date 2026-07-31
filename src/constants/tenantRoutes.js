@@ -21,6 +21,7 @@ export const RESERVED_TENANT_SLUGS = new Set([
   'landing3',
   'siteteste',
   'paginadevendas',
+  'landingslootibarbers',
 ]);
 
 function norm(slug) {
