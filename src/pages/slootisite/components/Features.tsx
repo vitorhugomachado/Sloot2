@@ -1,11 +1,10 @@
 import { motion, useInView } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { WordsPullUpMultiStyle } from './WordsPullUpMultiStyle'
 
-const FEATURE_VIDEO =
-  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260406_133058_0504132a-0cf3-4450-a370-8ea3b05c95d4.mp4'
+const FEATURE_VIDEO = '/feature-canvas.mp4'
 
 const CARD_EASE = [0.22, 1, 0.36, 1] as const
 
@@ -53,13 +52,23 @@ function FeatureCard({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
+  const [lifted, setLifted] = useState(false)
 
   return (
     <motion.div
       ref={ref}
-      className={`ss-feature-card ${className}`.trim()}
+      className={`ss-feature-card${lifted ? ' ss-feature-card--lifted' : ''} ${className}`.trim()}
       initial={{ scale: 0.95, opacity: 0 }}
       animate={isInView ? { scale: 1, opacity: 1 } : { scale: 0.95, opacity: 0 }}
+      whileHover={{
+        y: -10,
+        scale: 1.04,
+        transition: { delay: 0, duration: 0.35, ease: CARD_EASE },
+      }}
+      onHoverStart={() => setLifted(true)}
+      onHoverEnd={() => setLifted(false)}
+      onFocus={() => setLifted(true)}
+      onBlur={() => setLifted(false)}
       transition={{
         delay: index * 0.15,
         duration: 0.7,

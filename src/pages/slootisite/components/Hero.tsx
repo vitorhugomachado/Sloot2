@@ -8,8 +8,8 @@ const NAV_ITEMS = [
   { label: 'Contato', href: '#contato' },
 ]
 
-const HERO_VIDEO =
-  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_170732_8a9ccda6-5cff-4628-b164-059c500a2b41.mp4'
+/** Teste: vídeo da barbearia no hero. */
+const HERO_VIDEO = '/hero-barbershop-test.mp4'
 
 const EASE = [0.16, 1, 0.3, 1] as const
 
