@@ -28,8 +28,8 @@ function AnimatedLetter({
 }
 
 const BODY_PARAGRAPHS = [
-  'Desenvolvemos soluções inteligentes que transformam a forma como empresas operam, crescem e inovam.',
-  'Criamos plataformas, sistemas e experiências digitais que unem tecnologia, design e performance para resolver desafios reais e impulsionar resultados.',
+  'A Slooti nasceu da vontade de unir design, tecnologia e resultados reais para negócios que querem crescer com inteligência.',
+  'Construímos produtos digitais — como o Slooti Barbers e o Neura — que transformam operação, experiência e escala em uma mesma jornada.',
 ]
 
 export function About() {
@@ -45,8 +45,8 @@ export function About() {
         <WordsPullUpMultiStyle
           className="ss-about__title"
           segments={[
-            { text: 'Soluções', className: 'ss-about__title-seg' },
-            { text: 'Digitais', className: 'ss-serif' },
+            { text: 'Nossa', className: 'ss-about__title-seg' },
+            { text: 'História', className: 'ss-serif' },
           ]}
         />
 

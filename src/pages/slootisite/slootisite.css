@@ -592,6 +592,77 @@ body.slootisite-lock {
   padding: 1rem;
 }
 
+.ss-feature-card--has-bg {
+  background: #111;
+}
+
+.ss-feature-card__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.ss-feature-card__bg-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0.35) 100%);
+}
+
+.ss-feature-card__body {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  height: 100%;
+  min-height: inherit;
+  flex-direction: column;
+}
+
+.ss-feature-card--panel .ss-feature-card__title {
+  color: #ffffff;
+  font-size: 1.15rem;
+}
+
+.ss-feature-card--panel .ss-feature-card__item-text {
+  color: #ffffff;
+  font-size: 0.95rem;
+}
+
+.ss-feature-card--panel .ss-feature-card__link {
+  color: #ffffff;
+}
+
+.ss-feature-card--panel .ss-feature-card__num {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ss-feature-card--panel .ss-feature-card__check {
+  color: #ffffff;
+}
+
+.ss-feature-card--has-bg .ss-feature-card__title,
+.ss-feature-card--has-bg .ss-feature-card__item-text,
+.ss-feature-card--has-bg .ss-feature-card__link {
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+}
+
+.ss-feature-card--has-bg .ss-feature-card__check {
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.5));
+}
+
+@media (min-width: 640px) {
+  .ss-feature-card--panel .ss-feature-card__title {
+    font-size: 1.35rem;
+  }
+
+  .ss-feature-card--panel .ss-feature-card__item-text {
+    font-size: 1.05rem;
+  }
+}
+
 .ss-feature-card__video {
   position: absolute;
   inset: 0;

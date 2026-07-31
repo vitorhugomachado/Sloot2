@@ -2,6 +2,7 @@ import { motion, useInView } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { STUDIO_WHATSAPP_URL } from '../../landing-teste/landingContact.config'
 import { WordsPullUpMultiStyle } from './WordsPullUpMultiStyle'
 
 const FEATURE_VIDEO = '/feature-canvas.mp4'
@@ -21,6 +22,7 @@ const CARDS = [
     title: 'Slooti Barbers',
     icon: SLOOTI_LOGO,
     href: '/landingslootibarbers',
+    backgroundImage: '/card-slooti-barbers-bg.png',
     items: [
       'Agendamento Online 24/7',
       'Gestão Financeira e Comissões',
@@ -33,10 +35,10 @@ const CARDS = [
     number: '02',
     title: 'Neura',
     icon: '/icone-neutro.svg',
-    href: '#contato',
+    href: STUDIO_WHATSAPP_URL,
+    backgroundImage: '/card-neura-bg.png',
     items: [
       'Em desenvolvimento',
-      'Em breve',
     ],
   },
 ]
@@ -111,14 +113,13 @@ export function Features() {
                     playsInline
                   />
                   <div className="ss-feature-card__shade" />
-                  <p className="ss-feature-card__caption">{card.title}</p>
                 </FeatureCard>
               )
             }
 
             const linkInner = (
               <>
-                Learn more
+                Saiba mais
                 <ArrowRight className="ss-feature-card__link-arrow" />
               </>
             )
@@ -127,39 +128,58 @@ export function Features() {
               <FeatureCard
                 key={card.title}
                 index={index}
-                className="ss-feature-card--panel"
+                className={`ss-feature-card--panel${card.backgroundImage ? ' ss-feature-card--has-bg' : ''}`}
               >
-                {card.icon ? (
-                  <img
-                    src={card.icon}
-                    alt={card.title === 'Slooti Barbers' ? 'Slooti Barbers' : card.title}
-                    className="ss-feature-card__icon"
-                  />
+                {card.backgroundImage ? (
+                  <>
+                    <img
+                      className="ss-feature-card__bg"
+                      src={card.backgroundImage}
+                      alt=""
+                    />
+                    <div className="ss-feature-card__bg-shade" />
+                  </>
                 ) : null}
 
-                <div className="ss-feature-card__meta">
-                  <span className="ss-feature-card__num">{card.number}</span>
-                  <h3 className="ss-feature-card__title">{card.title}</h3>
+                <div className="ss-feature-card__body">
+                  {card.icon ? (
+                    <img
+                      src={card.icon}
+                      alt={card.title === 'Slooti Barbers' ? 'Slooti Barbers' : card.title}
+                      className="ss-feature-card__icon"
+                    />
+                  ) : null}
+
+                  <div className="ss-feature-card__meta">
+                    <span className="ss-feature-card__num">{card.number}</span>
+                    <h3 className="ss-feature-card__title">{card.title}</h3>
+                  </div>
+
+                  <ul className="ss-feature-card__list">
+                    {card.items.map((item) => (
+                      <li key={item} className="ss-feature-card__item">
+                        <Check className="ss-feature-card__check" />
+                        <span className="ss-feature-card__item-text">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {card.href.startsWith('/') ? (
+                    <Link to={card.href} className="ss-feature-card__link">
+                      {linkInner}
+                    </Link>
+                  ) : (
+                    <a
+                      href={card.href}
+                      className="ss-feature-card__link"
+                      {...(card.href.startsWith('http')
+                        ? { target: '_blank', rel: 'noopener noreferrer' }
+                        : {})}
+                    >
+                      {linkInner}
+                    </a>
+                  )}
                 </div>
-
-                <ul className="ss-feature-card__list">
-                  {card.items.map((item) => (
-                    <li key={item} className="ss-feature-card__item">
-                      <Check className="ss-feature-card__check" />
-                      <span className="ss-feature-card__item-text">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {card.href.startsWith('/') ? (
-                  <Link to={card.href} className="ss-feature-card__link">
-                    {linkInner}
-                  </Link>
-                ) : (
-                  <a href={card.href} className="ss-feature-card__link">
-                    {linkInner}
-                  </a>
-                )}
               </FeatureCard>
             )
           })}

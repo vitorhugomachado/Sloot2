@@ -1,11 +1,16 @@
 import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
+import { STUDIO_WHATSAPP_URL } from '../../landing-teste/landingContact.config'
 import { WordsPullUp } from './WordsPullUp'
 
 const NAV_ITEMS = [
   { label: 'Nossa História', href: '#nossa-historia' },
   { label: 'Soluções', href: '#solucoes' },
-  { label: 'Contato', href: '#contato' },
+  {
+    label: 'Contato',
+    href: STUDIO_WHATSAPP_URL,
+    external: true,
+  },
 ]
 
 /** Teste: vídeo da barbearia no hero. */
@@ -33,7 +38,13 @@ export function Hero() {
           <ul className="ss-hero__nav-list">
             {NAV_ITEMS.map((item) => (
               <li key={item.label}>
-                <a href={item.href} className="ss-hero__nav-link">
+                <a
+                  href={item.href}
+                  className="ss-hero__nav-link"
+                  {...(item.external
+                    ? { target: '_blank', rel: 'noopener noreferrer' }
+                    : {})}
+                >
                   {item.label}
                 </a>
               </li>
