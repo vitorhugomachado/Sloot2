@@ -638,8 +638,17 @@ export const AppProvider = ({ children }) => {
           setAppointments(prev => prev.map(app => app.id === id ? { ...updatedApp, _updatedAtLocal: Date.now() } : app));
           return true;
       } else {
-          const err = await res.json();
-          alert(`Erro ao atualizar agendamento: ${err.message}`);
+          const err = await res.json().catch(() => ({}));
+          if (err.code === 'CASH_CLOSED' || err.code === 'CASH_REQUIRED' || /caixa/i.test(err.message || '')) {
+            const go = window.confirm(
+              `${err.message || 'Selecione ou abra o caixa do dia antes de confirmar o recebimento.'}\n\nAbrir o Financeiro novo agora?`,
+            );
+            if (go && tenantSlug) {
+              window.location.assign(`/${tenantSlug}/dashboard/financeiro`);
+            }
+          } else {
+            alert(`Erro ao atualizar agendamento: ${err.message || 'desconhecido'}`);
+          }
           return false;
       }
     } catch (error) {
@@ -1070,6 +1079,265 @@ export const AppProvider = ({ children }) => {
     return body;
   };
 
+  const financeV2 = {
+    getCurrentCash: async () => {
+      const res = await apiFetch(`${API_URL}/cash/current`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao buscar caixa');
+      return body;
+    },
+    listCashSessions: async () => {
+      const res = await apiFetch(`${API_URL}/cash/sessions`, { authScope: 'staff' });
+      return res.ok ? res.json() : [];
+    },
+    getCashSession: async (id) => {
+      const res = await apiFetch(`${API_URL}/cash/sessions/${id}`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao buscar sessão');
+      return body;
+    },
+    openCash: async (payload) => {
+      const res = await apiFetch(`${API_URL}/cash/open`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload || {}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro ao abrir caixa');
+        err.code = body.code;
+        err.status = res.status;
+        throw err;
+      }
+      return body;
+    },
+    reopenCash: async (id, payload = {}) => {
+      const res = await apiFetch(`${API_URL}/cash/sessions/${id}/reopen`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload || {}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro ao reabrir caixa');
+        err.code = body.code;
+        err.status = res.status;
+        throw err;
+      }
+      return body;
+    },
+    closeCash: async (payload) => {
+      const res = await apiFetch(`${API_URL}/cash/close`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload || {}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao fechar caixa');
+      return body;
+    },
+    createCashMovement: async (payload) => {
+      const res = await apiFetch(`${API_URL}/cash/movements`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload || {}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao lançar movimento');
+      return body;
+    },
+    listComandas: async (params = {}) => {
+      const qs = new URLSearchParams();
+      Object.entries(params).forEach(([k, v]) => {
+        if (v != null && v !== '') qs.set(k, v);
+      });
+      const res = await apiFetch(`${API_URL}/comandas?${qs}`, { authScope: 'staff' });
+      return res.ok ? res.json() : [];
+    },
+    createComanda: async (payload) => {
+      const res = await apiFetch(`${API_URL}/comandas`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao criar comanda');
+      return body;
+    },
+    updateComandaItems: async (id, payload) => {
+      const res = await apiFetch(`${API_URL}/comandas/${id}/items`, {
+        method: 'PUT',
+        authScope: 'staff',
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao atualizar itens');
+      return body;
+    },
+    createDirectSale: async (payload) => {
+      const res = await apiFetch(`${API_URL}/comandas/direct-sale`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro na venda avulsa');
+        err.code = body.code;
+        err.status = res.status;
+        throw err;
+      }
+      return body;
+    },
+    settleComanda: async (id, payments) => {
+      const res = await apiFetch(`${API_URL}/comandas/${id}/settle`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify({
+          payments,
+          cashSessionId: payments?.cashSessionId,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro ao quitar comanda');
+        err.code = body.code;
+        err.status = res.status;
+        throw err;
+      }
+      return body;
+    },
+    reverseComanda: async (id, payload = {}) => {
+      const res = await apiFetch(`${API_URL}/comandas/${id}/reverse`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao estornar comanda');
+      return body;
+    },
+    cancelComanda: async (id) => {
+      const res = await apiFetch(`${API_URL}/comandas/${id}/cancel`, {
+        method: 'POST',
+        authScope: 'staff',
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao cancelar');
+      return body;
+    },
+    listCategories: async () => {
+      const res = await apiFetch(`${API_URL}/finance-v2/categories`, { authScope: 'staff' });
+      return res.ok ? res.json() : [];
+    },
+    listExpenses: async (params = {}) => {
+      const qs = new URLSearchParams();
+      Object.entries(params).forEach(([k, v]) => {
+        if (v != null && v !== '') qs.set(k, v);
+      });
+      const res = await apiFetch(`${API_URL}/finance-v2/expenses?${qs}`, { authScope: 'staff' });
+      return res.ok ? res.json() : [];
+    },
+    createExpense: async (payload) => {
+      const res = await apiFetch(`${API_URL}/finance-v2/expenses`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro ao criar despesa');
+        err.code = body.code;
+        throw err;
+      }
+      return body;
+    },
+    updateExpense: async (id, payload) => {
+      const res = await apiFetch(`${API_URL}/finance-v2/expenses/${id}`, {
+        method: 'PUT',
+        authScope: 'staff',
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao atualizar');
+      return body;
+    },
+    payExpense: async (id, payload = {}) => {
+      const res = await apiFetch(`${API_URL}/finance-v2/expenses/${id}/pay`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro ao pagar despesa');
+        err.code = body.code;
+        err.status = res.status;
+        throw err;
+      }
+      return body;
+    },
+    reverseExpense: async (id) => {
+      const res = await apiFetch(`${API_URL}/finance-v2/expenses/${id}/reverse`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify({}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao estornar despesa');
+      return body;
+    },
+    getComanda: async (id) => {
+      const res = await apiFetch(`${API_URL}/comandas/${id}`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao buscar comanda');
+      return body;
+    },
+    deleteExpense: async (id) => {
+      const res = await apiFetch(`${API_URL}/finance-v2/expenses/${id}`, {
+        method: 'DELETE',
+        authScope: 'staff',
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const err = new Error(body.error || 'Erro ao excluir');
+        err.code = body.code;
+        throw err;
+      }
+      return true;
+    },
+    getLedger: async (params = {}) => {
+      const qs = new URLSearchParams();
+      Object.entries(params).forEach(([k, v]) => {
+        if (v != null && v !== '') qs.set(k, v);
+      });
+      const res = await apiFetch(`${API_URL}/finance-v2/ledger?${qs}`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro no extrato');
+      return body;
+    },
+    getCashFlow: async (params = {}) => {
+      const qs = new URLSearchParams();
+      Object.entries(params).forEach(([k, v]) => {
+        if (v != null && v !== '') qs.set(k, v);
+      });
+      const res = await apiFetch(`${API_URL}/finance-v2/cash-flow?${qs}`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro no fluxo');
+      return body;
+    },
+    getCommissions: async (params = {}) => {
+      const qs = new URLSearchParams();
+      Object.entries(params).forEach(([k, v]) => {
+        if (v != null && v !== '') qs.set(k, v);
+      });
+      const res = await apiFetch(`${API_URL}/finance-v2/commissions?${qs}`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro nas comissões');
+      return body;
+    },
+  };
+
   // barberId: null = geral, 'barbershop' = só produtos sem barbeiro, number = barbeiro específico
   const getFinancialStats = useCallback((startDate, endDate, barberId = null) => {
     // Role-based isolation: Barbers always see only their own data
@@ -1168,6 +1436,7 @@ export const AppProvider = ({ children }) => {
       getFinancialStats, getBarberRanking,
       addExpense, removeExpense, updateExpense, refreshMonthClosings, createMonthClosing, refreshPeriodClosings, createPeriodClosing,
       addManualServiceRevenue, addManualProductSale,
+      financeV2,
       login, logout, currentUser, tenantModules, token, tenantSlug, apiFetch, loading, bootstrapLoading, staffLoading,
       currentCustomer, isCustomerAuthenticated: customerSessionActive, customerLogin, customerGoogleLogin, customerRegister, customerLogout, refreshCurrentCustomer, syncNavigatedCustomer,
       getCustomerAppointments, updateCustomerProfile,

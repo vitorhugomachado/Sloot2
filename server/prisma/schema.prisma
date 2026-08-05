@@ -43,6 +43,10 @@ model Tenant {
   workingHours            WorkingHours[]
   holidays                Holiday[]
   pushSubscriptions       PushSubscription[]
+  financeCategories       FinanceCategory[]
+  cashSessions            CashSession[]
+  cashMovements           CashMovement[]
+  comandas                Comanda[]
 }
 
 model Barber {
@@ -75,12 +79,14 @@ model Barber {
 }
 
 model Service {
-  id       Int    @id @default(autoincrement())
-  tenantId Int
-  name     String
-  price    Float
-  duration String
-  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id            Int    @id @default(autoincrement())
+  tenantId      Int
+  name          String
+  price         Float
+  duration      String
+  /// % que o profissional recebe sobre o preço do serviço (0–100). Default 50.
+  commissionPct Float? @default(50)
+  tenant        Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId], map: "idx_service_tenant")
 }
@@ -163,15 +169,143 @@ model ProductSale {
 }
 
 model Expense {
-  id          Int     @id @default(autoincrement())
-  tenantId    Int
-  description String
-  amount      Float
-  date        String
-  category    String?
-  tenant      Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id              Int           @id @default(autoincrement())
+  tenantId        Int
+  description     String
+  amount          Float
+  date            String
+  category        String?
+  title           String?
+  dueDate         String?
+  competenceDate  String?
+  account         String?       @default("CAIXA")
+  supplier        String?
+  costCenter      String?
+  paymentMethod   String?
+  status          String?       @default("PAID")
+  paidAt          String?
+  invoiceNote     String?
+  notes           String?
+  cashSessionId   Int?
+  categoryId      Int?
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cashSession     CashSession?  @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
+  financeCategory FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@index([tenantId], map: "idx_expense_tenant")
+  @@index([status], map: "idx_expense_status")
+  @@index([dueDate], map: "idx_expense_due_date")
+  @@index([categoryId], map: "idx_expense_category")
+}
+
+model FinanceCategory {
+  id       Int      @id @default(autoincrement())
+  tenantId Int
+  name     String
+  kind     String
+  slug     String?
+  parentId Int?
+  createdAt DateTime @default(now())
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent   FinanceCategory?  @relation("FinanceCategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children FinanceCategory[] @relation("FinanceCategoryTree")
+  expenses Expense[]
+  comandas Comanda[]
+
+  @@unique([tenantId, kind, name], map: "FinanceCategory_tenant_kind_name_key")
+  @@index([tenantId], map: "idx_finance_category_tenant")
+  @@index([parentId], map: "idx_finance_category_parent")
+}
+
+model CashSession {
+  id            Int       @id @default(autoincrement())
+  tenantId      Int
+  status        String    @default("OPEN")
+  openedAt      DateTime  @default(now())
+  openedById    Int?
+  openedByName  String?
+  closedAt      DateTime?
+  closedById    Int?
+  closedByName  String?
+  openingFloat  Float     @default(0)
+  countedCash   Float?
+  notes         String?
+  snapshot      Json?
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  movements     CashMovement[]
+  comandas      Comanda[]
+  expenses      Expense[]
+
+  @@index([tenantId], map: "idx_cash_session_tenant")
+  @@index([tenantId, status], map: "idx_cash_session_tenant_status")
+}
+
+model CashMovement {
+  id            Int         @id @default(autoincrement())
+  tenantId      Int
+  cashSessionId Int
+  type          String
+  source        String
+  amount        Float
+  method        String      @default("Outro")
+  description   String
+  referenceType String?
+  referenceId   Int?
+  createdAt     DateTime    @default(now())
+  createdById   Int?
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cashSession   CashSession @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId], map: "idx_cash_movement_tenant")
+  @@index([cashSessionId], map: "idx_cash_movement_session")
+  @@index([createdAt], map: "idx_cash_movement_created")
+}
+
+model Comanda {
+  id            Int       @id @default(autoincrement())
+  tenantId      Int
+  number        Int
+  customerName  String
+  customerId    Int?
+  appointmentId Int?      @unique
+  cashSessionId Int?
+  status        String    @default("OPEN")
+  origin        String    @default("AGENDA")
+  openedAt      DateTime  @default(now())
+  closedAt      DateTime?
+  total         Float     @default(0)
+  payments      Json?
+  notes         String?
+  barberId      Int?
+  categoryId    Int?
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cashSession   CashSession? @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
+  financeCategory FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  items         ComandaItem[]
+
+  @@unique([tenantId, number], map: "Comanda_tenantId_number_key")
+  @@index([tenantId], map: "idx_comanda_tenant")
+  @@index([tenantId, status], map: "idx_comanda_tenant_status")
+  @@index([openedAt], map: "idx_comanda_opened")
+  @@index([closedAt], map: "idx_comanda_closed")
+}
+
+model ComandaItem {
+  id            Int     @id @default(autoincrement())
+  comandaId     Int
+  itemType      String
+  name          String
+  quantity      Int     @default(1)
+  unitPrice     Float
+  total         Float
+  productId     Int?
+  serviceId     Int?
+  barberId      Int?
+  /// Snapshot do % do profissional no momento da quitação (só SERVICE).
+  commissionPct Float?
+  comanda       Comanda @relation(fields: [comandaId], references: [id], onDelete: Cascade)
+
+  @@index([comandaId], map: "idx_comanda_item_comanda")
 }
 
 model MonthClosing {

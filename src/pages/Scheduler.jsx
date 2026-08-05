@@ -100,6 +100,7 @@ const Scheduler = () => {
     currentUser,
     apiFetch,
     token,
+    financeV2,
   } = useApp();
   const [selectedDate, setSelectedDate] = useState(() => toIsoLocal(new Date()));
   const isBarber = currentUser?.role === 'Barbeiro';
@@ -132,6 +133,7 @@ const Scheduler = () => {
     updateAppointmentStatus,
     cancelAppointment,
     sellProduct,
+    financeV2,
   });
 
   const schedulerWeekPickerRef = useRef(null);

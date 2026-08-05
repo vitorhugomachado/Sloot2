@@ -909,6 +909,7 @@ export default function SchedulerWeek() {
     sellProduct,
     apiFetch,
     token,
+    financeV2,
   } = useApp();
   const location = useLocation();
 
@@ -1115,6 +1116,7 @@ export default function SchedulerWeek() {
     updateAppointmentStatus,
     cancelAppointment,
     sellProduct,
+    financeV2,
   });
 
   const openDrawerAction = useCallback((app, action) => {

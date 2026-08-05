@@ -5,6 +5,20 @@ const { invalidatePublicCache } = require('../middlewares/publicCache');
 const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
 const { parseDateRangeFromQuery, parseStaffDateRangeFromQuery, publicBookingDateRange } = require('../lib/bookingHorizon');
 const { scheduleNewAppointmentPush } = require('../services/appointmentPushService');
+const {
+  getSalesIncomeCategoryId,
+  settleComandaInTx,
+  ensureFinanceCategories,
+  ensureOpenComandaForAppointment,
+  cancelOpenComandaForAppointment,
+  resolveOpenCashSession,
+  validatePaymentSplits,
+  applyProductStockFromItems,
+  resolveServiceCommissionMeta,
+  toLocalDateIso,
+} = require('../lib/financeV2');
+
+const IN_SERVICE_STATUSES = new Set(['Em progresso', 'Em atendimento']);
 
 const BLOCKING_STATUSES = ['Agendado', 'Confirmado', 'Em progresso'];
 const includeBarber = { Barber: { select: { name: true } } };
@@ -212,10 +226,17 @@ const updateAppointment = async (req, res) => {
         return res.status(400).json({ message: 'Nenhuma alteração permitida' });
       }
 
-      const appointment = await prisma.appointment.update({
-        where: { id },
-        data: payload,
-        include: includeBarber,
+      const tenantId = tenantIdFromReq(req);
+      const appointment = await prisma.$transaction(async (tx) => {
+        const updated = await tx.appointment.update({
+          where: { id },
+          data: payload,
+          include: includeBarber,
+        });
+        if (payload.status === 'Cancelado') {
+          await cancelOpenComandaForAppointment(tx, { tenantId, appointmentId: id });
+        }
+        return updated;
       });
       invalidatePublicCache(req.tenantSlug);
       return res.json(appointment);
@@ -240,7 +261,48 @@ const updateAppointment = async (req, res) => {
     if (data.barberId) data.barberId = Number(data.barberId);
     if (data.price) data.price = parseFloat(data.price);
 
-    if (String(data.status || '') === 'Finalizado' && existing.status !== 'Finalizado') {
+    const nextStatus = String(data.status || existing.status || '');
+    const isStartingService =
+      IN_SERVICE_STATUSES.has(nextStatus) && !IN_SERVICE_STATUSES.has(String(existing.status || ''));
+    const isFinalizing =
+      nextStatus === 'Finalizado' && existing.status !== 'Finalizado';
+
+    if (isStartingService) {
+      const tenantId = tenantIdFromReq(req);
+      try {
+        await ensureFinanceCategories(tenantId);
+        const categoryId = await getSalesIncomeCategoryId(tenantId);
+        const appointment = await prisma.$transaction(async (tx) => {
+          const updated = await tx.appointment.update({
+            where: { id },
+            data,
+            include: includeBarber,
+          });
+          await ensureOpenComandaForAppointment(tx, {
+            tenantId,
+            appointment: updated,
+            categoryId,
+          });
+          return updated;
+        });
+        invalidatePublicCache(req.tenantSlug);
+        return res.json(appointment);
+      } catch (startErr) {
+        console.error(startErr);
+        if (startErr?.code === 'P2002') {
+          const appointment = await prisma.appointment.update({
+            where: { id },
+            data,
+            include: includeBarber,
+          });
+          invalidatePublicCache(req.tenantSlug);
+          return res.json(appointment);
+        }
+        return res.status(500).json({ message: 'Erro ao abrir comanda do atendimento' });
+      }
+    }
+
+    if (isFinalizing) {
       const paidAt = getLocalDateIso();
       let payments = data.payments !== undefined ? data.payments : existing.payments;
       if (payments && typeof payments === 'object' && !Array.isArray(payments)) {
@@ -252,6 +314,146 @@ const updateAppointment = async (req, res) => {
       } else if (!payments) {
         data.payments = { paidAt };
       }
+
+      const tenantId = tenantIdFromReq(req);
+      const finalPayments = data.payments;
+      const cashSessionId = finalPayments?.cashSessionId ?? data.cashSessionId;
+      delete data.cashSessionId;
+
+      try {
+        await ensureFinanceCategories(tenantId);
+        const categoryId = await getSalesIncomeCategoryId(tenantId);
+
+        const appointment = await prisma.$transaction(async (tx) => {
+          const cashSession = await resolveOpenCashSession(tenantId, cashSessionId, tx);
+
+          const updated = await tx.appointment.update({
+            where: { id },
+            data,
+            include: includeBarber,
+          });
+
+          let comanda = await ensureOpenComandaForAppointment(tx, {
+            tenantId,
+            appointment: updated,
+            categoryId,
+          });
+
+          const productItems = Array.isArray(finalPayments?.products)
+            ? finalPayments.products.map((p) => ({
+                itemType: 'PRODUCT',
+                name: String(p.name || 'Produto'),
+                quantity: Math.max(1, Number(p.quantity || 1)),
+                unitPrice: Number(p.unitPrice || 0),
+                total: Number(p.subtotal != null ? p.subtotal : Number(p.unitPrice || 0) * Number(p.quantity || 1)),
+                productId: p.id ? Number(p.id) : null,
+                barberId: updated.barberId || null,
+                commissionPct: null,
+                serviceId: null,
+              }))
+            : [];
+
+          const serviceTotal = Number(
+            finalPayments?.serviceTotal != null ? finalPayments.serviceTotal : updated.price || 0,
+          );
+          const serviceMeta = await resolveServiceCommissionMeta(tx, {
+            tenantId,
+            serviceName: updated.service,
+            barberId: updated.barberId,
+          });
+          const items = [
+            {
+              itemType: 'SERVICE',
+              name: String(updated.service || 'Serviço'),
+              quantity: 1,
+              unitPrice: serviceTotal,
+              total: serviceTotal,
+              barberId: updated.barberId || null,
+              serviceId: serviceMeta.serviceId,
+              commissionPct: serviceMeta.commissionPct,
+            },
+            ...productItems,
+          ];
+          const total = Number(
+            finalPayments?.totalCheckout != null
+              ? finalPayments.totalCheckout
+              : items.reduce((s, i) => s + Number(i.total || 0), 0),
+          );
+
+          validatePaymentSplits(finalPayments?.splits, total);
+
+          if (comanda.status !== 'QUITADA') {
+            await tx.comandaItem.deleteMany({ where: { comandaId: comanda.id } });
+            comanda = await tx.comanda.update({
+              where: { id: comanda.id },
+              data: {
+                total,
+                customerName: updated.customer,
+                barberId: updated.barberId || null,
+                categoryId: comanda.categoryId || categoryId,
+                items: { create: items },
+              },
+              include: { items: true },
+            });
+
+            await applyProductStockFromItems(tx, {
+              tenantId,
+              items,
+              barberId: updated.barberId || null,
+              customerId: updated.customer_id || null,
+              customerName: updated.customer,
+              saleDate: paidAt || toLocalDateIso(new Date()),
+            });
+
+            await settleComandaInTx(tx, {
+              tenantId,
+              comandaId: comanda.id,
+              cashSession,
+              payments: { ...finalPayments, cashSessionId: cashSession.id, totalCheckout: total },
+              userId: req.user?.id,
+              description: `Comanda Nº — ${updated.customer} (${updated.service})`,
+            });
+          }
+
+          return updated;
+        });
+
+        invalidatePublicCache(req.tenantSlug);
+        return res.json(appointment);
+      } catch (settleErr) {
+        console.error(settleErr);
+        if (
+          settleErr?.code === 'CASH_REQUIRED'
+          || settleErr?.code === 'CASH_CLOSED'
+          || settleErr?.code === 'PAYMENT_MISMATCH'
+          || settleErr?.code === 'STOCK_INSUFFICIENT'
+          || settleErr?.code === 'PRODUCT_NOT_FOUND'
+        ) {
+          return res.status(settleErr.status || 409).json({
+            message: settleErr.message,
+            code: settleErr.code,
+          });
+        }
+        return res.status(500).json({ message: 'Erro ao contabilizar comanda no financeiro' });
+      }
+    }
+
+    const isCancelling =
+      nextStatus === 'Cancelado' && existing.status !== 'Cancelado';
+
+    if (isCancelling) {
+      const tenantId = tenantIdFromReq(req);
+      const appointment = await prisma.$transaction(async (tx) => {
+        const updated = await tx.appointment.update({
+          where: { id },
+          data,
+          include: includeBarber,
+        });
+        await cancelOpenComandaForAppointment(tx, { tenantId, appointmentId: id });
+        return updated;
+      });
+      invalidatePublicCache(req.tenantSlug);
+      return res.json(appointment);
     }
 
     const appointment = await prisma.appointment.update({

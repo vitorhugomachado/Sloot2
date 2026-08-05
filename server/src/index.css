@@ -1,0 +1,72 @@
+
+/* Finance V2 — Sloot staff design */
+.fin2-page { display: flex; flex-direction: column; gap: 1rem; padding-bottom: 2rem; }
+.fin2-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+.fin2-title { margin: 0; font-size: 1.5rem; color: var(--text-primary); }
+.fin2-subtitle { margin: 0.35rem 0 0; color: var(--text-secondary); font-size: 0.9rem; }
+.fin2-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.fin2-btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  border: 1px solid var(--card-outline); background: var(--panel-bg);
+  color: var(--text-primary); border-radius: 12px; padding: 0.65rem 1rem;
+  font-weight: 600; font-size: 0.85rem; cursor: pointer;
+}
+.fin2-btn--accent { background: var(--accent-color); color: var(--accent-text); border-color: transparent; }
+.fin2-btn--in { background: rgba(22,163,74,0.12); color: #15803d; border-color: rgba(22,163,74,0.25); }
+.fin2-btn--out { background: rgba(220,38,38,0.1); color: #b91c1c; border-color: rgba(220,38,38,0.22); }
+.fin2-cash-banner {
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.85rem 1rem;
+  background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 14px;
+  color: var(--text-secondary); font-size: 0.9rem;
+}
+.fin2-tabs {
+  display: flex; gap: 0.25rem; overflow-x: auto; border-bottom: 2px solid var(--border-color);
+}
+.fin2-tab {
+  background: none; border: none; cursor: pointer; padding: 0.75rem 1rem;
+  color: var(--text-secondary); font-weight: 500; font-size: 0.85rem; position: relative; flex-shrink: 0;
+}
+.fin2-tab.active { color: var(--text-primary); font-weight: 700; }
+.fin2-tab.active::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 3px;
+  background: var(--accent-color); border-radius: 3px;
+}
+.fin2-filters {
+  display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end;
+  padding: 1rem; background: var(--panel-bg); border: 1px solid var(--card-outline); border-radius: 16px;
+}
+.fin2-field { display: grid; gap: 0.35rem; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); min-width: 140px; flex: 1; }
+.fin2-field input, .fin2-field select, .fin2-field textarea {
+  width: 100%; padding: 0.65rem 0.75rem; border-radius: 10px;
+  border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); font: inherit;
+}
+.fin2-search { display: flex; align-items: center; gap: 0.4rem; padding: 0 0.65rem; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-color); }
+.fin2-search input { border: none; background: transparent; padding: 0.65rem 0; outline: none; width: 100%; color: var(--text-primary); }
+.fin2-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }
+@media (max-width: 900px) { .fin2-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.fin2-panel {
+  background: var(--panel-bg); border: 1px solid var(--card-outline); border-radius: 16px; padding: 1rem; overflow: auto;
+}
+.fin2-stack { display: grid; gap: 1rem; }
+.fin2-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.fin2-table th { text-align: left; color: var(--text-secondary); font-weight: 600; padding: 0.65rem 0.5rem; border-bottom: 1px solid var(--border-color); }
+.fin2-table td { padding: 0.7rem 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); vertical-align: middle; }
+.fin2-empty { text-align: center; color: var(--text-secondary); padding: 1.5rem !important; }
+.fin2-badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+.fin2-modal {
+  background: var(--panel-bg); border: 1px solid var(--card-outline); border-radius: 18px; padding: 1.25rem;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+}
+.fin2-icon-btn { border: none; background: var(--icon-bg, #f3f1ee); border-radius: 999px; width: 36px; height: 36px; cursor: pointer; display: grid; place-items: center; }
+.fin2-modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+.fin2-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+@media (max-width: 640px) { .fin2-form-grid { grid-template-columns: 1fr; } }
+.fin2-check { display: flex; align-items: center; gap: 0.5rem; margin: 0.75rem 0; font-size: 0.9rem; color: var(--text-primary); }
+.fin2-link-danger { background: none; border: none; color: #dc2626; cursor: pointer; font-weight: 600; }
+.fin2-flow-block { margin-bottom: 1.25rem; }
+.fin2-flow-head, .fin2-flow-row, .fin2-flow-child {
+  display: flex; justify-content: space-between; gap: 1rem; padding: 0.65rem 0.4rem; border-bottom: 1px solid var(--border-color);
+}
+.fin2-flow-head { background: rgba(0,0,0,0.03); border-radius: 8px; font-size: 0.9rem; }
+.fin2-flow-row { width: 100%; border: none; background: none; cursor: pointer; text-align: left; color: var(--accent-color); font-weight: 600; }
+.fin2-flow-child { padding-left: 1.75rem; color: var(--text-secondary); font-size: 0.85rem; }

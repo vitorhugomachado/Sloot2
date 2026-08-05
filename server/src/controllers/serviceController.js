@@ -16,8 +16,18 @@ const createService = async (req, res) => {
   if (req.user?.role !== 'Gerente') {
     return res.status(403).json({ message: 'Apenas gestão pode alterar o catálogo de serviços.' });
   }
+  const { name, price, duration, commissionPct } = req.body;
+  const pct = commissionPct != null && commissionPct !== ''
+    ? Math.max(0, Math.min(100, Number(commissionPct)))
+    : 50;
   const service = await prisma.service.create({
-    data: { ...req.body, tenantId: tenantIdFromReq(req) },
+    data: {
+      name: String(name || '').trim(),
+      price: Number(price || 0),
+      duration: String(duration || '30 min'),
+      commissionPct: Number.isFinite(pct) ? pct : 50,
+      tenantId: tenantIdFromReq(req),
+    },
   });
   invalidatePublicCache(req.tenantSlug);
   res.json(service);
@@ -32,7 +42,17 @@ const updateService = async (req, res) => {
     where: { id: Number(id), ...tenantWhere(req) },
   });
   if (!existing) return res.status(404).json({ message: 'Serviço não encontrado.' });
-  const service = await prisma.service.update({ where: { id: Number(id) }, data: req.body });
+
+  const data = {};
+  if (req.body.name != null) data.name = String(req.body.name).trim();
+  if (req.body.price != null) data.price = Number(req.body.price);
+  if (req.body.duration != null) data.duration = String(req.body.duration);
+  if (req.body.commissionPct != null && req.body.commissionPct !== '') {
+    const pct = Math.max(0, Math.min(100, Number(req.body.commissionPct)));
+    data.commissionPct = Number.isFinite(pct) ? pct : existing.commissionPct;
+  }
+
+  const service = await prisma.service.update({ where: { id: Number(id) }, data });
   invalidatePublicCache(req.tenantSlug);
   res.json(service);
 };

@@ -9,6 +9,20 @@ export function formatCheckoutCurrency(value) {
   return `R$ ${Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
+function formatCashOptionLabel(session) {
+  if (!session) return 'Caixa';
+  const when = session.openedAt
+    ? new Date(session.openedAt).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '';
+  const who = session.openedByName || 'Caixa';
+  return when ? `${who} · ${when}` : who;
+}
+
 /**
  * Estado e handlers compartilhados do modal de ações (Dashboard + Scheduler).
  */
@@ -18,10 +32,14 @@ export function useAppointmentActions({
   updateAppointmentStatus,
   cancelAppointment,
   sellProduct,
+  financeV2,
 }) {
   const [actionModal, setActionModal] = useState({ open: false, app: null, step: 'choose' });
   const [paymentSplits, setPaymentSplits] = useState([{ method: 'Pix', amount: 0 }]);
   const [checkoutProducts, setCheckoutProducts] = useState([EMPTY_CHECKOUT_PRODUCT]);
+  const [openCashSessions, setOpenCashSessions] = useState([]);
+  const [cashSessionId, setCashSessionId] = useState('');
+  const [cashSessionsLoading, setCashSessionsLoading] = useState(false);
 
   const checkoutServiceTotal = Number(actionModal.app?.price || 0);
 
@@ -47,9 +65,41 @@ export function useAppointmentActions({
     });
   }, [actionModal.open, actionModal.step, checkoutGrandTotal]);
 
+  useEffect(() => {
+    if (!(actionModal.open && actionModal.step === 'payment') || !financeV2?.listCashSessions) {
+      return undefined;
+    }
+    let cancelled = false;
+    setCashSessionsLoading(true);
+    financeV2
+      .listCashSessions()
+      .then((sessions) => {
+        if (cancelled) return;
+        const open = (Array.isArray(sessions) ? sessions : []).filter((s) => s.status === 'OPEN');
+        setOpenCashSessions(open);
+        setCashSessionId((prev) => {
+          if (prev && open.some((s) => String(s.id) === String(prev))) return prev;
+          return open.length === 1 ? String(open[0].id) : '';
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setOpenCashSessions([]);
+          setCashSessionId('');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCashSessionsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [actionModal.open, actionModal.step, financeV2]);
+
   const resetCheckoutState = (app) => {
     setPaymentSplits([{ method: 'Pix', amount: Number(app?.price || 0) }]);
     setCheckoutProducts([EMPTY_CHECKOUT_PRODUCT]);
+    setCashSessionId('');
   };
 
   const openActionModal = (app) => {
@@ -61,6 +111,7 @@ export function useAppointmentActions({
   const closeActionModal = () => {
     setActionModal({ open: false, app: null, step: 'choose' });
     setCheckoutProducts([EMPTY_CHECKOUT_PRODUCT]);
+    setCashSessionId('');
   };
 
   const handleMarkInProgress = async () => {
@@ -74,6 +125,11 @@ export function useAppointmentActions({
   };
 
   const handleFinalizePayment = async () => {
+    if (!cashSessionId) {
+      alert('Selecione o caixa do dia para confirmar o recebimento.');
+      return;
+    }
+
     const selectedProducts = checkoutProducts
       .filter((item) => item.productId)
       .map((item) => ({
@@ -115,19 +171,6 @@ export function useAppointmentActions({
 
     const paidAt = todayIsoLocal();
 
-    for (const item of selectedProducts) {
-      const saleOk = await sellProduct(
-        item.productId,
-        item.quantity,
-        actionModal.app.barberId || null,
-        { saleDate: paidAt },
-      );
-      if (!saleOk) {
-        alert('Não foi possível registrar um dos produtos no estoque.');
-        return;
-      }
-    }
-
     const success = await updateAppointmentStatus(actionModal.app.id, 'Finalizado', {
       payments: {
         splits: paymentSplits,
@@ -136,6 +179,7 @@ export function useAppointmentActions({
         productsTotal,
         totalCheckout: requiredTotal,
         paidAt,
+        cashSessionId: Number(cashSessionId),
       },
     });
     if (success) closeActionModal();
@@ -213,6 +257,11 @@ export function useAppointmentActions({
     setPaymentSplits,
     checkoutProducts,
     setCheckoutProducts,
+    openCashSessions,
+    cashSessionId,
+    setCashSessionId,
+    cashSessionsLoading,
+    formatCashOptionLabel,
     checkoutServiceTotal,
     checkoutProductsTotal,
     checkoutGrandTotal,

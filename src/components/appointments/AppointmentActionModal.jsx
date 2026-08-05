@@ -15,6 +15,11 @@ export default function AppointmentActionModal({
   setPaymentSplits,
   checkoutProducts,
   setCheckoutProducts,
+  openCashSessions = [],
+  cashSessionId = '',
+  setCashSessionId,
+  cashSessionsLoading = false,
+  formatCashOptionLabel,
   services,
   products,
   closeActionModal,
@@ -179,6 +184,38 @@ export default function AppointmentActionModal({
           <div>
             <div className="action-modal-panel">
               <div className="action-modal-panel__head">
+                <span className="action-modal-panel__title">Caixa do dia</span>
+              </div>
+              <select
+                className="action-modal-field"
+                value={cashSessionId}
+                onChange={(e) => setCashSessionId?.(e.target.value)}
+                disabled={cashSessionsLoading}
+              >
+                <option value="">
+                  {cashSessionsLoading
+                    ? 'Carregando caixas...'
+                    : openCashSessions.length
+                      ? 'Selecione o caixa'
+                      : 'Nenhum caixa aberto'}
+                </option>
+                {openCashSessions.map((session) => (
+                  <option key={session.id} value={session.id}>
+                    {typeof formatCashOptionLabel === 'function'
+                      ? formatCashOptionLabel(session)
+                      : `Caixa #${session.id}`}
+                  </option>
+                ))}
+              </select>
+              {!cashSessionsLoading && openCashSessions.length === 0 ? (
+                <p style={{ margin: '10px 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  Abra o caixa em Financeiro novo antes de confirmar o recebimento.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="action-modal-panel">
+              <div className="action-modal-panel__head">
                 <span className="action-modal-panel__title">Composição de Pagamento</span>
                 <button type="button" className="action-modal-panel__chip-btn" onClick={handleAddSplit}>
                   <Plus size={14} aria-hidden /> Dividir
@@ -309,7 +346,9 @@ export default function AppointmentActionModal({
                 style={{
                   flex: 2,
                   padding: '14px',
+                  opacity: cashSessionId ? 1 : 0.55,
                 }}
+                disabled={!cashSessionId}
                 onClick={handleFinalizePayment}
               >
                 <Banknote size={18} /> Finalizar Recebimento

@@ -22,11 +22,12 @@ export function resolveEnabledTenantModules(tenantModules) {
 
 export function isStaffNavModuleVisible(moduleId, permissions, tenantModules) {
   const enabledModules = new Set(resolveEnabledTenantModules(tenantModules));
-  if (!enabledModules.has(moduleId)) return false;
+  const gateModuleId = moduleId === 'financeiro' ? 'finance' : moduleId;
+  if (!enabledModules.has(gateModuleId)) return false;
 
   const perms = normalizePermissions(permissions);
-  if (perms.includes(moduleId)) return true;
-  if (moduleId === 'inventory' && perms.includes('products')) return true;
+  if (perms.includes(gateModuleId)) return true;
+  if (gateModuleId === 'inventory' && perms.includes('products')) return true;
   return false;
 }
 

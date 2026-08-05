@@ -155,7 +155,7 @@ const Dashboard = () => {
   const {
     barbers, appointments, services, products,
     addAppointment, sellProduct, getFinancialStats, getBarberRanking,
-    updateAppointmentStatus, cancelAppointment, currentUser
+    updateAppointmentStatus, cancelAppointment, currentUser, financeV2,
   } = useApp();
 
   const todayStr = todayIsoLocal();
@@ -186,6 +186,7 @@ const Dashboard = () => {
     updateAppointmentStatus,
     cancelAppointment,
     sellProduct,
+    financeV2,
   });
 
   const [formData, setFormData] = useState({
@@ -193,6 +194,25 @@ const Dashboard = () => {
   });
   const [bookingFormError, setBookingFormError] = useState(null);
   const [saleForm, setSaleForm] = useState(EMPTY_DIRECT_SALE);
+  const [cashBrief, setCashBrief] = useState(null);
+  const [openCashOptions, setOpenCashOptions] = useState([]);
+  const [saleCashSessionId, setSaleCashSessionId] = useState('');
+  const [saleMethod, setSaleMethod] = useState('Pix');
+
+  useEffect(() => {
+    let alive = true;
+    if (!financeV2?.getCurrentCash) return undefined;
+    financeV2.getCurrentCash().then((data) => {
+      if (alive) setCashBrief(data.session || null);
+    }).catch(() => {});
+    financeV2.listCashSessions().then((sessions) => {
+      if (!alive) return;
+      const open = (sessions || []).filter((s) => s.status === 'OPEN');
+      setOpenCashOptions(open);
+      if (open.length === 1) setSaleCashSessionId(String(open[0].id));
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [financeV2, isSaleModalOpen]);
 
   const activeBarbers = useMemo(
     () => barbers.filter(b => b.role === 'Barbeiro' && b.status === 'Ativo'),
@@ -302,6 +322,10 @@ const Dashboard = () => {
   /* ─── Handlers ─── */
   const handleConfirmDirectSale = async () => {
     if (saleLineItems.length === 0) return;
+    if (!saleCashSessionId) {
+      alert('Selecione o caixa do dia para registrar a venda.');
+      return;
+    }
 
     for (const item of saleLineItems) {
       const product = products.find((p) => Number(p.id) === item.productId);
@@ -316,20 +340,34 @@ const Dashboard = () => {
     }
 
     const barberId = saleForm.barberId ? parseInt(saleForm.barberId, 10) : null;
-    const saleMeta = {
-      customerId: null,
-      customerName: saleForm.customerName.trim() ? saleForm.customerName.trim() : null,
-    };
-
-    for (const item of saleLineItems) {
-      const ok = await sellProduct(item.productId, item.quantity, barberId, saleMeta);
-      if (!ok) {
-        alert('Não foi possível concluir a venda. Verifique o estoque.');
-        return;
+    try {
+      await financeV2.createDirectSale({
+        customerName: saleForm.customerName.trim() || 'Cliente balcão',
+        barberId,
+        cashSessionId: Number(saleCashSessionId),
+        method: saleMethod,
+        items: saleLineItems.map((item) => {
+          const product = products.find((p) => Number(p.id) === item.productId);
+          return {
+            itemType: 'PRODUCT',
+            name: product?.name || 'Produto',
+            quantity: item.quantity,
+            unitPrice: Number(product?.price || 0),
+            productId: item.productId,
+          };
+        }),
+      });
+      const data = await financeV2.getCurrentCash();
+      setCashBrief(data.session || null);
+      closeSaleModal();
+    } catch (err) {
+      if (err?.code === 'CASH_CLOSED' || err?.code === 'CASH_REQUIRED') {
+        const go = window.confirm(`${err.message}\n\nAbrir o Financeiro novo agora?`);
+        if (go) window.location.assign(`/${window.location.pathname.split('/')[1]}/dashboard/financeiro`);
+      } else {
+        alert(err.message || 'Não foi possível concluir a venda.');
       }
     }
-
-    closeSaleModal();
   };
 
   const openActionModal = appointmentActions.openActionModal;
@@ -501,6 +539,17 @@ const Dashboard = () => {
       <div className="dash-kpi-section">
         <div className="dash-kpi-section-header">
           <span className="dash-kpi-section-title">Indicadores</span>
+          {cashBrief ? (
+            <span className="dash-kpi-section-title" style={{ fontWeight: 500, fontSize: '0.85rem' }}>
+              Caixa aberto · Entradas {formatCheckoutCurrency(cashBrief.totals?.totalIn)} · Saldo{' '}
+              {formatCheckoutCurrency(cashBrief.totals?.balance)}
+            </span>
+          ) : (
+            <span className="dash-kpi-section-title" style={{ fontWeight: 500, fontSize: '0.85rem', opacity: 0.7 }}>
+              Caixa fechado
+            </span>
+          )}
+        </div>
           <div className="dash-toggle-group">
             {PERIOD_OPTIONS.map((p) => (
               <button
@@ -908,6 +957,31 @@ const Dashboard = () => {
                   <option key={b.id} value={b.id}>
                     {b.name}
                   </option>
+                ))}
+              </select>
+
+              <select
+                className="booking-reserve-form__field"
+                value={saleCashSessionId}
+                onChange={(e) => setSaleCashSessionId(e.target.value)}
+              >
+                <option value="">
+                  {openCashOptions.length ? 'Selecione o caixa' : 'Nenhum caixa aberto'}
+                </option>
+                {openCashOptions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.openedByName || 'Caixa'} · {new Date(s.openedAt).toLocaleString('pt-BR')}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className="booking-reserve-form__field"
+                value={saleMethod}
+                onChange={(e) => setSaleMethod(e.target.value)}
+              >
+                {['Pix', 'Dinheiro', 'Cartão', 'Outro'].map((m) => (
+                  <option key={m} value={m}>{m}</option>
                 ))}
               </select>
 

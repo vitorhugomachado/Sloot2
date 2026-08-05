@@ -34,6 +34,7 @@ const Scheduler = lazy(() => import('./pages/SchedulerWeek'));
 const PublicBookingPage = lazy(() => import('./pages/public-booking/PublicBookingPage'));
 const CustomerAreaLayout = lazy(() => import('./pages/public-booking/CustomerAreaLayout'));
 const Finance = lazy(() => import('./pages/Finance'));
+const FinanceV2 = lazy(() => import('./pages/FinanceV2'));
 const Users = lazy(() => import('./pages/Users'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Inventory = lazy(() => import('./pages/Inventory'));
@@ -43,13 +44,14 @@ const CompleteProfileGate = lazy(() => import('./components/CompleteProfileGate'
 const Landing3Page = lazy(() => import('./pages/landing3/Landing3Page'));
 const SlootiSitePage = lazy(() => import('./pages/slootisite/SlootiSitePage'));
 
-const VALID_TABS = ['dashboard', 'clients', 'scheduler', 'finance', 'users', 'inventory', 'settings'];
+const VALID_TABS = ['dashboard', 'clients', 'scheduler', 'finance', 'financeiro', 'users', 'inventory', 'settings'];
 
 const STAFF_TAB_COMPONENTS = {
   dashboard: Dashboard,
   clients: Clients,
   scheduler: Scheduler,
   finance: Finance,
+  financeiro: FinanceV2,
   users: Users,
   inventory: Inventory,
   settings: Settings,
@@ -198,7 +200,7 @@ function StaffTabPanels({ activeTab }) {
             aria-hidden={!isActive}
           >
             <Suspense fallback={<TabLoadingFallback />}>
-              <Panel />
+              <Panel isActive={isActive} />
             </Suspense>
           </div>
         );

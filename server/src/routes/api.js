@@ -52,6 +52,37 @@ const {
   createManualProduct,
 } = require('../controllers/financeManualController');
 const {
+  getCurrentCash,
+  listCashSessions,
+  getCashSession,
+  openCash,
+  closeCash,
+  reopenCash,
+  createCashMovement,
+} = require('../controllers/cashController');
+const {
+  listComandas,
+  getComanda,
+  createComanda,
+  createDirectSale,
+  updateComandaItems,
+  settleComanda,
+  reverseComanda,
+  cancelComanda,
+} = require('../controllers/comandaController');
+const {
+  listCategories,
+  listFinanceExpenses,
+  createFinanceExpense,
+  updateFinanceExpense,
+  deleteFinanceExpense,
+  reverseFinanceExpense,
+  payFinanceExpense,
+  getLedgerSummary,
+  getCashFlow,
+  getCommissions,
+} = require('../controllers/financeV2Controller');
+const {
   requireStaff,
   getVapidPublicKeyHandler,
   subscribePush,
@@ -137,5 +168,34 @@ router.post('/period-closings', authMiddleware, requireTenantModule('finance'), 
 
 router.post('/finance/manual-service', authMiddleware, requireTenantModule('finance'), createManualService);
 router.post('/finance/manual-product', authMiddleware, requireTenantModule('finance'), createManualProduct);
+
+// Financeiro V2 — caixa, comandas, extrato, fluxo
+router.get('/cash/current', authMiddleware, requireTenantModule('finance'), getCurrentCash);
+router.get('/cash/sessions', authMiddleware, requireTenantModule('finance'), listCashSessions);
+router.get('/cash/sessions/:id', authMiddleware, requireTenantModule('finance'), getCashSession);
+router.post('/cash/open', authMiddleware, requireTenantModule('finance'), openCash);
+router.post('/cash/sessions/:id/reopen', authMiddleware, requireTenantModule('finance'), reopenCash);
+router.post('/cash/close', authMiddleware, requireTenantModule('finance'), closeCash);
+router.post('/cash/movements', authMiddleware, requireTenantModule('finance'), createCashMovement);
+
+router.get('/comandas', authMiddleware, requireTenantModule('finance'), listComandas);
+router.get('/comandas/:id', authMiddleware, requireTenantModule('finance'), getComanda);
+router.post('/comandas', authMiddleware, requireTenantModule('finance'), createComanda);
+router.post('/comandas/direct-sale', authMiddleware, requireTenantModule('finance'), createDirectSale);
+router.put('/comandas/:id/items', authMiddleware, requireTenantModule('finance'), updateComandaItems);
+router.post('/comandas/:id/settle', authMiddleware, requireTenantModule('finance'), settleComanda);
+router.post('/comandas/:id/reverse', authMiddleware, requireTenantModule('finance'), reverseComanda);
+router.post('/comandas/:id/cancel', authMiddleware, requireTenantModule('finance'), cancelComanda);
+
+router.get('/finance-v2/categories', authMiddleware, requireTenantModule('finance'), listCategories);
+router.get('/finance-v2/expenses', authMiddleware, requireTenantModule('finance'), listFinanceExpenses);
+router.post('/finance-v2/expenses', authMiddleware, requireTenantModule('finance'), createFinanceExpense);
+router.put('/finance-v2/expenses/:id', authMiddleware, requireTenantModule('finance'), updateFinanceExpense);
+router.post('/finance-v2/expenses/:id/pay', authMiddleware, requireTenantModule('finance'), payFinanceExpense);
+router.post('/finance-v2/expenses/:id/reverse', authMiddleware, requireTenantModule('finance'), reverseFinanceExpense);
+router.delete('/finance-v2/expenses/:id', authMiddleware, requireTenantModule('finance'), deleteFinanceExpense);
+router.get('/finance-v2/ledger', authMiddleware, requireTenantModule('finance'), getLedgerSummary);
+router.get('/finance-v2/cash-flow', authMiddleware, requireTenantModule('finance'), getCashFlow);
+router.get('/finance-v2/commissions', authMiddleware, requireTenantModule('finance'), getCommissions);
 
 module.exports = router;
