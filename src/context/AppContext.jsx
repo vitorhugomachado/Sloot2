@@ -894,6 +894,15 @@ export const AppProvider = ({ children }) => {
     return { ok: true };
   };
 
+  const refreshProducts = useCallback(async () => {
+    try {
+      const res = await apiFetch(`${API_URL}/products`, { authScope: 'staff' });
+      if (res.ok) setProducts(await res.json());
+    } catch (err) {
+      console.error(err);
+    }
+  }, [apiFetch]);
+
   const sellProduct = async (productId, quantity = 1, barberId = null, saleMeta = {}) => {
     const product = products.find(p => p.id === productId);
     if (!product || product.stock < quantity) return false;
@@ -941,6 +950,85 @@ export const AppProvider = ({ children }) => {
       console.error('Error refreshing appointments:', error);
     }
   }, [token, apiFetch, tenantSlug]);
+
+  const purchaseOrders = useMemo(() => ({
+    list: async (params = {}) => {
+      const qs = new URLSearchParams();
+      Object.entries(params).forEach(([k, v]) => {
+        if (v != null && v !== '') qs.set(k, v);
+      });
+      const q = qs.toString();
+      const res = await apiFetch(`${API_URL}/purchase-orders${q ? `?${q}` : ''}`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao listar pedidos');
+      return Array.isArray(body) ? body : [];
+    },
+    get: async (id) => {
+      const res = await apiFetch(`${API_URL}/purchase-orders/${id}`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao buscar pedido');
+      return body;
+    },
+    create: async (payload) => {
+      const res = await apiFetch(`${API_URL}/purchase-orders`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload || {}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro ao criar pedido');
+        err.code = body.code;
+        err.status = res.status;
+        throw err;
+      }
+      return body;
+    },
+    update: async (id, payload) => {
+      const res = await apiFetch(`${API_URL}/purchase-orders/${id}`, {
+        method: 'PUT',
+        authScope: 'staff',
+        body: JSON.stringify(payload || {}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro ao atualizar pedido');
+        err.code = body.code;
+        err.status = res.status;
+        throw err;
+      }
+      return body;
+    },
+    cancel: async (id) => {
+      const res = await apiFetch(`${API_URL}/purchase-orders/${id}/cancel`, {
+        method: 'POST',
+        authScope: 'staff',
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro ao cancelar pedido');
+        err.code = body.code;
+        err.status = res.status;
+        throw err;
+      }
+      return body;
+    },
+    receive: async (id, payload) => {
+      const res = await apiFetch(`${API_URL}/purchase-orders/${id}/receive`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload || {}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro ao receber pedido');
+        err.code = body.code;
+        err.status = res.status;
+        throw err;
+      }
+      return body;
+    },
+  }), [apiFetch]);
 
   const financeV2 = useMemo(() => ({
     getCurrentCash: async () => {
@@ -1375,9 +1463,10 @@ export const AppProvider = ({ children }) => {
       addBarber, updateBarberPermissions, removeBarber, updateBarber, toggleBarberStatus,
       fetchBarberScheduleBlocks, createBarberScheduleBlock, deleteBarberScheduleBlock,
       addService, removeService, updateService,
-      addProduct, removeProduct, updateProduct, adjustProductStock,
+      addProduct, removeProduct, updateProduct, adjustProductStock, refreshProducts,
       sellProduct, updateBusinessInfo,
       refreshStaffAppointments,
+      purchaseOrders,
       financeV2,
       login, logout, currentUser, tenantModules, token, tenantSlug, apiFetch, loading, bootstrapLoading, staffLoading,
       currentCustomer, isCustomerAuthenticated: customerSessionActive, customerLogin, customerGoogleLogin, customerRegister, customerLogout, refreshCurrentCustomer, syncNavigatedCustomer,

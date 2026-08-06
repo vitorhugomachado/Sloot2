@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Download,
   ArrowDownLeft,
@@ -34,6 +34,9 @@ import CashStatusBar from '../components/financev2/CashStatusBar';
 import OverviewTab from '../components/financev2/OverviewTab';
 import SessionDetailModal from '../components/financev2/SessionDetailModal';
 import ComandaDetailModal from '../components/financev2/ComandaDetailModal';
+
+/** Abas que mostram KPIs/extrato derivados do ledger. */
+const TABS_NEEDING_LEDGER = new Set(['Visão geral', 'Extrato', 'Despesas', 'Receitas']);
 
 const GROUPS = [
   {
@@ -158,6 +161,10 @@ export default function FinanceV2({ isActive = true }) {
   const [sessionDetail, setSessionDetail] = useState(null);
   const [comandaDetail, setComandaDetail] = useState(null);
 
+  const categoriesLoadedRef = useRef(false);
+  const loadedTabsRef = useRef({ key: '', tabs: new Set() });
+  const rangeCacheKey = `${startDate}|${endDate}|${comandaFilter}|${dreMonth}`;
+
   const expenseCategories = useMemo(
     () => categories.filter((c) => c.kind === 'EXPENSE'),
     [categories],
@@ -250,32 +257,53 @@ export default function FinanceV2({ isActive = true }) {
     ]);
   }, [financeV2, refreshKpis]);
 
-  const refreshAll = useCallback(async () => {
+  const refreshAll = useCallback(async (opts = {}) => {
+    const force = Boolean(opts && opts.force);
     setLoading(true);
     try {
-      await Promise.all([
+      if (loadedTabsRef.current.key !== rangeCacheKey) {
+        loadedTabsRef.current = { key: rangeCacheKey, tabs: new Set() };
+      }
+      const tabAlreadyLoaded = !force && loadedTabsRef.current.tabs.has(tab);
+
+      const tasks = [
         refreshCash(),
-        refreshLedger(),
-        financeV2.listCategories().then(setCategories),
         financeV2.listCashSessions().then(setSessions),
-      ]);
-      if (tab === 'Visão geral') await refreshOverview();
-      if (tab === 'Extrato') await refreshKpis();
-      if (tab === 'Despesas') await refreshExpenses();
-      if (tab === 'Comandas') await refreshComandas();
-      if (tab === 'Comissões') await refreshCommissions();
-      if (tab === 'Taxas') await refreshTaxas();
-      if (tab === 'Contas') await refreshAccounts();
-      if (tab === 'Fechamentos') await refreshClosings();
-      if (tab === 'Auditoria') await refreshAudit();
-      if (tab === 'DRE') {
-        try {
-          const data = await financeV2.getDre({ month: dreMonth });
-          setDre(data);
-        } catch (err) {
-          console.error(err);
+      ];
+
+      if (force || !categoriesLoadedRef.current) {
+        tasks.push(
+          financeV2.listCategories().then((data) => {
+            setCategories(Array.isArray(data) ? data : []);
+            categoriesLoadedRef.current = true;
+          }),
+        );
+      }
+
+      if (!tabAlreadyLoaded) {
+        if (TABS_NEEDING_LEDGER.has(tab)) {
+          tasks.push(refreshLedger());
+        }
+        if (tab === 'Visão geral') tasks.push(refreshOverview());
+        else if (tab === 'Extrato') tasks.push(refreshKpis());
+        else if (tab === 'Despesas') tasks.push(refreshExpenses());
+        else if (tab === 'Comandas') tasks.push(refreshComandas());
+        else if (tab === 'Comissões') tasks.push(refreshCommissions());
+        else if (tab === 'Taxas') tasks.push(refreshTaxas());
+        else if (tab === 'Contas') tasks.push(refreshAccounts());
+        else if (tab === 'Fechamentos') tasks.push(refreshClosings());
+        else if (tab === 'Auditoria') tasks.push(refreshAudit());
+        else if (tab === 'DRE') {
+          tasks.push(
+            financeV2.getDre({ month: dreMonth }).then(setDre).catch((err) => {
+              console.error(err);
+            }),
+          );
         }
       }
+
+      await Promise.all(tasks);
+      loadedTabsRef.current.tabs.add(tab);
     } catch (err) {
       console.error(err);
     } finally {
@@ -296,6 +324,7 @@ export default function FinanceV2({ isActive = true }) {
     financeV2,
     tab,
     dreMonth,
+    rangeCacheKey,
   ]);
 
   useEffect(() => {
@@ -398,7 +427,7 @@ export default function FinanceV2({ isActive = true }) {
         account: form.account || 'CAIXA',
       });
       closeModal();
-      await refreshAll();
+      await refreshAll({ force: true });
       await refreshExpenses();
       await refreshCash();
     } catch (err) {
@@ -464,7 +493,7 @@ export default function FinanceV2({ isActive = true }) {
         paymentMethod: form.paymentMethod || 'Dinheiro',
       });
       closeModal();
-      await refreshAll();
+      await refreshAll({ force: true });
       await refreshExpenses();
     } catch (err) {
       handleError(err);
@@ -526,7 +555,7 @@ export default function FinanceV2({ isActive = true }) {
         });
       }
       closeModal();
-      await refreshAll();
+      await refreshAll({ force: true });
       await refreshComandas();
     } catch (err) {
       handleError(err);
@@ -585,7 +614,7 @@ export default function FinanceV2({ isActive = true }) {
       });
       closeModal();
       setComandaDetail(null);
-      await refreshAll();
+      await refreshAll({ force: true });
       await refreshComandas();
     } catch (err) {
       handleError(err);
@@ -926,7 +955,7 @@ export default function FinanceV2({ isActive = true }) {
           <button
             type="button"
             className="btn-primary finv2-btn-primary finv2-filters__submit"
-            onClick={refreshAll}
+            onClick={() => refreshAll({ force: true })}
             disabled={loading}
           >
             {loading ? 'Atualizando…' : 'Buscar'}
@@ -1514,7 +1543,7 @@ export default function FinanceV2({ isActive = true }) {
                                   if (!confirm('Estornar esta comanda? O valor sai do caixa e ela volta a aberta.')) return;
                                   try {
                                     await financeV2.reverseComanda(c.id, { restoreStock: true });
-                                    await refreshAll();
+                                    await refreshAll({ force: true });
                                     await refreshComandas();
                                   } catch (err) {
                                     handleError(err);
@@ -3235,7 +3264,7 @@ export default function FinanceV2({ isActive = true }) {
             try {
               await financeV2.reverseComanda(c.id, { restoreStock: true });
               setComandaDetail(null);
-              await refreshAll();
+              await refreshAll({ force: true });
               await refreshComandas();
             } catch (err) {
               handleError(err);

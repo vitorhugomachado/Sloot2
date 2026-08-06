@@ -163,6 +163,7 @@ function summarizeSessionMovements(movements, openingFloat = 0) {
   const byMethod = {};
   let totalIn = 0;
   let totalOut = 0;
+  let openingInCash = 0;
   for (const m of movements) {
     const amount = Number(m.amount || 0);
     if (m.type === 'IN') totalIn += amount;
@@ -171,16 +172,30 @@ function summarizeSessionMovements(movements, openingFloat = 0) {
     if (!byMethod[method]) byMethod[method] = { in: 0, out: 0 };
     if (m.type === 'IN') byMethod[method].in += amount;
     else byMethod[method].out += amount;
+    // Troco inicial também vira movimento OPENING — não somar 2× no esperado
+    if (
+      m.type === 'IN'
+      && String(m.source || '') === 'OPENING'
+      && String(method) === 'Dinheiro'
+    ) {
+      openingInCash += amount;
+    }
   }
   const cashIn = byMethod.Dinheiro?.in || 0;
   const cashOut = byMethod.Dinheiro?.out || 0;
-  const expectedCash = Number(openingFloat || 0) + cashIn - cashOut;
+  const float = Number(openingFloat || 0);
+  // Preferir openingFloat da sessão; excluir OPENING já espelhado nos movimentos
+  const cashInExOpening = cashIn - openingInCash;
+  const expectedCash = float + cashInExOpening - cashOut;
   return {
     totalIn,
     totalOut,
     balance: totalIn - totalOut,
     byMethod,
     expectedCash,
+    cashIn: cashInExOpening,
+    cashOut,
+    openingFloat: float,
   };
 }
 

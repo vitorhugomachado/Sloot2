@@ -46,6 +46,72 @@ function slugify(name) {
     .slice(0, 80) || 'categoria';
 }
 
+/** Shift YYYY-MM-DD by delta days (local calendar). */
+function shiftIsoDate(iso, deltaDays) {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  const d = new Date(`${iso}T12:00:00`);
+  d.setDate(d.getDate() + deltaDays);
+  return toLocalDateIso(d);
+}
+
+/**
+ * SQL window on closedAt (±1 day) so settlement-date JS filter stays correct
+ * when payments.paidAt differs slightly from closedAt / timezone.
+ */
+function quitadaComandaWhere(tenantId, start, end) {
+  const where = { tenantId, status: 'QUITADA' };
+  const bounds = brazilDayBounds(
+    start ? shiftIsoDate(start, -1) : null,
+    end ? shiftIsoDate(end, 1) : null,
+  );
+  if (bounds) where.closedAt = bounds;
+  return where;
+}
+
+function paidExpenseWhere(tenantId, start, end) {
+  const where = {
+    tenantId,
+    OR: [{ status: 'PAID' }, { paidAt: { not: null } }],
+  };
+  if (!start && !end) return where;
+
+  const paidAtRange = {};
+  const dateRange = {};
+  if (start) {
+    paidAtRange.gte = start;
+    dateRange.gte = start;
+  }
+  if (end) {
+    paidAtRange.lte = end;
+    dateRange.lte = end;
+  }
+
+  where.AND = [
+    {
+      OR: [
+        { AND: [{ paidAt: { not: null } }, { paidAt: paidAtRange }] },
+        {
+          AND: [
+            { OR: [{ paidAt: null }, { paidAt: '' }] },
+            { date: dateRange },
+          ],
+        },
+      ],
+    },
+  ];
+  return where;
+}
+
+function openExpenseWhere(tenantId) {
+  return {
+    tenantId,
+    AND: [
+      { OR: [{ status: null }, { status: { not: 'PAID' } }] },
+      { OR: [{ paidAt: null }, { paidAt: '' }] },
+    ],
+  };
+}
+
 function methodGoesThroughCash(method) {
   const m = String(method || '').toUpperCase();
   return m === 'CAIXA' || m === 'DINHEIRO' || m === 'PIX' || m.includes('DINHEIRO') || m.includes('PIX');
@@ -1384,7 +1450,7 @@ const getKpis = async (req, res) => {
 
     const [comandas, tenant] = await Promise.all([
       prisma.comanda.findMany({
-        where: { tenantId, status: 'QUITADA' },
+        where: quitadaComandaWhere(tenantId, start, end),
         include: { items: true },
       }),
       prisma.tenant.findUnique({
@@ -1492,14 +1558,15 @@ const getLedgerSummary = async (req, res) => {
     const start = req.query.startDate || req.query.start;
     const end = req.query.endDate || req.query.end;
 
-    const [comandasRaw, expenses, openComandas] = await Promise.all([
+    const [comandasRaw, expenses, openExpenseAgg, openComandas] = await Promise.all([
       prisma.comanda.findMany({
-        where: {
-          tenantId,
-          status: 'QUITADA',
-        },
+        where: quitadaComandaWhere(tenantId, start, end),
       }),
-      prisma.expense.findMany({ where: { tenantId } }),
+      prisma.expense.findMany({ where: paidExpenseWhere(tenantId, start, end) }),
+      prisma.expense.aggregate({
+        where: openExpenseWhere(tenantId),
+        _sum: { amount: true },
+      }),
       prisma.comanda.aggregate({
         where: { tenantId, status: { in: ['OPEN', 'PARTIAL'] } },
         _sum: { total: true },
@@ -1521,9 +1588,7 @@ const getLedgerSummary = async (req, res) => {
       return true;
     });
 
-    const openExpenses = expenses
-      .filter((e) => e.status !== 'PAID' && !e.paidAt)
-      .reduce((s, e) => s + Number(e.amount || 0), 0);
+    const openExpenses = Number(openExpenseAgg._sum.amount || 0);
 
     const receitas = comandas.reduce((s, c) => s + Number(c.total || 0), 0);
     const despesas = paidExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);

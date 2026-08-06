@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, Package, PackagePlus, X, Info, Search } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import PurchaseOrdersPanel from '../components/inventory/PurchaseOrdersPanel';
 
 const ICON_BLACK = '#1f1f1f';
 const ICON_STROKE = 2.25;
@@ -167,6 +168,8 @@ const ProductMobileCard = ({
 
 const Inventory = () => {
   const { products, addProduct, updateProduct, removeProduct, adjustProductStock, currentUser } = useApp();
+  const [section, setSection] = useState('products');
+  const [ordersCreateTick, setOrdersCreateTick] = useState(0);
   const [search, setSearch] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
@@ -480,60 +483,99 @@ const Inventory = () => {
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <div className="inventory-page inventory-page--mobile fade-in">
-        <header className="inv-mobile-header">
-          <div className="inv-mobile-header__top">
-            <div>
-              <h1 className="inv-mobile-title">Estoque</h1>
-              <p className="inv-mobile-sub">Produtos, quantidades e entradas.</p>
-            </div>
+  const hero = (
+    <header className="finv2-hero finv2-hero--compact">
+      <div className="finv2-hero__copy">
+        <p className="finv2-eyebrow">Gestão</p>
+        <h1>Estoque</h1>
+      </div>
+      <div className="finv2-hero__actions">
+        {section === 'products' && (
+          <div className="finv2-search finv2-hero__search">
+            <Search size={15} strokeWidth={2} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar produto…"
+              autoComplete="off"
+            />
           </div>
-          <button type="button" className="btn-primary inv-mobile-new-full" onClick={openCreateForm}>
-            <Plus size={18} stroke="currentColor" strokeWidth={2.5} aria-hidden />
+        )}
+        {section === 'products' ? (
+          <button type="button" className="btn-primary finv2-btn-primary" onClick={openCreateForm}>
+            <Plus size={16} strokeWidth={2.25} aria-hidden />
             Novo produto
           </button>
-        </header>
+        ) : isGerente ? (
+          <button
+            type="button"
+            className="btn-primary finv2-btn-primary"
+            onClick={() => setOrdersCreateTick((n) => n + 1)}
+          >
+            <Plus size={16} strokeWidth={2.25} aria-hidden />
+            Novo pedido
+          </button>
+        ) : null}
+      </div>
+    </header>
+  );
 
-        <div className="inv-mobile-kpi-scroll hide-scrollbar">
-          <div className="inv-mobile-kpi-track">
-            <div className="inv-mobile-kpi-chip glass-card">
-              <div className="inv-mobile-kpi-chip__label">Produtos</div>
-              <div className="inv-mobile-kpi-chip__value">{stats.count}</div>
-            </div>
-            <div className="inv-mobile-kpi-chip glass-card inv-mobile-kpi-chip--info">
-              <div className="inv-mobile-kpi-chip__label">Unidades</div>
-              <div className="inv-mobile-kpi-chip__value">{stats.units}</div>
-            </div>
-            {stats.lowStock > 0 && (
-              <div className="inv-mobile-kpi-chip glass-card inv-mobile-kpi-chip--warn">
-                <div className="inv-mobile-kpi-chip__label">Baixo estoque</div>
-                <div className="inv-mobile-kpi-chip__value">{stats.lowStock}</div>
-              </div>
-            )}
-          </div>
+  const tabs = (
+    <nav className="finance-tab-nav finv2-tabs" aria-label="Seções do estoque">
+      <button
+        type="button"
+        className={section === 'products' ? 'active' : ''}
+        onClick={() => setSection('products')}
+      >
+        Produtos
+        {section === 'products' ? <span className="finv2-tab-underline" /> : null}
+      </button>
+      <button
+        type="button"
+        className={section === 'orders' ? 'active' : ''}
+        onClick={() => setSection('orders')}
+      >
+        Pedidos de compra
+        {section === 'orders' ? <span className="finv2-tab-underline" /> : null}
+      </button>
+    </nav>
+  );
+
+  const kpiRow = section === 'products' && (
+    <div className="dash-kpi-row finv2-kpi-row">
+      <div className="dash-kpi-card stagger-1">
+        <div className="dash-kpi-top">
+          <span className="dash-kpi-label">Produtos</span>
         </div>
+        <div className="dash-kpi-value">{stats.count}</div>
+        <div className="dash-kpi-subtitle">No catálogo filtrado</div>
+      </div>
+      <div className="dash-kpi-card stagger-2">
+        <div className="dash-kpi-top">
+          <span className="dash-kpi-label">Unidades</span>
+        </div>
+        <div className="dash-kpi-value">{stats.units}</div>
+        <div className="dash-kpi-subtitle">Em estoque</div>
+      </div>
+      <div className="dash-kpi-card stagger-3">
+        <div className="dash-kpi-top">
+          <span className="dash-kpi-label">Baixo estoque</span>
+        </div>
+        <div className="dash-kpi-value">{stats.lowStock}</div>
+        <div className="dash-kpi-subtitle">Até 5 unidades</div>
+      </div>
+    </div>
+  );
 
-        <div className="glass-card inv-mobile-list-card">
-          <div className="inv-mobile-filters">
-            <div className="inv-mobile-search-wrap">
-              <Search size={18} className="inv-mobile-search-icon" aria-hidden />
-              <input
-                type="search"
-                className="inv-mobile-search-input"
-                placeholder="Buscar produto…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                autoComplete="off"
-              />
-            </div>
-          </div>
-
+  const productsPanel = (
+    <>
+      {kpiRow}
+      {isMobile ? (
+        <div className="glass-card inv-list-card">
           <div className="inv-mobile-product-list">
             {filteredProducts.length === 0 ? (
-              <p className="inv-mobile-empty">
-                <Package size={20} stroke={ICON_BLACK} strokeWidth={ICON_STROKE} aria-hidden />
+              <p className="inv-empty">
+                <Package size={20} strokeWidth={ICON_STROKE} aria-hidden />
                 Nenhum produto encontrado.
               </p>
             ) : (
@@ -551,167 +593,103 @@ const Inventory = () => {
             )}
           </div>
         </div>
-
-        {isFormOpen && formModal}
-        {infoModal}
-        {stockEntryModal}
-      </div>
-    );
-  }
+      ) : (
+        <>
+          <div className="glass-card table-responsive inventory-desktop-table-wrap">
+            <table className="inventory-desktop-table">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Categoria</th>
+                  <th>Estoque</th>
+                  <th>Custo</th>
+                  <th>Preço</th>
+                  <th className="inventory-desktop-table__actions-th">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProducts.map((product) => {
+                  const low = Number(product.stock ?? 0) <= 5;
+                  return (
+                    <tr key={product.id}>
+                      <td className="inventory-desktop-table__name">{product.name}</td>
+                      <td>{product.category || '—'}</td>
+                      <td>
+                        <span className={low ? 'inv-stock-pill inv-stock-pill--low' : 'inv-stock-pill'}>
+                          {product.stock} un.
+                        </span>
+                      </td>
+                      <td>{formatMoney(product.cost)}</td>
+                      <td>{formatMoney(product.price)}</td>
+                      <td className="inventory-desktop-table__actions-td">
+                        <div className="inventory-desktop-actions">
+                          <button
+                            type="button"
+                            className="inventory-action-icon-btn"
+                            title="Resumo do produto"
+                            aria-label="Resumo do produto"
+                            onClick={() => setInfoProduct(product)}
+                          >
+                            <Info size={18} stroke={ICON_BLACK} strokeWidth={ICON_STROKE} aria-hidden />
+                          </button>
+                          {isGerente && (
+                            <button
+                              type="button"
+                              className="inventory-action-icon-btn"
+                              title="Entrada no estoque"
+                              aria-label="Entrada no estoque"
+                              onClick={() => openStockEntry(product)}
+                            >
+                              <PackagePlus size={18} stroke={ICON_BLACK} strokeWidth={ICON_STROKE} aria-hidden />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="inventory-action-icon-btn"
+                            title="Editar produto"
+                            aria-label="Editar produto"
+                            onClick={() => handleEdit(product)}
+                          >
+                            <Pencil size={18} stroke={ICON_BLACK} strokeWidth={ICON_STROKE} aria-hidden />
+                          </button>
+                          <button
+                            type="button"
+                            className="inventory-action-icon-btn inventory-action-icon-btn--danger"
+                            title="Eliminar produto"
+                            aria-label="Eliminar produto"
+                            onClick={() => handleDelete(product)}
+                          >
+                            <Trash2 size={18} stroke="#b91c1c" strokeWidth={ICON_STROKE} aria-hidden />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {filteredProducts.length === 0 && (
+            <div className="glass-card inv-empty">
+              <Package size={18} strokeWidth={ICON_STROKE} aria-hidden />
+              Nenhum produto encontrado com os filtros atuais.
+            </div>
+          )}
+        </>
+      )}
+    </>
+  );
 
   return (
-    <div className="inventory-page fade-in">
-      <header className="inventory-desktop-header">
-        <h1>Estoque</h1>
-        <p>Gerencie produtos, custos e quantidades em um fluxo dedicado.</p>
-      </header>
-
-      <div className="glass-card inventory-desktop-toolbar">
-        <input
-          type="text"
-          className="inventory-desktop-search"
-          placeholder="Buscar produto por nome..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <button type="button" className="btn-primary inventory-desktop-new" onClick={openCreateForm}>
-          <Plus size={16} stroke="currentColor" strokeWidth={2.5} aria-hidden />
-          Novo produto
-        </button>
-      </div>
-
-      {isFormOpen && !isMobile && (
-        <div className="glass-card inventory-desktop-form-card">
-          <h3>{editingProductId ? 'Editar produto' : 'Novo produto'}</h3>
-          <div className="inventory-desktop-form-grid">
-            <input
-              type="text"
-              placeholder="Nome"
-              className="inventory-field-input"
-              value={formData.name}
-              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-            />
-            <input
-              type="text"
-              placeholder="Categoria"
-              className="inventory-field-input"
-              value={formData.category}
-              onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-            />
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Preço"
-              className="inventory-field-input"
-              value={formData.price}
-              onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
-            />
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Custo"
-              className="inventory-field-input"
-              value={formData.cost}
-              onChange={(e) => setFormData((prev) => ({ ...prev, cost: e.target.value }))}
-            />
-            <input
-              type="number"
-              min="0"
-              step="1"
-              placeholder="Estoque"
-              className="inventory-field-input"
-              value={formData.stock}
-              onChange={(e) => setFormData((prev) => ({ ...prev, stock: e.target.value }))}
-            />
-          </div>
-          <div className="inventory-desktop-form-actions">
-            <button type="button" className="btn-secondary" onClick={resetForm}>
-              Cancelar
-            </button>
-            <button type="button" className="btn-primary" onClick={handleSubmit}>
-              {editingProductId ? 'Salvar' : 'Adicionar'}
-            </button>
-          </div>
-        </div>
+    <div className={`inventory-page finv2-page fade-in${isMobile ? ' inventory-page--mobile' : ''}`}>
+      {hero}
+      {tabs}
+      {section === 'orders' ? (
+        <PurchaseOrdersPanel isGerente={isGerente} createTick={ordersCreateTick} hideCreateButton />
+      ) : (
+        productsPanel
       )}
-
-      <div className="glass-card table-responsive inventory-desktop-table-wrap">
-        <table className="inventory-desktop-table">
-          <thead>
-            <tr>
-              <th>Produto</th>
-              <th>Categoria</th>
-              <th>Estoque</th>
-              <th>Custo</th>
-              <th>Preço</th>
-              <th className="inventory-desktop-table__actions-th">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredProducts.map((product) => (
-              <tr key={product.id}>
-                <td className="inventory-desktop-table__name">{product.name}</td>
-                <td>{product.category || '—'}</td>
-                <td>{product.stock}</td>
-                <td>{formatMoney(product.cost)}</td>
-                <td>{formatMoney(product.price)}</td>
-                <td className="inventory-desktop-table__actions-td">
-                  <div className="inventory-desktop-actions">
-                    <button
-                      type="button"
-                      className="inventory-action-icon-btn"
-                      title="Resumo do produto"
-                      aria-label="Resumo do produto"
-                      onClick={() => setInfoProduct(product)}
-                    >
-                      <Info size={18} stroke={ICON_BLACK} strokeWidth={ICON_STROKE} aria-hidden />
-                    </button>
-                    {isGerente && (
-                      <button
-                        type="button"
-                        className="inventory-action-icon-btn"
-                        title="Entrada no estoque"
-                        aria-label="Entrada no estoque"
-                        onClick={() => openStockEntry(product)}
-                      >
-                        <PackagePlus size={18} stroke={ICON_BLACK} strokeWidth={ICON_STROKE} aria-hidden />
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="inventory-action-icon-btn"
-                      title="Editar produto"
-                      aria-label="Editar produto"
-                      onClick={() => handleEdit(product)}
-                    >
-                      <Pencil size={18} stroke={ICON_BLACK} strokeWidth={ICON_STROKE} aria-hidden />
-                    </button>
-                    <button
-                      type="button"
-                      className="inventory-action-icon-btn inventory-action-icon-btn--danger"
-                      title="Eliminar produto"
-                      aria-label="Eliminar produto"
-                      onClick={() => handleDelete(product)}
-                    >
-                      <Trash2 size={18} stroke="#b91c1c" strokeWidth={ICON_STROKE} aria-hidden />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {filteredProducts.length === 0 && (
-        <div className="glass-card inventory-desktop-empty">
-          <Package size={18} stroke={ICON_BLACK} strokeWidth={ICON_STROKE} aria-hidden />
-          Nenhum produto encontrado com os filtros atuais.
-        </div>
-      )}
-
+      {formModal}
       {infoModal}
       {stockEntryModal}
     </div>

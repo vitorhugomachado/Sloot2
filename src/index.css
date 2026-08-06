@@ -6399,6 +6399,254 @@ button.inventory-action-icon-btn--danger svg {
   gap: 10px;
 }
 
+.inventory-page.finv2-page {
+  gap: 1.25rem;
+}
+
+.inventory-page .finv2-hero__search {
+  min-width: min(260px, 70vw);
+}
+
+.inv-list-card {
+  padding: 0.75rem;
+}
+
+.inv-empty {
+  margin: 0;
+  padding: 1.5rem 1.25rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.inv-stock-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-primary);
+}
+
+.inv-stock-pill--low {
+  background: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+}
+
+.inv-po {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.inv-po__filters-bar {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) auto;
+  gap: 0.85rem;
+  align-items: end;
+  padding: 1rem 1.15rem;
+}
+
+.inv-po__filters-bar .finv2-filters__submit {
+  justify-self: start;
+}
+
+.inv-section-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  flex-wrap: wrap;
+}
+
+.inv-section-tabs button {
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inv-section-tabs button.is-active {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: #fff;
+}
+
+.inv-po__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.inv-po__filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 160px;
+}
+
+.inv-po__empty {
+  color: var(--text-secondary);
+  padding: 1.5rem 0.25rem;
+}
+
+.inv-po__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.inv-po__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.inv-po__status {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.inv-po__status--open {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+}
+
+.inv-po__status--received {
+  background: rgba(22, 163, 74, 0.12);
+  color: #15803d;
+}
+
+.inv-po__status--cancelled {
+  background: rgba(185, 28, 28, 0.1);
+  color: #b91c1c;
+}
+
+.inv-po__modal {
+  max-width: min(720px, 96vw);
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.inv-po__lines {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.inv-po__lines-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inv-po__lines-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.inv-po__line {
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.inv-po__line-mode {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.inv-po__line-mode button {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.inv-po__line-mode button.is-active {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: #fff;
+}
+
+.inv-po__line-subtotal {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.inv-po__total {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.inv-po__receive-summary {
+  margin: 0 0 0.5rem;
+}
+
+.inv-po__receive-hint {
+  margin: 0 0 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.inv-po__catalog-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .inventory-page .finv2-hero {
+    align-items: stretch;
+  }
+
+  .inventory-page .finv2-hero__actions {
+    width: 100%;
+  }
+
+  .inventory-page .finv2-hero__search {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .inv-po__filters-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Mobile â€” header & KPIs */
 .inv-mobile-header {
   display: flex;

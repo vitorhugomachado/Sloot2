@@ -24,6 +24,14 @@ const {
   getSales,
   createSale,
 } = require('../controllers/productController');
+const {
+  listPurchaseOrders,
+  getPurchaseOrder,
+  createPurchaseOrder,
+  updatePurchaseOrder,
+  cancelPurchaseOrder,
+  receivePurchaseOrder,
+} = require('../controllers/purchaseOrderController');
 const { getBusinessInfo, updateBusinessInfo } = require('../controllers/businessController');
 const { getExpenses, createExpense, updateExpense, deleteExpense } = require('../controllers/expenseController');
 const { getMonthClosings, createMonthClosing } = require('../controllers/monthClosingController');
@@ -166,6 +174,13 @@ router.put('/products/:id', authMiddleware, requireTenantModule('inventory'), up
 router.delete('/products/:id', authMiddleware, requireTenantModule('inventory'), deleteProduct);
 router.get('/sales', authMiddleware, requireTenantModule('inventory'), getSales);
 router.post('/sales', authMiddleware, requireTenantModule('inventory'), createSale);
+
+router.get('/purchase-orders', authMiddleware, requireTenantModule('inventory'), listPurchaseOrders);
+router.get('/purchase-orders/:id', authMiddleware, requireTenantModule('inventory'), getPurchaseOrder);
+router.post('/purchase-orders', authMiddleware, requireTenantModule('inventory'), createPurchaseOrder);
+router.put('/purchase-orders/:id', authMiddleware, requireTenantModule('inventory'), updatePurchaseOrder);
+router.post('/purchase-orders/:id/cancel', authMiddleware, requireTenantModule('inventory'), cancelPurchaseOrder);
+router.post('/purchase-orders/:id/receive', authMiddleware, requireTenantModule('inventory'), receivePurchaseOrder);
 
 router.get('/expenses', authMiddleware, requireTenantModule('finance'), getExpenses);
 router.post('/expenses', authMiddleware, requireTenantModule('finance'), createExpense);

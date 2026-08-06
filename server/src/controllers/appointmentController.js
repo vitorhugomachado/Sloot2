@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma');
+const { HEAVY_TX } = require('../lib/prisma');
 const { normalizeBookingTime, isBookingSlotInPast, getLocalDateIso } = require('../utils/appointmentTime');
 const { parseDurationMinutes, validateBarberAppointmentSlot } = require('../utils/barberAvailability');
 const { invalidatePublicCache } = require('../middlewares/publicCache');
@@ -286,7 +287,7 @@ const updateAppointment = async (req, res) => {
             categoryId,
           });
           return updated;
-        });
+        }, HEAVY_TX);
         invalidatePublicCache(req.tenantSlug);
         return res.json(appointment);
       } catch (startErr) {
@@ -438,7 +439,7 @@ const updateAppointment = async (req, res) => {
           }
 
           return updated;
-        });
+        }, HEAVY_TX);
 
         invalidatePublicCache(req.tenantSlug);
         return res.json(appointment);
@@ -450,12 +451,19 @@ const updateAppointment = async (req, res) => {
           || settleErr?.code === 'PAYMENT_MISMATCH'
           || settleErr?.code === 'STOCK_INSUFFICIENT'
           || settleErr?.code === 'PRODUCT_NOT_FOUND'
+          || settleErr?.code === 'PRODUCT_REQUIRED'
           || settleErr?.code === 'CARD_BRAND_REQUIRED'
           || settleErr?.code === 'CARD_KIND_REQUIRED'
         ) {
           return res.status(settleErr.status || 409).json({
             message: settleErr.message,
             code: settleErr.code,
+          });
+        }
+        if (settleErr?.code === 'P2028') {
+          return res.status(503).json({
+            message: 'Demorou demais para gravar no financeiro. Tente novamente.',
+            code: 'P2028',
           });
         }
         return res.status(500).json({ message: 'Erro ao contabilizar comanda no financeiro' });

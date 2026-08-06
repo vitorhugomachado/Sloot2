@@ -1,5 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
 
+/** Interactive transactions that hit remote Postgres (Railway) need more than the 5s default. */
+const HEAVY_TX = { maxWait: 10_000, timeout: 20_000 };
+
 const globalForPrisma = globalThis;
 
 if (!globalForPrisma.__slootPrisma) {
@@ -8,4 +11,7 @@ if (!globalForPrisma.__slootPrisma) {
   });
 }
 
-module.exports = globalForPrisma.__slootPrisma;
+const prisma = globalForPrisma.__slootPrisma;
+
+module.exports = prisma;
+module.exports.HEAVY_TX = HEAVY_TX;

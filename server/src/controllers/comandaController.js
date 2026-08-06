@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma.js');
+const { HEAVY_TX } = require('../lib/prisma.js');
 const { tenantIdFromReq } = require('../lib/tenantHelpers');
 const {
   getSalesIncomeCategoryId,
@@ -524,7 +525,7 @@ const settleComanda = async (req, res) => {
       });
 
       return settled;
-    });
+    }, HEAVY_TX);
 
     res.json(result.comanda);
   } catch (error) {
@@ -739,7 +740,7 @@ const createDirectSale = async (req, res) => {
       });
 
       return settled;
-    });
+    }, HEAVY_TX);
 
     res.status(201).json(result.comanda);
   } catch (error) {

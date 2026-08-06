@@ -38,6 +38,7 @@ model Tenant {
   appointments            Appointment[]
   products                Product[]
   productSales            ProductSale[]
+  purchaseOrders          PurchaseOrder[]
   expenses                Expense[]
   monthClosings           MonthClosing[]
   financialPeriodClosings FinancialPeriodClosing[]
@@ -151,8 +152,47 @@ model Product {
   stock    Int
   category String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchaseOrderItems PurchaseOrderItem[]
 
   @@index([tenantId], map: "idx_product_tenant")
+}
+
+model PurchaseOrder {
+  id            Int      @id @default(autoincrement())
+  tenantId      Int
+  supplier      String   @default("")
+  status        String   @default("OPEN")
+  notes         String?
+  orderedAt     DateTime @default(now())
+  receivedAt    DateTime?
+  total         Float    @default(0)
+  expenseId     Int?
+  paymentMethod String?
+  account       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  expense       Expense? @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+  items         PurchaseOrderItem[]
+
+  @@index([tenantId], map: "idx_purchase_order_tenant")
+  @@index([tenantId, status], map: "idx_purchase_order_tenant_status")
+  @@index([expenseId], map: "idx_purchase_order_expense")
+}
+
+model PurchaseOrderItem {
+  id              Int           @id @default(autoincrement())
+  purchaseOrderId Int
+  productId       Int
+  productName     String
+  quantity        Int
+  unitCost        Float
+  total           Float
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([purchaseOrderId], map: "idx_purchase_order_item_order")
+  @@index([productId], map: "idx_purchase_order_item_product")
 }
 
 model ProductSale {
@@ -203,6 +243,7 @@ model Expense {
   tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   cashSession     CashSession?  @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
   financeCategory FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  purchaseOrders  PurchaseOrder[]
 
   @@index([tenantId], map: "idx_expense_tenant")
   @@index([status], map: "idx_expense_status")
