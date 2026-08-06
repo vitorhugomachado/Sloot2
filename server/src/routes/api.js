@@ -72,6 +72,9 @@ const {
 } = require('../controllers/comandaController');
 const {
   listCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
   listFinanceExpenses,
   createFinanceExpense,
   updateFinanceExpense,
@@ -81,6 +84,17 @@ const {
   getLedgerSummary,
   getCashFlow,
   getCommissions,
+  listCommissionPayouts,
+  createCommissionPayout,
+  getAccountBalances,
+  transferAccounts,
+  listClosings,
+  createClosing,
+  getDre,
+  getAuditLog,
+  getKpis,
+  listCardFees,
+  upsertCardFee,
 } = require('../controllers/financeV2Controller');
 const {
   requireStaff,
@@ -188,6 +202,9 @@ router.post('/comandas/:id/reverse', authMiddleware, requireTenantModule('financ
 router.post('/comandas/:id/cancel', authMiddleware, requireTenantModule('finance'), cancelComanda);
 
 router.get('/finance-v2/categories', authMiddleware, requireTenantModule('finance'), listCategories);
+router.post('/finance-v2/categories', authMiddleware, requireTenantModule('finance'), createCategory);
+router.put('/finance-v2/categories/:id', authMiddleware, requireTenantModule('finance'), updateCategory);
+router.delete('/finance-v2/categories/:id', authMiddleware, requireTenantModule('finance'), deleteCategory);
 router.get('/finance-v2/expenses', authMiddleware, requireTenantModule('finance'), listFinanceExpenses);
 router.post('/finance-v2/expenses', authMiddleware, requireTenantModule('finance'), createFinanceExpense);
 router.put('/finance-v2/expenses/:id', authMiddleware, requireTenantModule('finance'), updateFinanceExpense);
@@ -197,5 +214,16 @@ router.delete('/finance-v2/expenses/:id', authMiddleware, requireTenantModule('f
 router.get('/finance-v2/ledger', authMiddleware, requireTenantModule('finance'), getLedgerSummary);
 router.get('/finance-v2/cash-flow', authMiddleware, requireTenantModule('finance'), getCashFlow);
 router.get('/finance-v2/commissions', authMiddleware, requireTenantModule('finance'), getCommissions);
+router.get('/finance-v2/commissions/payouts', authMiddleware, requireTenantModule('finance'), listCommissionPayouts);
+router.post('/finance-v2/commissions/payouts', authMiddleware, requireTenantModule('finance'), createCommissionPayout);
+router.get('/finance-v2/card-fees', authMiddleware, requireTenantModule('finance'), listCardFees);
+router.put('/finance-v2/card-fees', authMiddleware, requireTenantModule('finance'), upsertCardFee);
+router.get('/finance-v2/accounts/balances', authMiddleware, requireTenantModule('finance'), getAccountBalances);
+router.post('/finance-v2/accounts/transfer', authMiddleware, requireTenantModule('finance'), transferAccounts);
+router.get('/finance-v2/closings', authMiddleware, requireTenantModule('finance'), listClosings);
+router.post('/finance-v2/closings', authMiddleware, requireTenantModule('finance'), createClosing);
+router.get('/finance-v2/dre', authMiddleware, requireTenantModule('finance'), getDre);
+router.get('/finance-v2/audit', authMiddleware, requireTenantModule('finance'), getAuditLog);
+router.get('/finance-v2/kpis', authMiddleware, requireTenantModule('finance'), getKpis);
 
 module.exports = router;

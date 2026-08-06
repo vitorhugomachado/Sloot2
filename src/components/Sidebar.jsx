@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { LayoutDashboard, Calendar, Users, Settings, DollarSign, Shield, Menu, Package, LogOut, Wallet } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, Settings, Shield, Menu, Package, LogOut, Wallet } from 'lucide-react';
 import SlootiLogo from './SlootiLogo';
 import { isStaffNavModuleVisible } from '../utils/staffNavModules';
 
@@ -39,8 +39,7 @@ const Sidebar = ({ activeTab, setActiveTab, user, tenantModules, isCollapsed, se
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard /> },
     { id: 'scheduler', label: 'Agendamentos', icon: <Calendar /> },
     { id: 'clients', label: 'Clientes', icon: <Users /> },
-    { id: 'financeiro', label: 'Financeiro novo', icon: <Wallet /> },
-    { id: 'finance', label: 'Financeiro', icon: <DollarSign /> },
+    { id: 'financeiro', label: 'Financeiro', icon: <Wallet /> },
     { id: 'users', label: 'Usuários', icon: <Shield /> },
     { id: 'inventory', label: 'Estoque', icon: <Package /> },
     { id: 'settings', label: 'Configurações', icon: <Settings /> },

@@ -6,6 +6,26 @@ export function toIsoLocal(date) {
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * Formata data YYYY-MM-DD (ou ISO com hora) para dd/mm/aaaa sem deslocar o dia.
+ * Não usa `new Date('YYYY-MM-DD')` (UTC) — só fatia a string.
+ */
+export function formatDateBr(value) {
+  if (!value) return '—';
+  const raw = String(value).trim();
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  try {
+    return new Date(value).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  } catch {
+    return raw;
+  }
+}
+
 /** Hoje no fuso local (preferir em vez de toISOString().slice(0, 10)). */
 export function todayIsoLocal() {
   return toIsoLocal(new Date());

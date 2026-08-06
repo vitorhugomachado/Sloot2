@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
 
 /* PainÃ©is staff: abas inativas ficam ocultas mas montadas (troca rÃ¡pida) */
 .staff-tab-panel[hidden] {
@@ -9258,4 +9258,405 @@ a.nav-item {
 .finv2-close-report {
   display: grid;
   gap: 0.25rem;
+}
+
+/* ===== FinanceV2 redesign ===== */
+
+/* Números tabulares em Outfit */
+.finv2-num {
+  font-family: 'Outfit', 'Manrope', sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hero compacto: uma linha, sem lead */
+.finv2-hero--compact {
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.finv2-hero--compact .finv2-eyebrow {
+  margin-bottom: 0.2rem;
+}
+
+.finv2-hero--compact h1 {
+  font-size: clamp(1.35rem, 2vw, 1.6rem);
+}
+
+.finv2-hero--compact .finv2-hero__actions {
+  align-items: center;
+}
+
+.finv2-hero__search {
+  height: 42px;
+  min-width: 240px;
+}
+
+/* Barra de status do caixa (persistente) */
+.finv2-cashbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem 1.25rem;
+  flex-wrap: wrap;
+  min-height: 56px;
+  padding: 0.55rem 1rem;
+  background: var(--panel-bg);
+  border: var(--card-border);
+  border-left-width: 3px;
+  border-radius: 14px;
+  box-shadow: var(--card-shadow);
+}
+
+.finv2-cashbar.is-open {
+  border-left-color: #22c55e;
+  background:
+    linear-gradient(90deg, rgba(34, 197, 94, 0.05), transparent 32%),
+    var(--panel-bg);
+}
+
+.finv2-cashbar.is-closed {
+  border-left-color: var(--accent-color);
+  background:
+    linear-gradient(90deg, rgba(255, 133, 51, 0.06), transparent 32%),
+    var(--panel-bg);
+}
+
+.finv2-cashbar__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.finv2-cashbar__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--icon-bg);
+  color: var(--accent-color);
+}
+
+.finv2-cashbar.is-open .finv2-cashbar__icon {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+.finv2-cashbar__text {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.finv2-cashbar__text strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.finv2-cashbar__chips {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.finv2-cashbar__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.finv2-cashbar__chip strong {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.finv2-cashbar__chip strong.is-in { color: #15803d; }
+.finv2-cashbar__chip strong.is-out { color: #b91c1c; }
+
+.finv2-cashbar__chip--balance strong {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.finv2-cashbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+/* Segmentos internos abaixo das abas primárias */
+.finv2-subtabs {
+  margin: -0.35rem 0 0.15rem;
+}
+
+/* Tabelas: cabeçalho fixo, zebra e altura máxima */
+.finv2-table-wrap {
+  max-height: 62vh;
+  overflow: auto;
+}
+
+.finv2-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-bg);
+  z-index: 1;
+}
+
+.finv2-table tbody tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+.finv2-table tbody tr:hover td {
+  background: var(--hover-bg);
+}
+
+.finv2-row-click {
+  cursor: pointer;
+}
+
+.finv2-row-click:hover td {
+  background: var(--hover-bg);
+}
+
+/* Modais */
+.finv2-modal {
+  border-top: 3px solid var(--accent-color);
+}
+
+.finv2-modal--wide {
+  width: min(100%, 760px);
+}
+
+/* Mini KPIs (resumo do caixa no detalhe da sessão) */
+.finv2-mini-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 0.85rem;
+}
+
+.finv2-mini-kpi {
+  display: grid;
+  gap: 2px;
+  padding: 0.7rem 0.85rem;
+  background: var(--dash-card-bg);
+  border: var(--card-border);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+}
+
+.finv2-mini-kpi span {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.finv2-mini-kpi strong {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.finv2-mini-kpi strong.is-in { color: #15803d; }
+.finv2-mini-kpi strong.is-out { color: #b91c1c; }
+
+/* Visão geral */
+.finv2-overview-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.finv2-overview-list {
+  display: grid;
+  gap: 0;
+}
+
+.finv2-overview-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.65rem 0.35rem;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+  font: inherit;
+  border-radius: 8px;
+}
+
+.finv2-overview-row:hover {
+  background: var(--hover-bg);
+}
+
+.finv2-overview-row__main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.finv2-overview-row__main strong {
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finv2-overview-row__meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.finv2-overview-row__side {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.finv2-overview-row__side strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* Mobile ≤768px */
+@media (max-width: 768px) {
+  .finv2-tabs.finance-tab-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .finv2-tabs.finance-tab-nav button {
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+
+  .finv2-subtabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .finv2-subtabs .finv2-segment {
+    flex-wrap: nowrap;
+  }
+
+  .finv2-subtabs .finv2-segment button {
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+
+  .finv2-cashbar {
+    align-items: flex-start;
+  }
+
+  .finv2-cashbar__status {
+    flex: 1 1 auto;
+  }
+
+  .finv2-cashbar__chips {
+    width: 100%;
+    order: 3;
+  }
+
+  .finv2-cashbar__actions {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .finv2-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .finv2-mini-kpi-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Extrato e Comandas viram cards empilhados */
+  .finv2-table-wrap:has(.finv2-table--cards) {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .finv2-table--cards,
+  .finv2-table--cards tbody,
+  .finv2-table--cards tr,
+  .finv2-table--cards td {
+    display: block;
+  }
+
+  .finv2-table--cards thead {
+    display: none;
+  }
+
+  .finv2-table--cards tbody tr {
+    border: var(--card-border);
+    border-radius: 12px;
+    background: var(--panel-bg);
+    box-shadow: var(--card-shadow);
+    padding: 0.3rem 0.8rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .finv2-table--cards tbody tr:nth-child(even) td {
+    background: transparent;
+  }
+
+  .finv2-table--cards tbody tr:hover td {
+    background: transparent;
+  }
+
+  .finv2-table--cards td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--border-color);
+    text-align: right;
+  }
+
+  .finv2-table--cards td:last-child {
+    border-bottom: none;
+  }
+
+  .finv2-table--cards td::before {
+    content: attr(data-label);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  .finv2-table--cards td:not([data-label]) {
+    justify-content: flex-end;
+  }
+
+  .finv2-table--cards td:not([data-label])::before {
+    content: none;
+  }
 }

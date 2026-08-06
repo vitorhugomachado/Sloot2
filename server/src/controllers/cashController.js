@@ -1,9 +1,11 @@
 const prisma = require('../lib/prisma.js');
-const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
+const { tenantIdFromReq } = require('../lib/tenantHelpers');
 const {
   getOpenCashSession,
   summarizeSessionMovements,
   resolveStaffName,
+  writeLedgerEntry,
+  writeAuditLog,
 } = require('../lib/financeV2');
 
 function requireGerente(req, res) {
@@ -14,12 +16,13 @@ function requireGerente(req, res) {
   return true;
 }
 
-function sessionPayload(session, movements = []) {
+function sessionPayload(session, movements = [], extra = {}) {
   const totals = summarizeSessionMovements(movements, session.openingFloat);
   return {
     ...session,
     movements,
     totals,
+    ...extra,
   };
 }
 
@@ -61,12 +64,97 @@ const getCashSession = async (req, res) => {
       where: { id, tenantId },
     });
     if (!session) return res.status(404).json({ error: 'Caixa não encontrado' });
-    const movements = await prisma.cashMovement.findMany({
-      where: { cashSessionId: id, tenantId },
-      orderBy: { createdAt: 'desc' },
-    });
-    res.json(sessionPayload(session, movements));
+
+    const [movements, comandas, expenses] = await Promise.all([
+      prisma.cashMovement.findMany({
+        where: { cashSessionId: id, tenantId },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.comanda.findMany({
+        where: { tenantId, cashSessionId: id, status: 'QUITADA' },
+        include: {
+          items: {
+            select: {
+              name: true,
+              itemType: true,
+              quantity: true,
+              unitPrice: true,
+              total: true,
+            },
+          },
+        },
+        orderBy: { closedAt: 'desc' },
+      }),
+      prisma.expense.findMany({
+        where: { tenantId, cashSessionId: id },
+        orderBy: { id: 'desc' },
+      }),
+    ]);
+
+    const adjustments = movements.filter((m) => m.source === 'ADJUSTMENT');
+
+    const comandaById = Object.fromEntries(comandas.map((c) => [c.id, c]));
+    const byMethodDetail = {};
+    for (const m of movements) {
+      if (m.source !== 'COMANDA' || m.type !== 'IN') continue;
+      const method = m.method || 'Outro';
+      if (!byMethodDetail[method]) byMethodDetail[method] = [];
+      const c = m.referenceId ? comandaById[m.referenceId] : null;
+      byMethodDetail[method].push({
+        comandaId: m.referenceId || null,
+        number: c?.number ?? null,
+        customerName: c?.customerName ?? null,
+        amount: Number(m.amount || 0),
+      });
+    }
+
+    // Inclui comandas QUITADA que possam não estar no mapa (já buscadas)
+    // e também PARTIAL ligadas à sessão, só para composição de detalhe por método
+    const missingIds = [
+      ...new Set(
+        movements
+          .filter((m) => m.source === 'COMANDA' && m.referenceId && !comandaById[m.referenceId])
+          .map((m) => m.referenceId),
+      ),
+    ];
+    if (missingIds.length) {
+      const extra = await prisma.comanda.findMany({
+        where: { tenantId, id: { in: missingIds } },
+        select: { id: true, number: true, customerName: true },
+      });
+      for (const c of extra) {
+        for (const method of Object.keys(byMethodDetail)) {
+          for (const row of byMethodDetail[method]) {
+            if (row.comandaId === c.id) {
+              row.number = c.number;
+              row.customerName = c.customerName;
+            }
+          }
+        }
+      }
+    }
+
+    res.json(
+      sessionPayload(session, movements, {
+        composition: {
+          comandas: comandas.map((c) => ({
+            id: c.id,
+            number: c.number,
+            customerName: c.customerName,
+            total: c.total,
+            barberId: c.barberId,
+            closedAt: c.closedAt,
+            payments: c.payments,
+            items: c.items,
+          })),
+          expenses,
+          adjustments,
+          byMethodDetail,
+        },
+      }),
+    );
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Erro ao buscar caixa' });
   }
 };
@@ -88,7 +176,6 @@ const openCash = async (req, res) => {
     const dateRaw = String(req.body.date || req.body.businessDate || '').trim();
     let openedAt = new Date();
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateRaw)) {
-      // meio-dia local evita deslocar o dia por timezone
       openedAt = new Date(`${dateRaw}T12:00:00`);
       if (Number.isNaN(openedAt.getTime())) {
         return res.status(400).json({ error: 'Data inválida' });
@@ -122,7 +209,29 @@ const openCash = async (req, res) => {
             createdById: req.user?.id || null,
           },
         });
+        await writeLedgerEntry(tx, {
+          tenantId,
+          kind: 'ADJUSTMENT',
+          amount: openingFloat,
+          direction: 'IN',
+          method: 'Dinheiro',
+          account: 'CAIXA',
+          referenceType: 'CashSession',
+          referenceId: created.id,
+          description: 'Troco inicial',
+          createdById: req.user?.id || null,
+          occurredAt: openedAt,
+        });
       }
+      await writeAuditLog(tx, {
+        tenantId,
+        userId: req.user?.id,
+        userName: openedByName,
+        action: 'OPEN_CASH',
+        entity: 'CashSession',
+        entityId: created.id,
+        payload: { openingFloat, notes, openedAt },
+      });
       return created;
     });
 
@@ -132,6 +241,12 @@ const openCash = async (req, res) => {
     res.status(201).json(sessionPayload(session, movements));
   } catch (error) {
     console.error(error);
+    if (error?.code === 'P2002') {
+      return res.status(409).json({
+        error: 'Já existe um caixa aberto para este estabelecimento.',
+        code: 'CASH_ALREADY_OPEN',
+      });
+    }
     res.status(500).json({ error: 'Erro ao abrir caixa' });
   }
 };
@@ -141,6 +256,14 @@ const reopenCash = async (req, res) => {
     if (!requireGerente(req, res)) return;
     const tenantId = tenantIdFromReq(req);
     const id = parseInt(req.params.id, 10);
+
+    const reason = String(req.body.reason || '').trim();
+    if (reason.length < 3) {
+      return res.status(400).json({
+        error: 'Informe o motivo da reabertura (mínimo 3 caracteres).',
+        code: 'REASON_REQUIRED',
+      });
+    }
 
     const openExisting = await getOpenCashSession(tenantId);
     if (openExisting) {
@@ -158,33 +281,51 @@ const reopenCash = async (req, res) => {
       return res.status(409).json({ error: 'Este caixa já está aberto.' });
     }
 
-    const reopened = await prisma.cashSession.update({
-      where: { id },
-      data: {
-        status: 'OPEN',
-        closedAt: null,
-        closedById: null,
-        closedByName: null,
-        countedCash: null,
-        // mantém snapshot anterior como histórico interno em notes se útil — snapshot limpo ao reabrir
-        snapshot: session.snapshot
-          ? {
-              ...(typeof session.snapshot === 'object' ? session.snapshot : {}),
-              reopenedAt: new Date().toISOString(),
-              previousClose: {
-                closedAt: session.closedAt,
-                countedCash: session.countedCash,
+    const reopened = await prisma.$transaction(async (tx) => {
+      const userName = await resolveStaffName(req.user?.id, tx);
+      const updated = await tx.cashSession.update({
+        where: { id },
+        data: {
+          status: 'OPEN',
+          closedAt: null,
+          closedById: null,
+          closedByName: null,
+          countedCash: null,
+          snapshot: session.snapshot
+            ? {
+                ...(typeof session.snapshot === 'object' ? session.snapshot : {}),
+                reopenedAt: new Date().toISOString(),
+                reopenReason: reason,
+                previousClose: {
+                  closedAt: session.closedAt,
+                  countedCash: session.countedCash,
+                },
+              }
+            : {
+                reopenedAt: new Date().toISOString(),
+                reopenReason: reason,
+                previousClose: {
+                  closedAt: session.closedAt,
+                  countedCash: session.countedCash,
+                },
               },
-            }
-          : {
-              reopenedAt: new Date().toISOString(),
-              previousClose: {
-                closedAt: session.closedAt,
-                countedCash: session.countedCash,
-              },
-            },
-        notes: req.body.notes != null ? String(req.body.notes) : session.notes,
-      },
+          notes: [
+            session.notes || '',
+            req.body.notes != null ? String(req.body.notes) : '',
+            `Reabertura: ${reason}`,
+          ].filter(Boolean).join(' | ') || reason,
+        },
+      });
+      await writeAuditLog(tx, {
+        tenantId,
+        userId: req.user?.id,
+        userName,
+        action: 'REOPEN_CASH',
+        entity: 'CashSession',
+        entityId: id,
+        payload: { reason, notes: req.body.notes },
+      });
+      return updated;
     });
 
     const movements = await prisma.cashMovement.findMany({
@@ -194,6 +335,12 @@ const reopenCash = async (req, res) => {
     res.json(sessionPayload(reopened, movements));
   } catch (error) {
     console.error(error);
+    if (error?.code === 'P2002') {
+      return res.status(409).json({
+        error: 'Já existe um caixa aberto para este estabelecimento.',
+        code: 'CASH_ALREADY_OPEN',
+      });
+    }
     res.status(500).json({ error: 'Erro ao reabrir caixa' });
   }
 };
@@ -207,6 +354,32 @@ const closeCash = async (req, res) => {
       return res.status(409).json({ error: 'Não há caixa aberto para fechar.' });
     }
 
+    const force = req.body.force === true;
+    if (!force) {
+      const openComandas = await prisma.comanda.findMany({
+        where: {
+          tenantId,
+          cashSessionId: session.id,
+          status: { in: ['OPEN', 'PARTIAL'] },
+        },
+        select: {
+          id: true,
+          number: true,
+          customerName: true,
+          status: true,
+          total: true,
+        },
+      });
+      // Também comandas OPEN sem sessão ainda vinculadas indiretamente? Spec: cashSessionId = session.id
+      if (openComandas.length > 0) {
+        return res.status(409).json({
+          error: 'Existem comandas abertas ou parciais neste caixa. Quite-as ou use force=true.',
+          code: 'OPEN_COMANDAS',
+          comandas: openComandas,
+        });
+      }
+    }
+
     const countedCash = req.body.countedCash != null ? Number(req.body.countedCash) : null;
     const notes = req.body.notes != null ? String(req.body.notes) : session.notes;
 
@@ -217,23 +390,36 @@ const closeCash = async (req, res) => {
     const difference =
       countedCash != null ? Number(countedCash) - Number(totals.expectedCash) : null;
 
-    const closedByName = await resolveStaffName(req.user?.id);
-    const closed = await prisma.cashSession.update({
-      where: { id: session.id },
-      data: {
-        status: 'CLOSED',
-        closedAt: new Date(),
-        closedById: req.user?.id || null,
-        closedByName: closedByName || null,
-        countedCash,
-        notes,
-        snapshot: {
-          ...totals,
+    const closed = await prisma.$transaction(async (tx) => {
+      const closedByName = await resolveStaffName(req.user?.id, tx);
+      const updated = await tx.cashSession.update({
+        where: { id: session.id },
+        data: {
+          status: 'CLOSED',
+          closedAt: new Date(),
+          closedById: req.user?.id || null,
+          closedByName: closedByName || null,
           countedCash,
-          difference,
-          closedAt: new Date().toISOString(),
+          notes,
+          snapshot: {
+            ...totals,
+            countedCash,
+            difference,
+            closedAt: new Date().toISOString(),
+            force: force || false,
+          },
         },
-      },
+      });
+      await writeAuditLog(tx, {
+        tenantId,
+        userId: req.user?.id,
+        userName: closedByName,
+        action: 'CLOSE_CASH',
+        entity: 'CashSession',
+        entityId: session.id,
+        payload: { countedCash, difference, force: force || false },
+      });
+      return updated;
     });
 
     res.json(sessionPayload(closed, movements));
@@ -259,17 +445,43 @@ const createCashMovement = async (req, res) => {
     const amount = Number(req.body.amount || 0);
     if (!(amount > 0)) return res.status(400).json({ error: 'Valor inválido' });
 
-    const movement = await prisma.cashMovement.create({
-      data: {
+    const description = String(req.body.description || (type === 'OUT' ? 'Sangria' : 'Suprimento'));
+    const method = String(req.body.method || 'Dinheiro');
+
+    const movement = await prisma.$transaction(async (tx) => {
+      const mov = await tx.cashMovement.create({
+        data: {
+          tenantId,
+          cashSessionId: session.id,
+          type,
+          source: 'ADJUSTMENT',
+          amount,
+          method,
+          description,
+          createdById: req.user?.id || null,
+        },
+      });
+      await writeLedgerEntry(tx, {
         tenantId,
-        cashSessionId: session.id,
-        type,
-        source: 'ADJUSTMENT',
+        kind: 'ADJUSTMENT',
         amount,
-        method: String(req.body.method || 'Dinheiro'),
-        description: String(req.body.description || (type === 'OUT' ? 'Sangria' : 'Suprimento')),
+        direction: type,
+        method,
+        account: 'CAIXA',
+        referenceType: 'CashMovement',
+        referenceId: mov.id,
+        description,
         createdById: req.user?.id || null,
-      },
+      });
+      await writeAuditLog(tx, {
+        tenantId,
+        userId: req.user?.id,
+        action: type === 'OUT' ? 'CASH_ADJUSTMENT_OUT' : 'CASH_ADJUSTMENT_IN',
+        entity: 'CashMovement',
+        entityId: mov.id,
+        payload: { amount, method, description, cashSessionId: session.id },
+      });
+      return mov;
     });
     res.status(201).json(movement);
   } catch (error) {

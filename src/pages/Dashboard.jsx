@@ -154,7 +154,7 @@ function formatActivitySlot(date, time) {
 const Dashboard = () => {
   const {
     barbers, appointments, services, products,
-    addAppointment, sellProduct, getFinancialStats, getBarberRanking,
+    addAppointment, sellProduct,
     updateAppointmentStatus, cancelAppointment, currentUser, financeV2,
   } = useApp();
 
@@ -163,6 +163,12 @@ const Dashboard = () => {
   const [dashboardPeriodDays, setDashboardPeriodDays] = useState(7);
   const [activityTick, setActivityTick] = useState(0);
   const isBarber = currentUser?.role === 'Barbeiro';
+  const isGerente = currentUser?.role === 'Gerente';
+  const [isOpenCashModal, setIsOpenCashModal] = useState(false);
+  const [openCashFloat, setOpenCashFloat] = useState('0');
+  const [openingCash, setOpeningCash] = useState(false);
+  const [kpis, setKpis] = useState({ revenue: 0, ticketMedio: 0, byBarber: [], comandaCount: 0 });
+  const [kpiTick, setKpiTick] = useState(0);
 
   useEffect(() => {
     const id = setInterval(() => setActivityTick((t) => t + 1), 30000);
@@ -218,14 +224,73 @@ const Dashboard = () => {
     () => barbers.filter(b => b.role === 'Barbeiro' && b.status === 'Ativo'),
     [barbers]
   );
-  const stats = useMemo(
-    () => getFinancialStats(dashboardPeriodDates.start, dashboardPeriodDates.end),
-    [getFinancialStats, dashboardPeriodDates.start, dashboardPeriodDates.end]
-  );
-  const ranking = useMemo(
-    () => getBarberRanking(dashboardPeriodDates.start, dashboardPeriodDates.end),
-    [getBarberRanking, dashboardPeriodDates.start, dashboardPeriodDates.end]
-  );
+
+  useEffect(() => {
+    let alive = true;
+    if (!financeV2?.getKpis) return undefined;
+    financeV2
+      .getKpis({
+        startDate: dashboardPeriodDates.start,
+        endDate: dashboardPeriodDates.end,
+      })
+      .then((data) => {
+        if (!alive || !data) return;
+        setKpis({
+          revenue: Number(data.revenue || 0),
+          ticketMedio: Number(data.ticketMedio || 0),
+          byBarber: Array.isArray(data.byBarber) ? data.byBarber : [],
+          comandaCount: Number(data.comandaCount || 0),
+        });
+      })
+      .catch(() => {
+        if (alive) setKpis({ revenue: 0, ticketMedio: 0, byBarber: [], comandaCount: 0 });
+      });
+    return () => { alive = false; };
+  }, [
+    financeV2,
+    dashboardPeriodDates.start,
+    dashboardPeriodDates.end,
+    kpiTick,
+    appointments,
+  ]);
+
+  const stats = useMemo(() => {
+    if (isBarber && currentUser?.id != null) {
+      const mine = (kpis.byBarber || []).find((r) => Number(r.barberId) === Number(currentUser.id));
+      const revenue = Number(mine?.revenue || 0);
+      const count = Number(mine?.count || 0);
+      const averageTicket = mine?.ticketMedio != null
+        ? Number(mine.ticketMedio)
+        : (count > 0 ? revenue / count : 0);
+      return { revenue, averageTicket, count };
+    }
+    return {
+      revenue: Number(kpis.revenue || 0),
+      averageTicket: Number(kpis.ticketMedio || 0),
+      count: Number(kpis.comandaCount || 0),
+    };
+  }, [kpis, isBarber, currentUser?.id]);
+
+  const ranking = useMemo(() => {
+    let targetBarbers = barbers.filter((b) => b.role === 'Barbeiro');
+    if (isBarber && currentUser?.id != null) {
+      targetBarbers = targetBarbers.filter((b) => Number(b.id) === Number(currentUser.id));
+    }
+    const byId = new Map((kpis.byBarber || []).map((r) => [Number(r.barberId), r]));
+    return targetBarbers
+      .map((barber) => {
+        const row = byId.get(Number(barber.id));
+        return {
+          ...barber,
+          serviceRevenue: Number(row?.serviceRevenue || 0),
+          productRevenue: Number(row?.productRevenue || 0),
+          revenue: Number(row?.revenue || 0),
+          count: Number(row?.count || 0),
+          averageTicket: Number(row?.ticketMedio || 0),
+        };
+      })
+      .sort((a, b) => b.revenue - a.revenue);
+  }, [barbers, kpis.byBarber, isBarber, currentUser?.id]);
 
   // Feed ao vivo — independente do seletor de KPIs; só eventos com timestamp local
   const recentActivity = useMemo(() => {
@@ -319,10 +384,57 @@ const Dashboard = () => {
     setSaleForm(EMPTY_DIRECT_SALE);
   };
 
-  /* ─── Handlers ─── */
+  const refreshCashBrief = async () => {
+    try {
+      const data = await financeV2.getCurrentCash();
+      setCashBrief(data.session || null);
+      const sessions = await financeV2.listCashSessions();
+      const open = (sessions || []).filter((s) => s.status === 'OPEN');
+      setOpenCashOptions(open);
+      if (open.length === 1) setSaleCashSessionId(String(open[0].id));
+      else if (!open.find((s) => String(s.id) === String(saleCashSessionId))) {
+        setSaleCashSessionId('');
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleOpenCashFromDashboard = async () => {
+    if (!isGerente) return;
+    setOpeningCash(true);
+    try {
+      await financeV2.openCash({
+        openingFloat: Number(openCashFloat || 0),
+        date: todayIsoLocal(),
+      });
+      setIsOpenCashModal(false);
+      setOpenCashFloat('0');
+      await refreshCashBrief();
+    } catch (err) {
+      alert(err.message || 'Não foi possível abrir o caixa.');
+    } finally {
+      setOpeningCash(false);
+    }
+  };
+
+  const promptOpenCashOrFinanceiro = (message) => {
+    if (isGerente) {
+      const openNow = window.confirm(`${message}\n\nAbrir o caixa agora?`);
+      if (openNow) setIsOpenCashModal(true);
+      return;
+    }
+    const go = window.confirm(`${message}\n\nAbrir o Financeiro agora?`);
+    if (go) window.location.assign(`/${window.location.pathname.split('/')[1]}/dashboard/financeiro`);
+  };
+
   const handleConfirmDirectSale = async () => {
     if (saleLineItems.length === 0) return;
     if (!saleCashSessionId) {
+      if (isGerente && openCashOptions.length === 0) {
+        promptOpenCashOrFinanceiro('Nenhum caixa aberto.');
+        return;
+      }
       alert('Selecione o caixa do dia para registrar a venda.');
       return;
     }
@@ -357,13 +469,12 @@ const Dashboard = () => {
           };
         }),
       });
-      const data = await financeV2.getCurrentCash();
-      setCashBrief(data.session || null);
+      await refreshCashBrief();
+      setKpiTick((t) => t + 1);
       closeSaleModal();
     } catch (err) {
       if (err?.code === 'CASH_CLOSED' || err?.code === 'CASH_REQUIRED') {
-        const go = window.confirm(`${err.message}\n\nAbrir o Financeiro novo agora?`);
-        if (go) window.location.assign(`/${window.location.pathname.split('/')[1]}/dashboard/financeiro`);
+        promptOpenCashOrFinanceiro(err.message);
       } else {
         alert(err.message || 'Não foi possível concluir a venda.');
       }
@@ -539,17 +650,16 @@ const Dashboard = () => {
       <div className="dash-kpi-section">
         <div className="dash-kpi-section-header">
           <span className="dash-kpi-section-title">Indicadores</span>
-          {cashBrief ? (
-            <span className="dash-kpi-section-title" style={{ fontWeight: 500, fontSize: '0.85rem' }}>
-              Caixa aberto · Entradas {formatCheckoutCurrency(cashBrief.totals?.totalIn)} · Saldo{' '}
-              {formatCheckoutCurrency(cashBrief.totals?.balance)}
-            </span>
-          ) : (
-            <span className="dash-kpi-section-title" style={{ fontWeight: 500, fontSize: '0.85rem', opacity: 0.7 }}>
-              Caixa fechado
-            </span>
-          )}
-        </div>
+          {!cashBrief && isGerente ? (
+            <button
+              type="button"
+              className="dash-action-btn secondary"
+              style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+              onClick={() => setIsOpenCashModal(true)}
+            >
+              Abrir caixa
+            </button>
+          ) : null}
           <div className="dash-toggle-group">
             {PERIOD_OPTIONS.map((p) => (
               <button
@@ -611,11 +721,8 @@ const Dashboard = () => {
               </p>
             ) : (
               ranking.map((barber, idx) => {
-                const commissionPercent = Math.max(0, Math.min(100, Number(barber.commission ?? 50)));
-                const barbershopCommissionValue = barber.revenue * (commissionPercent / 100);
                 const barFillPct = (barber.revenue / maxRevenue) * 100;
-                const commissionStripePct = barber.revenue > 0 ? (barbershopCommissionValue / barber.revenue) * 100 : 0;
-                const barTooltip = `Faturamento total: ${formatCurrency(barber.revenue)} | Comissão da barbearia (${commissionPercent}%): ${formatCurrency(barbershopCommissionValue)}`;
+                const barTooltip = `Faturamento: ${formatCurrency(barber.revenue)}`;
 
                 return (
                 <div key={barber.id} className="dash-bar-item">
@@ -637,16 +744,13 @@ const Dashboard = () => {
                     title={barTooltip}
                     aria-label={barTooltip}
                   >
-                    <div className="dash-bar-fill" style={{ width: `${barFillPct}%` }}>
-                      <div className="dash-bar-commission-overlay" style={{ width: `${commissionStripePct}%` }} />
-                    </div>
+                    <div className="dash-bar-fill" style={{ width: `${barFillPct}%`, background: barberColors[idx] || '#94a3b8' }} />
                   </div>
-                  {/* Extra stats for barbers viewing their own data */}
                   {isBarber && (
                     <div style={{ display: 'flex', gap: '16px', marginTop: '10px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                      <span>🎯 {barber.count} atendimentos</span>
-                      <span>💈 R$ {barber.serviceRevenue.toLocaleString('pt-BR')} serviços</span>
-                      <span>🛒 R$ {barber.productRevenue.toLocaleString('pt-BR')} produtos</span>
+                      <span>{barber.count} atendimentos</span>
+                      <span>R$ {(barber.serviceRevenue || 0).toLocaleString('pt-BR')} serviços</span>
+                      <span>R$ {(barber.productRevenue || 0).toLocaleString('pt-BR')} produtos</span>
                     </div>
                   )}
                 </div>
@@ -834,6 +938,50 @@ const Dashboard = () => {
         </div>
       </div>
       </div>
+
+      {isOpenCashModal && isGerente && (
+        <div className="modal-backdrop" onClick={() => !openingCash && setIsOpenCashModal(false)}>
+          <div
+            className="modal-glass-panel fade-in scheduler-modal-panel"
+            style={{ width: '95%', maxWidth: '400px', padding: '1.5rem' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="booking-reserve-form__title-row">
+              <h2 className="booking-reserve-form__title">Abrir caixa</h2>
+              <button
+                type="button"
+                className="booking-reserve-form__close"
+                onClick={() => setIsOpenCashModal(false)}
+                aria-label="Fechar"
+                disabled={openingCash}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="booking-reserve-form" style={{ marginTop: '1rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                Fundo de troco (R$)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                className="booking-reserve-form__field"
+                value={openCashFloat}
+                onChange={(e) => setOpenCashFloat(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn-primary booking-reserve-form__submit"
+                disabled={openingCash}
+                onClick={handleOpenCashFromDashboard}
+              >
+                {openingCash ? 'Abrindo…' : 'Abrir caixa do dia'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AppointmentActionModal
         {...appointmentActions}

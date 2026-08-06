@@ -169,11 +169,23 @@ export function useAppointmentActions({
       return;
     }
 
+    for (const split of paymentSplits) {
+      if (/cart[aã]o/i.test(String(split.method || '')) && !String(split.cardBrand || '').trim()) {
+        alert('Informe a bandeira do cartão em cada pagamento com cartão.');
+        return;
+      }
+    }
+
     const paidAt = todayIsoLocal();
 
     const success = await updateAppointmentStatus(actionModal.app.id, 'Finalizado', {
       payments: {
-        splits: paymentSplits,
+        splits: paymentSplits.map((s) => ({
+          ...s,
+          cardKind: /d[eé]bito/i.test(String(s.method || ''))
+            ? 'DEBIT'
+            : (/cr[eé]dito/i.test(String(s.method || '')) ? 'CREDIT' : s.cardKind),
+        })),
         products: selectedProductsDetailed,
         serviceTotal: Number(actionModal.app.price || 0),
         productsTotal,

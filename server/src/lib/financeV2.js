@@ -51,6 +51,114 @@ async function resolveStaffName(userId, tx = prisma) {
   return barber?.name || null;
 }
 
+/**
+ * Lança entrada no razão financeiro (LedgerEntry).
+ * amount sempre positivo; direção via direction IN|OUT.
+ */
+async function writeLedgerEntry(tx, {
+  tenantId,
+  kind,
+  amount,
+  direction,
+  method,
+  account = 'CAIXA',
+  referenceType,
+  referenceId,
+  description,
+  createdById,
+  occurredAt,
+}) {
+  const amt = Math.abs(Number(amount || 0));
+  if (!(amt > 0)) return null;
+  const dir = String(direction || 'IN').toUpperCase() === 'OUT' ? 'OUT' : 'IN';
+  return tx.ledgerEntry.create({
+    data: {
+      tenantId: Number(tenantId),
+      kind: String(kind || 'INCOME').toUpperCase(),
+      amount: amt,
+      direction: dir,
+      method: method ? String(method) : null,
+      account: String(account || 'CAIXA').toUpperCase(),
+      referenceType: referenceType || null,
+      referenceId: referenceId != null ? Number(referenceId) : null,
+      description: String(description || ''),
+      createdById: createdById != null ? Number(createdById) : null,
+      ...(occurredAt ? { occurredAt } : {}),
+    },
+  });
+}
+
+/**
+ * Auditoria financeira (FinanceAuditLog).
+ */
+async function writeAuditLog(tx, {
+  tenantId,
+  userId,
+  userName,
+  action,
+  entity,
+  entityId,
+  payload,
+}) {
+  let name = userName || null;
+  if (!name && userId) {
+    name = await resolveStaffName(userId, tx);
+  }
+  return tx.financeAuditLog.create({
+    data: {
+      tenantId: Number(tenantId),
+      userId: userId != null ? Number(userId) : null,
+      userName: name,
+      action: String(action || ''),
+      entity: String(entity || ''),
+      entityId: entityId != null ? Number(entityId) : null,
+      payload: payload != null ? payload : undefined,
+    },
+  });
+}
+
+/**
+ * Bloqueia lançamentos em datas cobertas por FinanceClosing.
+ * @throws {Error} code PERIOD_CLOSED status 409
+ */
+async function assertPeriodNotClosed(tenantId, date, tx = prisma) {
+  const d = String(date || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+  const closed = await tx.financeClosing.findFirst({
+    where: {
+      tenantId: Number(tenantId),
+      periodStart: { lte: d },
+      periodEnd: { gte: d },
+    },
+  });
+  if (closed) {
+    const err = new Error(
+      `Período ${closed.periodStart} a ${closed.periodEnd} está fechado. Reabra o fechamento para lançar.`,
+    );
+    err.code = 'PERIOD_CLOSED';
+    err.status = 409;
+    err.closing = closed;
+    throw err;
+  }
+}
+
+/**
+ * Soma pagos já lançados (movimentos COMANDA) para uma comanda.
+ */
+async function sumComandaPaidAmount(tx, tenantId, comandaId) {
+  const ag = await tx.cashMovement.aggregate({
+    where: {
+      tenantId: Number(tenantId),
+      referenceType: 'Comanda',
+      referenceId: Number(comandaId),
+      source: 'COMANDA',
+      type: 'IN',
+    },
+    _sum: { amount: true },
+  });
+  return Number(ag._sum.amount || 0);
+}
+
 function summarizeSessionMovements(movements, openingFloat = 0) {
   const byMethod = {};
   let totalIn = 0;
@@ -192,6 +300,39 @@ function validatePaymentSplits(splits, requiredTotal) {
   return totalPaid;
 }
 
+/** Itens PRODUCT do V2 precisam de productId do catálogo (estoque). */
+function assertCatalogProductItems(items) {
+  for (const item of items || []) {
+    if (String(item.itemType || '').toUpperCase() !== 'PRODUCT') continue;
+    const productId = Number(item.productId);
+    if (!Number.isFinite(productId) || productId <= 0) {
+      const err = new Error(
+        `Produto "${item.name || 'sem nome'}" precisa ser escolhido do catálogo.`,
+      );
+      err.code = 'PRODUCT_REQUIRED';
+      err.status = 400;
+      throw err;
+    }
+  }
+}
+
+/**
+ * Total a cobrar = soma itens − desconto + gorjeta.
+ */
+function computePayableTotal(itemsTotal, payments = {}) {
+  const base = Number(itemsTotal || 0);
+  const discount = Math.max(0, Number(payments.discountAmount ?? payments.discount ?? 0));
+  const tip = Math.max(0, Number(payments.tipAmount ?? payments.tip ?? 0));
+  const payable = Math.round((base - discount + tip) * 100) / 100;
+  if (payable < 0) {
+    const err = new Error('Desconto não pode exceder o total dos itens.');
+    err.code = 'DISCOUNT_INVALID';
+    err.status = 400;
+    throw err;
+  }
+  return { itemsTotal: base, discount, tip, payable };
+}
+
 /**
  * Garante comanda OPEN ligada ao agendamento (cria se não existir).
  */
@@ -305,7 +446,9 @@ async function applyProductStockFromItems(tx, {
   customerId,
   customerName,
   saleDate,
+  comandaId,
 }) {
+  assertCatalogProductItems(items);
   const productItems = (items || []).filter(
     (i) => String(i.itemType || '').toUpperCase() === 'PRODUCT' && i.productId,
   );
@@ -346,6 +489,7 @@ async function applyProductStockFromItems(tx, {
         barberId: barberId || null,
         customerId: customerId || null,
         customerName: customerName || null,
+        comandaId: comandaId ? Number(comandaId) : null,
       },
     });
     sales.push(sale);
@@ -354,7 +498,9 @@ async function applyProductStockFromItems(tx, {
 }
 
 /**
- * Quitação de comanda: grava movimentos por split, fecha (QUITADA).
+ * Quitação de comanda: grava movimentos por split, fecha (QUITADA) ou PARTIAL.
+ * @param {string} [status='QUITADA'] — QUITADA | PARTIAL
+ * @param {boolean} [writeLedger=true] — lança LedgerEntry INCOME IN por split
  */
 async function settleComandaInTx(tx, {
   tenantId,
@@ -363,15 +509,22 @@ async function settleComandaInTx(tx, {
   payments,
   userId,
   description,
+  totalOverride,
+  status = 'QUITADA',
+  writeLedger = true,
 }) {
   const splits = Array.isArray(payments?.splits) && payments.splits.length > 0
     ? payments.splits
     : [{ method: 'Outro', amount: Number(payments?.totalCheckout || payments?.amount || 0) }];
 
+  const finalStatus = String(status || 'QUITADA').toUpperCase() === 'PARTIAL' ? 'PARTIAL' : 'QUITADA';
+  const desc = description || `Comanda #${comandaId}`;
+
   const movements = [];
   for (const split of splits) {
     const amount = Number(split.amount || 0);
     if (amount <= 0) continue;
+    const method = String(split.method || 'Outro');
     const mov = await tx.cashMovement.create({
       data: {
         tenantId,
@@ -379,25 +532,49 @@ async function settleComandaInTx(tx, {
         type: 'IN',
         source: 'COMANDA',
         amount,
-        method: String(split.method || 'Outro'),
-        description: description || `Comanda #${comandaId}`,
+        method,
+        description: desc,
         referenceType: 'Comanda',
         referenceId: comandaId,
         createdById: userId || null,
       },
     });
     movements.push(mov);
+
+    if (writeLedger) {
+      await writeLedgerEntry(tx, {
+        tenantId,
+        kind: 'INCOME',
+        amount,
+        direction: 'IN',
+        method,
+        account: 'CAIXA',
+        referenceType: 'Comanda',
+        referenceId: comandaId,
+        description: desc,
+        createdById: userId || null,
+      });
+    }
   }
 
-  const closedAt = new Date();
+  const updateData = {
+    status: finalStatus,
+    cashSessionId: cashSession.id,
+    payments: payments || undefined,
+  };
+  if (finalStatus === 'QUITADA') {
+    updateData.closedAt = new Date();
+  } else {
+    // PARTIAL: mantém aberta temporalmente (sem closedAt definitivo)
+    updateData.closedAt = null;
+  }
+  if (totalOverride != null && Number.isFinite(Number(totalOverride))) {
+    updateData.total = Number(totalOverride);
+  }
+
   const comanda = await tx.comanda.update({
     where: { id: comandaId },
-    data: {
-      status: 'QUITADA',
-      closedAt,
-      cashSessionId: cashSession.id,
-      payments: payments || undefined,
-    },
+    data: updateData,
     include: { items: true },
   });
 
@@ -405,19 +582,47 @@ async function settleComandaInTx(tx, {
 }
 
 /**
- * Estorno: remove movimentos COMANDA, reabre comanda, opcionalmente restaura estoque.
+ * Estorno: remove movimentos COMANDA, reabre comanda, restaura estoque e apaga ProductSales.
+ * Ledger: contra-lançamento (INCOME OUT) em vez de apagar entradas.
+ * Aceita QUITADA ou PARTIAL.
  */
 async function reverseSettleComandaInTx(tx, {
   tenantId,
   comanda,
-  restoreStock = false,
+  restoreStock = true,
   userId,
 }) {
-  if (comanda.status !== 'QUITADA') {
-    const err = new Error('Só é possível estornar comanda quitada.');
+  const st = String(comanda.status || '').toUpperCase();
+  if (st !== 'QUITADA' && st !== 'PARTIAL') {
+    const err = new Error('Só é possível estornar comanda quitada ou parcial.');
     err.code = 'NOT_QUITADA';
     err.status = 409;
     throw err;
+  }
+
+  const existingMovements = await tx.cashMovement.findMany({
+    where: {
+      tenantId,
+      referenceType: 'Comanda',
+      referenceId: comanda.id,
+      source: 'COMANDA',
+    },
+  });
+
+  const reverseDesc = `Estorno comanda #${comanda.number}`;
+  for (const mov of existingMovements) {
+    await writeLedgerEntry(tx, {
+      tenantId,
+      kind: 'INCOME',
+      amount: Number(mov.amount || 0),
+      direction: 'OUT',
+      method: mov.method || null,
+      account: 'CAIXA',
+      referenceType: 'Comanda',
+      referenceId: comanda.id,
+      description: reverseDesc,
+      createdById: userId || null,
+    });
   }
 
   await tx.cashMovement.deleteMany({
@@ -429,7 +634,22 @@ async function reverseSettleComandaInTx(tx, {
     },
   });
 
-  if (restoreStock) {
+  const linkedSales = await tx.productSale.findMany({
+    where: { tenantId, comandaId: comanda.id },
+  });
+
+  if (linkedSales.length > 0) {
+    for (const sale of linkedSales) {
+      await tx.product.update({
+        where: { id: Number(sale.productId) },
+        data: { stock: { increment: Math.max(1, Number(sale.quantity || 1)) } },
+      });
+    }
+    await tx.productSale.deleteMany({
+      where: { tenantId, comandaId: comanda.id },
+    });
+  } else if (restoreStock && st === 'QUITADA') {
+    // Fallback: comandas quitadas antes do vínculo comandaId
     const items = comanda.items || await tx.comandaItem.findMany({ where: { comandaId: comanda.id } });
     for (const item of items) {
       if (String(item.itemType).toUpperCase() !== 'PRODUCT' || !item.productId) continue;
@@ -450,6 +670,7 @@ async function reverseSettleComandaInTx(tx, {
         ...(typeof comanda.payments === 'object' && comanda.payments ? comanda.payments : {}),
         reversedAt: new Date().toISOString(),
         reversedById: userId || null,
+        paidAmount: 0,
       },
     },
     include: { items: true },
@@ -506,9 +727,172 @@ function splitItemCommission(itemTotal, commissionPct) {
   return { barber, house, pct };
 }
 
+const CARD_BRANDS = ['Visa', 'Mastercard', 'Elo', 'Amex', 'Hipercard', 'Outra'];
+const DEFAULT_CARD_FEE_SEED = [
+  { brand: 'Visa', kind: 'DEBIT', feePct: 1.5 },
+  { brand: 'Visa', kind: 'CREDIT', feePct: 2.5 },
+  { brand: 'Mastercard', kind: 'DEBIT', feePct: 1.5 },
+  { brand: 'Mastercard', kind: 'CREDIT', feePct: 2.5 },
+  { brand: 'Elo', kind: 'DEBIT', feePct: 1.6 },
+  { brand: 'Elo', kind: 'CREDIT', feePct: 2.7 },
+  { brand: 'Amex', kind: 'DEBIT', feePct: 2.0 },
+  { brand: 'Amex', kind: 'CREDIT', feePct: 3.2 },
+  { brand: 'Hipercard', kind: 'DEBIT', feePct: 1.8 },
+  { brand: 'Hipercard', kind: 'CREDIT', feePct: 2.9 },
+  { brand: 'Outra', kind: 'DEBIT', feePct: 2.0 },
+  { brand: 'Outra', kind: 'CREDIT', feePct: 3.0 },
+];
+
+function isCardPaymentMethod(method) {
+  const m = String(method || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return m.includes('cartao');
+}
+
+function inferCardKindFromMethod(method, explicitKind) {
+  const k = String(explicitKind || '').toUpperCase();
+  if (k === 'DEBIT' || k === 'CREDIT') return k;
+  const m = String(method || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (m.includes('debito')) return 'DEBIT';
+  if (m.includes('credito')) return 'CREDIT';
+  return null;
+}
+
+function normalizeCardBrand(brand) {
+  const raw = String(brand || '').trim();
+  if (!raw) return null;
+  const found = CARD_BRANDS.find((b) => b.toLowerCase() === raw.toLowerCase());
+  return found || 'Outra';
+}
+
+async function ensureDefaultCardFeeRates(tenantId, db = prisma) {
+  const count = await db.cardFeeRate.count({ where: { tenantId } });
+  if (count > 0) return;
+  await db.cardFeeRate.createMany({
+    data: DEFAULT_CARD_FEE_SEED.map((row) => ({
+      tenantId,
+      brand: row.brand,
+      kind: row.kind,
+      feePct: row.feePct,
+      active: true,
+    })),
+    skipDuplicates: true,
+  });
+}
+
+async function resolveCardFeePct(tx, { tenantId, brand, kind }) {
+  const normalizedBrand = normalizeCardBrand(brand);
+  const normalizedKind = String(kind || '').toUpperCase() === 'DEBIT' ? 'DEBIT' : 'CREDIT';
+  if (!normalizedBrand) {
+    const err = new Error('Informe a bandeira do cartão.');
+    err.code = 'CARD_BRAND_REQUIRED';
+    err.status = 400;
+    throw err;
+  }
+  await ensureDefaultCardFeeRates(tenantId, tx);
+  const rate = await tx.cardFeeRate.findFirst({
+    where: {
+      tenantId,
+      brand: normalizedBrand,
+      kind: normalizedKind,
+      active: true,
+    },
+  });
+  const feePct = rate ? Number(rate.feePct || 0) : 0;
+  return { brand: normalizedBrand, kind: normalizedKind, feePct: clampPct(feePct, 0) };
+}
+
+/**
+ * Enriquece splits de cartão com feePct/feeAmount; exige bandeira.
+ * @returns {Promise<object[]>}
+ */
+async function enrichCardSplits(tx, tenantId, splits) {
+  const out = [];
+  for (const split of splits || []) {
+    const amount = Number(split.amount || 0);
+    const method = String(split.method || 'Outro');
+    if (!isCardPaymentMethod(method) || !(amount > 0)) {
+      out.push({ ...split, amount, method });
+      continue;
+    }
+    const cardKind = inferCardKindFromMethod(method, split.cardKind);
+    if (!cardKind) {
+      const err = new Error('Informe se o cartão é débito ou crédito.');
+      err.code = 'CARD_KIND_REQUIRED';
+      err.status = 400;
+      throw err;
+    }
+    const brand = normalizeCardBrand(split.cardBrand);
+    if (!brand) {
+      const err = new Error('Informe a bandeira do cartão.');
+      err.code = 'CARD_BRAND_REQUIRED';
+      err.status = 400;
+      throw err;
+    }
+    const { feePct } = await resolveCardFeePct(tx, { tenantId, brand, kind: cardKind });
+    const feeAmount = Math.round(amount * (feePct / 100) * 100) / 100;
+    out.push({
+      ...split,
+      amount,
+      method,
+      cardKind,
+      cardBrand: brand,
+      feePct,
+      feeAmount,
+    });
+  }
+  return out;
+}
+
+/**
+ * Rateia taxas de cartão dos splits entre barbeiros dos itens SERVICE (proporcional ao total).
+ */
+function allocateCardFeesToBarbers(splits, items, comandaBarberId) {
+  const totalCardFee = (splits || []).reduce((s, p) => s + Number(p.feeAmount || 0), 0);
+  const serviceItems = (items || []).filter((i) => String(i.itemType).toUpperCase() === 'SERVICE');
+  const weightByBarber = new Map();
+  let weightTotal = 0;
+  for (const item of serviceItems) {
+    const bid = Number(item.barberId || comandaBarberId || 0);
+    if (!bid) continue;
+    const w = Number(item.total || 0);
+    if (!(w > 0)) continue;
+    weightByBarber.set(bid, (weightByBarber.get(bid) || 0) + w);
+    weightTotal += w;
+  }
+
+  const byBarber = [];
+  if (totalCardFee > 0 && weightTotal > 0) {
+    let allocated = 0;
+    const entries = [...weightByBarber.entries()];
+    entries.forEach(([barberId, weight], idx) => {
+      let feeAmount;
+      if (idx === entries.length - 1) {
+        feeAmount = Math.round((totalCardFee - allocated) * 100) / 100;
+      } else {
+        feeAmount = Math.round(totalCardFee * (weight / weightTotal) * 100) / 100;
+        allocated += feeAmount;
+      }
+      byBarber.push({ barberId, feeAmount });
+    });
+  }
+
+  return {
+    cardFeeTotal: Math.round(totalCardFee * 100) / 100,
+    cardFeeByBarber: byBarber,
+  };
+}
+
+function cardFeeForBarber(payments, barberId) {
+  const list = Array.isArray(payments?.cardFeeByBarber) ? payments.cardFeeByBarber : [];
+  const row = list.find((r) => Number(r.barberId) === Number(barberId));
+  return Number(row?.feeAmount || 0);
+}
+
 module.exports = {
   DEFAULT_CATEGORIES,
   DEFAULT_BARBER_COMMISSION_PCT,
+  CARD_BRANDS,
+  DEFAULT_CARD_FEE_SEED,
   ensureFinanceCategories,
   getSalesIncomeCategoryId,
   getOpenCashSession,
@@ -522,11 +906,25 @@ module.exports = {
   reverseSettleComandaInTx,
   applyProductStockFromItems,
   validatePaymentSplits,
+  assertCatalogProductItems,
+  computePayableTotal,
   resolveServiceCommissionMeta,
   resolveServiceCommissionPct,
   clampPct,
   splitItemCommission,
+  isCardPaymentMethod,
+  inferCardKindFromMethod,
+  normalizeCardBrand,
+  ensureDefaultCardFeeRates,
+  resolveCardFeePct,
+  enrichCardSplits,
+  allocateCardFeesToBarbers,
+  cardFeeForBarber,
   toLocalDateIso,
   brazilDayBounds,
   comandaSettlementDate,
+  writeLedgerEntry,
+  writeAuditLog,
+  assertPeriodNotClosed,
+  sumComandaPaidAmount,
 };

@@ -16,6 +16,8 @@ const {
   applyProductStockFromItems,
   resolveServiceCommissionMeta,
   toLocalDateIso,
+  enrichCardSplits,
+  allocateCardFeesToBarbers,
 } = require('../lib/financeV2');
 
 const IN_SERVICE_STATUSES = new Set(['Em progresso', 'Em atendimento']);
@@ -403,15 +405,35 @@ const updateAppointment = async (req, res) => {
               customerId: updated.customer_id || null,
               customerName: updated.customer,
               saleDate: paidAt || toLocalDateIso(new Date()),
+              comandaId: comanda.id,
             });
+
+            const enrichedSplits = await enrichCardSplits(
+              tx,
+              tenantId,
+              Array.isArray(finalPayments?.splits) ? finalPayments.splits : [],
+            );
+            const feeMeta = allocateCardFeesToBarbers(
+              enrichedSplits,
+              items,
+              updated.barberId || null,
+            );
 
             await settleComandaInTx(tx, {
               tenantId,
               comandaId: comanda.id,
               cashSession,
-              payments: { ...finalPayments, cashSessionId: cashSession.id, totalCheckout: total },
+              payments: {
+                ...finalPayments,
+                splits: enrichedSplits,
+                cashSessionId: cashSession.id,
+                totalCheckout: total,
+                cardFeeTotal: feeMeta.cardFeeTotal,
+                cardFeeByBarber: feeMeta.cardFeeByBarber,
+              },
               userId: req.user?.id,
               description: `Comanda Nº — ${updated.customer} (${updated.service})`,
+              totalOverride: total,
             });
           }
 
@@ -428,6 +450,8 @@ const updateAppointment = async (req, res) => {
           || settleErr?.code === 'PAYMENT_MISMATCH'
           || settleErr?.code === 'STOCK_INSUFFICIENT'
           || settleErr?.code === 'PRODUCT_NOT_FOUND'
+          || settleErr?.code === 'CARD_BRAND_REQUIRED'
+          || settleErr?.code === 'CARD_KIND_REQUIRED'
         ) {
           return res.status(settleErr.status || 409).json({
             message: settleErr.message,

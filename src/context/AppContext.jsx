@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { flushSync } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { API_URL } from '../config/apiUrl';
@@ -11,10 +11,6 @@ import {
 } from '../utils/appointmentsPollLeader';
 import { notifyStaffNewOnlineAppointments } from '../utils/staffInAppNotifications';
 import { mergeAppointmentsWithActivity, mergeAppointmentActivity } from '../utils/appointmentActivity';
-import {
-  getAppointmentServiceRevenue,
-  isAppointmentInRevenuePeriod,
-} from '../utils/appointmentRevenue';
 import { todayIsoLocal } from '../utils/dateLocal';
 import {
   readBootstrapFromCache,
@@ -63,9 +59,6 @@ export const AppProvider = ({ children }) => {
   const [businessInfo, setBusinessInfo] = useState(initialBootstrap.businessInfo);
   const [products, setProducts] = useState([]);
   const [productSales, setProductSales] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [monthClosings, setMonthClosings] = useState([]);
-  const [periodClosings, setPeriodClosings] = useState([]);
   const [bootstrapLoading, setBootstrapLoading] = useState(
     () => !hasBootstrapCache(tenantSlug) && !tenantLoading,
   );
@@ -213,9 +206,6 @@ export const AppProvider = ({ children }) => {
     hydrateFromCache();
     setProducts([]);
     setProductSales([]);
-    setExpenses([]);
-    setMonthClosings([]);
-    setPeriodClosings([]);
 
     const hasCache = hasBootstrapCache(tenantSlug);
     if (hasCache) setBootstrapLoading(false);
@@ -250,16 +240,10 @@ export const AppProvider = ({ children }) => {
               void Promise.all([
                 apiFetch(`${API_URL}/products`, { authScope: 'staff' }),
                 apiFetch(`${API_URL}/sales`, { authScope: 'staff' }),
-                apiFetch(`${API_URL}/expenses`, { authScope: 'staff' }),
-                apiFetch(`${API_URL}/month-closings`, { authScope: 'staff' }),
-                apiFetch(`${API_URL}/period-closings`, { authScope: 'staff' }),
               ])
-                .then(async ([prodsRes, salesRes, expensesRes, closingsRes, periodCloseRes]) => {
+                .then(async ([prodsRes, salesRes]) => {
                   if (prodsRes.ok) setProducts(await prodsRes.json());
                   if (salesRes.ok) setProductSales(await salesRes.json());
-                  if (expensesRes.ok) setExpenses(await expensesRes.json());
-                  if (closingsRes.ok) setMonthClosings(await closingsRes.json());
-                  if (periodCloseRes.ok) setPeriodClosings(await periodCloseRes.json());
                 })
                 .catch((err) => console.error('Erro ao carregar dados secundários:', err));
             } else if (!ac.signal.aborted) {
@@ -641,7 +625,7 @@ export const AppProvider = ({ children }) => {
           const err = await res.json().catch(() => ({}));
           if (err.code === 'CASH_CLOSED' || err.code === 'CASH_REQUIRED' || /caixa/i.test(err.message || '')) {
             const go = window.confirm(
-              `${err.message || 'Selecione ou abra o caixa do dia antes de confirmar o recebimento.'}\n\nAbrir o Financeiro novo agora?`,
+              `${err.message || 'Selecione ou abra o caixa do dia antes de confirmar o recebimento.'}\n\nAbrir o Financeiro agora?`,
             );
             if (go && tenantSlug) {
               window.location.assign(`/${tenantSlug}/dashboard/financeiro`);
@@ -945,141 +929,20 @@ export const AppProvider = ({ children }) => {
     return false;
   };
 
-  const addManualServiceRevenue = async (payload) => {
-    try {
-      const res = await apiFetch(`${API_URL}/finance/manual-service`, {
-        method: 'POST',
-        authScope: 'staff',
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        const saved = await res.json();
-        setAppointments((prev) => [
-          ...prev,
-          mergeAppointmentActivity(undefined, saved),
-        ]);
-        return { ok: true, data: saved };
-      }
-      const err = await res.json().catch(() => ({}));
-      return { ok: false, message: err.message || 'Erro ao registar atendimento manual.' };
-    } catch {
-      return { ok: false, message: 'Erro de conexão ao registar atendimento.' };
-    }
-  };
-
-  const addManualProductSale = async (payload) => {
-    try {
-      const res = await apiFetch(`${API_URL}/finance/manual-product`, {
-        method: 'POST',
-        authScope: 'staff',
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        const body = await res.json();
-        const { sale, product } = body;
-        if (product?.id != null) {
-          setProducts((prev) => prev.map((p) => (p.id === product.id ? product : p)));
-        }
-        if (sale) {
-          setProductSales((prev) => [...prev, sale]);
-        }
-        return { ok: true, data: body };
-      }
-      const err = await res.json().catch(() => ({}));
-      return { ok: false, message: err.message || 'Erro ao registar venda manual.' };
-    } catch {
-      return { ok: false, message: 'Erro de conexão ao registar venda.' };
-    }
-  };
-
-  const addExpense = async (newExpense) => {
-    const res = await apiFetch(`${API_URL}/expenses`, {
-      method: 'POST',
-      body: JSON.stringify(newExpense)
-    });
-    if (res.ok) {
-        const savedExpense = await res.json();
-        setExpenses(prev => [...prev, savedExpense]);
-    }
-  };
-
-  const removeExpense = async (id) => {
-    const res = await apiFetch(`${API_URL}/expenses/${id}`, { method: 'DELETE' });
-    if (res.ok) setExpenses(prev => prev.filter(e => e.id !== id));
-  };
-
-  const updateExpense = async (id, data) => {
-    const res = await apiFetch(`${API_URL}/expenses/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data)
-    });
-    if (res.ok) {
-        const updated = await res.json();
-        setExpenses(prev => prev.map(e => e.id === id ? updated : e));
-    }
-  };
-
-  const refreshPeriodClosings = async () => {
+  const refreshStaffAppointments = useCallback(async () => {
     if (!token) return;
-    const res = await apiFetch(`${API_URL}/period-closings`, { authScope: 'staff' });
-    if (res.ok) {
-      setPeriodClosings(await res.json());
+    try {
+      const apptsRes = await apiFetch(staffAppointmentsUrl(API_URL), { authScope: 'staff' });
+      if (!apptsRes.ok) return;
+      const data = await apptsRes.json();
+      setAppointments((prev) => mergeAppointmentsWithActivity(prev, data));
+      notifyStaffNewOnlineAppointments(data, tenantSlug, inAppAppointmentTrackerRef.current);
+    } catch (error) {
+      console.error('Error refreshing appointments:', error);
     }
-  };
+  }, [token, apiFetch, tenantSlug]);
 
-  const createPeriodClosing = async ({ startDate, endDate, scope, barberId, notes }) => {
-    const payload = {
-      startDate,
-      endDate,
-      scope,
-      notes: notes || '',
-    };
-    if (scope === 'BARBER' && barberId != null && barberId !== '') {
-      payload.barberId = Number(barberId);
-    }
-    const res = await apiFetch(`${API_URL}/period-closings`, {
-      method: 'POST',
-      authScope: 'staff',
-      body: JSON.stringify(payload),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const base = body.error || body.message || 'Falha ao registar fechamento';
-      const detail = body.details ? ` ${body.details}` : '';
-      const err = new Error(`${base}${detail}`.trim());
-      err.status = res.status;
-      throw err;
-    }
-    setPeriodClosings((prev) => {
-      const id = body?.id;
-      const without = id == null ? prev : prev.filter((row) => row.id !== id);
-      return [body, ...without];
-    });
-    return body;
-  };
-
-  const refreshMonthClosings = async () => {
-    if (!token) return;
-    const res = await apiFetch(`${API_URL}/month-closings`, { authScope: 'staff' });
-    if (res.ok) setMonthClosings(await res.json());
-  };
-
-  const createMonthClosing = async ({ yearMonth, notes }) => {
-    const res = await apiFetch(`${API_URL}/month-closings`, {
-      method: 'POST',
-      authScope: 'staff',
-      body: JSON.stringify({ yearMonth, notes: notes || '' }),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const err = new Error(body.error || body.message || 'Falha ao registrar fechamento');
-      err.status = res.status;
-      throw err;
-    }
-    return body;
-  };
-
-  const financeV2 = {
+  const financeV2 = useMemo(() => ({
     getCurrentCash: async () => {
       const res = await apiFetch(`${API_URL}/cash/current`, { authScope: 'staff' });
       const body = await res.json().catch(() => ({}));
@@ -1122,6 +985,7 @@ export const AppProvider = ({ children }) => {
         const err = new Error(body.error || 'Erro ao reabrir caixa');
         err.code = body.code;
         err.status = res.status;
+        err.body = body;
         throw err;
       }
       return body;
@@ -1133,7 +997,13 @@ export const AppProvider = ({ children }) => {
         body: JSON.stringify(payload || {}),
       });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || 'Erro ao fechar caixa');
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro ao fechar caixa');
+        err.code = body.code;
+        err.status = res.status;
+        err.body = body;
+        throw err;
+      }
       return body;
     },
     createCashMovement: async (payload) => {
@@ -1187,6 +1057,7 @@ export const AppProvider = ({ children }) => {
         err.status = res.status;
         throw err;
       }
+      await refreshStaffAppointments();
       return body;
     },
     settleComanda: async (id, payments) => {
@@ -1196,6 +1067,9 @@ export const AppProvider = ({ children }) => {
         body: JSON.stringify({
           payments,
           cashSessionId: payments?.cashSessionId,
+          discountAmount: payments?.discountAmount,
+          tipAmount: payments?.tipAmount,
+          allowPartial: payments?.allowPartial,
         }),
       });
       const body = await res.json().catch(() => ({}));
@@ -1205,6 +1079,7 @@ export const AppProvider = ({ children }) => {
         err.status = res.status;
         throw err;
       }
+      await refreshStaffAppointments();
       return body;
     },
     reverseComanda: async (id, payload = {}) => {
@@ -1215,6 +1090,7 @@ export const AppProvider = ({ children }) => {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || 'Erro ao estornar comanda');
+      await refreshStaffAppointments();
       return body;
     },
     cancelComanda: async (id) => {
@@ -1229,6 +1105,40 @@ export const AppProvider = ({ children }) => {
     listCategories: async () => {
       const res = await apiFetch(`${API_URL}/finance-v2/categories`, { authScope: 'staff' });
       return res.ok ? res.json() : [];
+    },
+    createCategory: async (payload) => {
+      const res = await apiFetch(`${API_URL}/finance-v2/categories`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload || {}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao criar categoria');
+      return body;
+    },
+    updateCategory: async (id, payload) => {
+      const res = await apiFetch(`${API_URL}/finance-v2/categories/${id}`, {
+        method: 'PUT',
+        authScope: 'staff',
+        body: JSON.stringify(payload || {}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao atualizar categoria');
+      return body;
+    },
+    deleteCategory: async (id) => {
+      const res = await apiFetch(`${API_URL}/finance-v2/categories/${id}`, {
+        method: 'DELETE',
+        authScope: 'staff',
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro ao excluir categoria');
+        err.code = body.code;
+        err.status = res.status;
+        throw err;
+      }
+      return body;
     },
     listExpenses: async (params = {}) => {
       const qs = new URLSearchParams();
@@ -1336,86 +1246,120 @@ export const AppProvider = ({ children }) => {
       if (!res.ok) throw new Error(body.error || 'Erro nas comissões');
       return body;
     },
-  };
-
-  // barberId: null = geral, 'barbershop' = só produtos sem barbeiro, number = barbeiro específico
-  const getFinancialStats = useCallback((startDate, endDate, barberId = null) => {
-    // Role-based isolation: Barbers always see only their own data
-    let effectiveBarberId = barberId;
-    if (currentUser && currentUser.role === 'Barbeiro' && !barberId) {
-      effectiveBarberId = currentUser.id;
-    }
-
-    let finished = appointments.filter(app => app.status === 'Finalizado');
-    let soldProducts = [...productSales];
-    let periodExpenses = [...expenses];
-
-    if (startDate && endDate) {
-      finished = finished.filter(
-        (app) => isAppointmentInRevenuePeriod(app, startDate, endDate),
-      );
-      soldProducts = soldProducts.filter(sale => sale.date >= startDate && sale.date <= endDate);
-      periodExpenses = periodExpenses.filter(e => e.date >= startDate && e.date <= endDate);
-    }
-
-    if (currentUser && currentUser.role === 'Barbeiro') {
-      periodExpenses = [];
-    }
-
-    // Filtro por barbeiro
-    if (effectiveBarberId === 'barbershop') {
-      finished = [];
-      soldProducts = soldProducts.filter(sale => !sale.barberId);
-    } else if (effectiveBarberId) {
-      const id = Number(effectiveBarberId);
-      finished = finished.filter(app => Number(app.barberId) === id);
-      soldProducts = soldProducts.filter(sale => Number(sale.barberId) === id);
-    }
-    
-    const serviceRevenue = finished.reduce(
-      (sum, app) => sum + getAppointmentServiceRevenue(app),
-      0,
-    );
-    const productRevenue = soldProducts.reduce((sum, sale) => sum + (sale.price * sale.quantity), 0);
-    const productCost = soldProducts.reduce((sum, sale) => sum + (sale.cost * sale.quantity), 0);
-    const expensesTotal = periodExpenses.reduce((sum, e) => sum + e.amount, 0);
-    
-    const revenue = serviceRevenue + productRevenue;
-    const itemsCount = finished.length + soldProducts.length;
-    return {
-      revenue, serviceRevenue, productRevenue, productCost, expenses: expensesTotal,
-      profit: revenue - expensesTotal - productCost, count: itemsCount,
-      averageTicket: itemsCount > 0 ? revenue / itemsCount : 0,
-      appointments: finished,
-      sales: soldProducts,
-      expensesList: periodExpenses
-    };
-  }, [appointments, productSales, expenses, currentUser]);
-
-  // Retorna ranking de barbeiros com stats individuais para o período
-  // Barbers only see their own stats in the ranking
-  const getBarberRanking = useCallback((startDate, endDate) => {
-    let targetBarbers = barbers.filter(b => b.role === 'Barbeiro');
-    
-    // Role-based isolation: Barbers only see themselves
-    if (currentUser && currentUser.role === 'Barbeiro') {
-      targetBarbers = targetBarbers.filter(b => b.id === currentUser.id);
-    }
-
-    return targetBarbers
-      .map(barber => {
-        const stats = getFinancialStats(startDate, endDate, barber.id);
-        return {
-          ...barber,
-          serviceRevenue: stats.serviceRevenue,
-          productRevenue: stats.productRevenue,
-          revenue: stats.revenue,
-          count: stats.count,
-          averageTicket: stats.averageTicket
-        };
-      })
-      .sort((a, b) => b.revenue - a.revenue);
-  }, [barbers, currentUser, getFinancialStats]);
+    listCommissionPayouts: async (params = {}) => {
+      const qs = new URLSearchParams();
+      Object.entries(params).forEach(([k, v]) => {
+        if (v != null && v !== '') qs.set(k, v);
+      });
+      const res = await apiFetch(`${API_URL}/finance-v2/commissions/payouts?${qs}`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao listar pagamentos de comissão');
+      return body;
+    },
+    createCommissionPayout: async (payload) => {
+      const res = await apiFetch(`${API_URL}/finance-v2/commissions/payouts`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload || {}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro ao pagar comissão');
+        err.code = body.code;
+        err.status = res.status;
+        throw err;
+      }
+      return body;
+    },
+    getAccountBalances: async () => {
+      const res = await apiFetch(`${API_URL}/finance-v2/accounts/balances`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao buscar saldos');
+      return body;
+    },
+    transferAccounts: async (payload) => {
+      const res = await apiFetch(`${API_URL}/finance-v2/accounts/transfer`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload || {}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro na transferência');
+        err.code = body.code;
+        err.status = res.status;
+        throw err;
+      }
+      return body;
+    },
+    listClosings: async () => {
+      const res = await apiFetch(`${API_URL}/finance-v2/closings`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao listar fechamentos');
+      return Array.isArray(body) ? body : [];
+    },
+    createClosing: async (payload) => {
+      const res = await apiFetch(`${API_URL}/finance-v2/closings`, {
+        method: 'POST',
+        authScope: 'staff',
+        body: JSON.stringify(payload || {}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(body.error || 'Erro ao fechar período');
+        err.code = body.code;
+        err.status = res.status;
+        throw err;
+      }
+      return body;
+    },
+    getDre: async (params = {}) => {
+      const qs = new URLSearchParams();
+      Object.entries(params).forEach(([k, v]) => {
+        if (v != null && v !== '') qs.set(k, v);
+      });
+      const res = await apiFetch(`${API_URL}/finance-v2/dre?${qs}`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao gerar DRE');
+      return body;
+    },
+    getAuditLog: async (params = {}) => {
+      const qs = new URLSearchParams();
+      Object.entries(params).forEach(([k, v]) => {
+        if (v != null && v !== '') qs.set(k, v);
+      });
+      const res = await apiFetch(`${API_URL}/finance-v2/audit?${qs}`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao buscar auditoria');
+      return Array.isArray(body) ? body : [];
+    },
+    getKpis: async (params = {}) => {
+      const qs = new URLSearchParams();
+      Object.entries(params).forEach(([k, v]) => {
+        if (v != null && v !== '') qs.set(k, v);
+      });
+      const res = await apiFetch(`${API_URL}/finance-v2/kpis?${qs}`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao buscar KPIs');
+      return body;
+    },
+    listCardFees: async () => {
+      const res = await apiFetch(`${API_URL}/finance-v2/card-fees`, { authScope: 'staff' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao listar taxas de cartão');
+      return body;
+    },
+    upsertCardFee: async (payload) => {
+      const res = await apiFetch(`${API_URL}/finance-v2/card-fees`, {
+        method: 'PUT',
+        authScope: 'staff',
+        body: JSON.stringify(payload || {}),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Erro ao salvar taxa de cartão');
+      return body;
+    },
+  }), [apiFetch, refreshStaffAppointments]);
 
   const storedCustomerToken = getCustomerToken(tenantSlug, tenant?.id);
   const customerSessionActive =
@@ -1426,16 +1370,14 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      barbers, appointments, services, businessInfo, products, productSales, expenses, monthClosings, periodClosings,
+      barbers, appointments, services, businessInfo, products, productSales,
       addAppointment, updateAppointmentStatus, cancelAppointment,
       addBarber, updateBarberPermissions, removeBarber, updateBarber, toggleBarberStatus,
       fetchBarberScheduleBlocks, createBarberScheduleBlock, deleteBarberScheduleBlock,
       addService, removeService, updateService,
       addProduct, removeProduct, updateProduct, adjustProductStock,
       sellProduct, updateBusinessInfo,
-      getFinancialStats, getBarberRanking,
-      addExpense, removeExpense, updateExpense, refreshMonthClosings, createMonthClosing, refreshPeriodClosings, createPeriodClosing,
-      addManualServiceRevenue, addManualProductSale,
+      refreshStaffAppointments,
       financeV2,
       login, logout, currentUser, tenantModules, token, tenantSlug, apiFetch, loading, bootstrapLoading, staffLoading,
       currentCustomer, isCustomerAuthenticated: customerSessionActive, customerLogin, customerGoogleLogin, customerRegister, customerLogout, refreshCurrentCustomer, syncNavigatedCustomer,

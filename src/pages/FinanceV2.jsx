@@ -8,33 +8,88 @@ import {
   Eye,
   Pencil,
   Plus,
-  Receipt,
   Search,
   Trash2,
   Wallet,
-  X,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { todayIsoLocal } from '../utils/dateLocal';
+import { todayIsoLocal, formatDateBr } from '../utils/dateLocal';
+import {
+  money,
+  formatWhen,
+  downloadCsv,
+  comandaSeriesLabel,
+  comandaStatusLabel,
+  comandaStatusTone,
+  comandaBalanceDue,
+  itemsSubtotal,
+  payableFromForm,
+  ModalShell,
+  Field,
+  EmptyState,
+  StatusPill,
+  CashCloseReport,
+} from '../components/financev2/shared';
+import CashStatusBar from '../components/financev2/CashStatusBar';
+import OverviewTab from '../components/financev2/OverviewTab';
+import SessionDetailModal from '../components/financev2/SessionDetailModal';
+import ComandaDetailModal from '../components/financev2/ComandaDetailModal';
 
-const TABS = [
-  { id: 'Extrato', label: 'Extrato' },
-  { id: 'Despesas', label: 'Despesas' },
-  { id: 'Receitas', label: 'Receitas' },
-  { id: 'Caixas', label: 'Caixas' },
-  { id: 'Comandas', label: 'Comandas' },
-  { id: 'Comissões', label: 'Comissões' },
-  { id: 'Fluxo', label: 'Fluxo' },
+const GROUPS = [
+  {
+    id: 'Visão geral',
+    label: 'Visão geral',
+    tabs: [{ id: 'Visão geral', label: 'Visão geral' }],
+  },
+  {
+    id: 'Movimento',
+    label: 'Movimento',
+    tabs: [
+      { id: 'Extrato', label: 'Extrato' },
+      { id: 'Receitas', label: 'Receitas' },
+      { id: 'Despesas', label: 'Despesas' },
+    ],
+  },
+  {
+    id: 'Caixa',
+    label: 'Caixa',
+    tabs: [
+      { id: 'Caixas', label: 'Caixa do dia' },
+      { id: 'Contas', label: 'Contas' },
+    ],
+  },
+  {
+    id: 'Comandas',
+    label: 'Comandas',
+    tabs: [{ id: 'Comandas', label: 'Comandas' }],
+  },
+  {
+    id: 'Equipe',
+    label: 'Equipe',
+    tabs: [
+      { id: 'Comissões', label: 'Comissões' },
+      { id: 'Taxas', label: 'Taxas' },
+    ],
+  },
+  {
+    id: 'Relatórios',
+    label: 'Relatórios',
+    tabs: [
+      { id: 'Fluxo', label: 'Fluxo' },
+      { id: 'DRE', label: 'DRE' },
+      { id: 'Fechamentos', label: 'Fechamentos' },
+      { id: 'Auditoria', label: 'Auditoria' },
+    ],
+  },
 ];
 
-const PAY_METHODS = ['Pix', 'Dinheiro', 'Cartão', 'Outro'];
+const PAY_METHODS = ['Pix', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito', 'Outro'];
+const CARD_BRANDS_UI = ['Visa', 'Mastercard', 'Elo', 'Amex', 'Hipercard', 'Outra'];
 
-function money(value) {
-  return `R$ ${Number(value || 0).toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+function isCardMethod(method) {
+  return /cart[aã]o/i.test(String(method || ''));
 }
+const PAYOUT_METHODS = ['CAIXA', 'Pix', 'Dinheiro', 'Cartão', 'Transferência', 'Outro'];
 
 function monthNow() {
   const d = new Date();
@@ -62,79 +117,16 @@ function statusMeta(status) {
   }
 }
 
-function formatWhen(value) {
-  if (!value) return '—';
-  try {
-    return new Date(value).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return String(value);
-  }
-}
-
-function ModalShell({ title, subtitle, onClose, children, wide }) {
-  return (
-    <div className="modal-backdrop" onClick={onClose} role="presentation">
-      <div
-        className={`modal-glass-panel finv2-modal ${wide ? 'finv2-modal--wide' : ''}`}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="finv2-modal__head">
-          <div>
-            <h3 className="finv2-modal__title">{title}</h3>
-            {subtitle ? <p className="finv2-modal__sub">{subtitle}</p> : null}
-          </div>
-          <button type="button" className="finv2-icon-btn" onClick={onClose} aria-label="Fechar">
-            <X size={18} />
-          </button>
-        </div>
-        <div className="finv2-modal__body">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, children, full }) {
-  return (
-    <label className={`finv2-field ${full ? 'finv2-field--full' : ''}`}>
-      <span className="finv2-field__label">{label}</span>
-      {children}
-    </label>
-  );
-}
-
-function EmptyState({ icon: Icon = Receipt, title, hint }) {
-  return (
-    <div className="finv2-empty">
-      <div className="finv2-empty__icon">
-        <Icon size={22} strokeWidth={1.75} />
-      </div>
-      <p className="finv2-empty__title">{title}</p>
-      {hint ? <p className="finv2-empty__hint">{hint}</p> : null}
-    </div>
-  );
-}
-
-function StatusPill({ tone, children }) {
-  return <span className={`finv2-pill finv2-pill--${tone}`}>{children}</span>;
-}
-
 export default function FinanceV2({ isActive = true }) {
-  const { financeV2, currentUser } = useApp();
+  const { financeV2, currentUser, products, services, businessInfo, barbers, updateService } = useApp();
   const isGerente = currentUser?.role === 'Gerente';
 
   const initialRange = monthStartEnd();
-  const [tab, setTab] = useState('Extrato');
+  const [tab, setTab] = useState('Visão geral');
   const [startDate, setStartDate] = useState(initialRange.start);
   const [endDate, setEndDate] = useState(initialRange.end);
   const [q, setQ] = useState('');
+  const [heroSearch, setHeroSearch] = useState('');
   const [loading, setLoading] = useState(false);
 
   const [cash, setCash] = useState(null);
@@ -143,11 +135,22 @@ export default function FinanceV2({ isActive = true }) {
   const [expenses, setExpenses] = useState([]);
   const [comandas, setComandas] = useState([]);
   const [comandaFilter, setComandaFilter] = useState('OPEN');
+  const [overviewComandas, setOverviewComandas] = useState([]);
   const [categories, setCategories] = useState([]);
   const [flow, setFlow] = useState(null);
   const [flowMonth, setFlowMonth] = useState(monthNow());
   const [expandedCats, setExpandedCats] = useState({});
   const [commissions, setCommissions] = useState({ rows: [], byBarber: [], totals: {} });
+  const [commissionPayouts, setCommissionPayouts] = useState([]);
+  const [cardFeeRates, setCardFeeRates] = useState([]);
+  const [cardFeeBrands, setCardFeeBrands] = useState(CARD_BRANDS_UI);
+  const [servicePctDraft, setServicePctDraft] = useState({});
+  const [accountBalances, setAccountBalances] = useState(null);
+  const [closings, setClosings] = useState([]);
+  const [dre, setDre] = useState(null);
+  const [dreMonth, setDreMonth] = useState(monthNow());
+  const [auditLog, setAuditLog] = useState([]);
+  const [kpis, setKpis] = useState(null);
 
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
@@ -188,9 +191,64 @@ export default function FinanceV2({ isActive = true }) {
   }, [financeV2, comandaFilter, startDate, endDate, q]);
 
   const refreshCommissions = useCallback(async () => {
-    const data = await financeV2.getCommissions({ startDate, endDate });
+    const [data, payouts] = await Promise.all([
+      financeV2.getCommissions({ startDate, endDate }),
+      financeV2.listCommissionPayouts({ startDate, endDate }).catch(() => []),
+    ]);
     setCommissions(data);
+    setCommissionPayouts(Array.isArray(payouts) ? payouts : []);
   }, [financeV2, startDate, endDate]);
+
+  const refreshTaxas = useCallback(async () => {
+    try {
+      const data = await financeV2.listCardFees();
+      setCardFeeRates(Array.isArray(data?.rates) ? data.rates : []);
+      if (Array.isArray(data?.brands) && data.brands.length) setCardFeeBrands(data.brands);
+      const draft = {};
+      (services || []).forEach((s) => {
+        draft[s.id] = String(s.commissionPct ?? 50);
+      });
+      setServicePctDraft(draft);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [financeV2, services]);
+
+  const refreshAccounts = useCallback(async () => {
+    const data = await financeV2.getAccountBalances();
+    setAccountBalances(data);
+  }, [financeV2]);
+
+  const refreshClosings = useCallback(async () => {
+    const data = await financeV2.listClosings();
+    setClosings(Array.isArray(data) ? data : []);
+  }, [financeV2]);
+
+  const refreshAudit = useCallback(async () => {
+    if (!isGerente) {
+      setAuditLog([]);
+      return;
+    }
+    const data = await financeV2.getAuditLog({ startDate, endDate });
+    setAuditLog(Array.isArray(data) ? data : []);
+  }, [financeV2, startDate, endDate, isGerente]);
+
+  const refreshKpis = useCallback(async () => {
+    const data = await financeV2.getKpis({ startDate, endDate });
+    setKpis(data);
+  }, [financeV2, startDate, endDate]);
+
+  const refreshOverview = useCallback(async () => {
+    const [open, partial] = await Promise.all([
+      refreshKpis(),
+      financeV2.listComandas({ status: 'OPEN' }),
+      financeV2.listComandas({ status: 'PARTIAL' }),
+    ]).then(([, o, p]) => [o, p]);
+    setOverviewComandas([
+      ...(Array.isArray(open) ? open : []),
+      ...(Array.isArray(partial) ? partial : []),
+    ]);
+  }, [financeV2, refreshKpis]);
 
   const refreshAll = useCallback(async () => {
     setLoading(true);
@@ -201,24 +259,56 @@ export default function FinanceV2({ isActive = true }) {
         financeV2.listCategories().then(setCategories),
         financeV2.listCashSessions().then(setSessions),
       ]);
+      if (tab === 'Visão geral') await refreshOverview();
+      if (tab === 'Extrato') await refreshKpis();
       if (tab === 'Despesas') await refreshExpenses();
       if (tab === 'Comandas') await refreshComandas();
       if (tab === 'Comissões') await refreshCommissions();
+      if (tab === 'Taxas') await refreshTaxas();
+      if (tab === 'Contas') await refreshAccounts();
+      if (tab === 'Fechamentos') await refreshClosings();
+      if (tab === 'Auditoria') await refreshAudit();
+      if (tab === 'DRE') {
+        try {
+          const data = await financeV2.getDre({ month: dreMonth });
+          setDre(data);
+        } catch (err) {
+          console.error(err);
+        }
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [refreshCash, refreshLedger, refreshExpenses, refreshComandas, refreshCommissions, financeV2, tab]);
+  }, [
+    refreshCash,
+    refreshLedger,
+    refreshExpenses,
+    refreshComandas,
+    refreshCommissions,
+    refreshTaxas,
+    refreshAccounts,
+    refreshClosings,
+    refreshAudit,
+    refreshKpis,
+    refreshOverview,
+    financeV2,
+    tab,
+    dreMonth,
+  ]);
 
   useEffect(() => {
     if (!isActive) return;
     refreshAll();
-  }, [isActive, tab, startDate, endDate, comandaFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isActive, tab, startDate, endDate, comandaFilter, dreMonth]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openModal = (type, seed = {}) => {
     setForm(seed);
     setModal(type);
+    if (type === 'settle' || type === 'entrada') {
+      refreshTaxas().catch(() => {});
+    }
   };
 
   const closeModal = () => {
@@ -255,9 +345,15 @@ export default function FinanceV2({ isActive = true }) {
       alert('Já existe um caixa aberto. Feche-o antes de reabrir outro.');
       return;
     }
+    const reason = window.prompt('Motivo da reabertura (mínimo 3 caracteres):');
+    if (reason == null) return;
+    if (String(reason).trim().length < 3) {
+      alert('Informe um motivo com pelo menos 3 caracteres.');
+      return;
+    }
     if (!confirm('Reabrir este caixa? Ele volta a receber movimentos e pagamentos.')) return;
     try {
-      await financeV2.reopenCash(sessionId);
+      await financeV2.reopenCash(sessionId, { reason: String(reason).trim() });
       await refreshCash();
       await financeV2.listCashSessions().then(setSessions);
       setSessionDetail(null);
@@ -266,7 +362,7 @@ export default function FinanceV2({ isActive = true }) {
     }
   };
 
-  const onCloseCash = async () => {
+  const onCloseCash = async (opts = {}) => {
     try {
       const closed = await financeV2.closeCash({
         countedCash:
@@ -274,12 +370,23 @@ export default function FinanceV2({ isActive = true }) {
             ? Number(form.countedCash)
             : null,
         notes: form.notes || '',
+        force: Boolean(opts.force),
       });
       closeModal();
       setCloseReport(closed);
       await refreshCash();
       await financeV2.listCashSessions().then(setSessions);
     } catch (err) {
+      if (err?.code === 'OPEN_COMANDAS') {
+        const list = (err.body?.comandas || [])
+          .map((c) => `Nº${String(c.number).padStart(4, '0')} · ${c.customerName || '—'} (${comandaStatusLabel(c.status)})`)
+          .join('\n');
+        const msg = `${err.message || 'Há comandas em aberto neste caixa.'}\n\n${list || ''}\n\nFechar mesmo assim?`;
+        if (confirm(msg)) {
+          await onCloseCash({ force: true });
+        }
+        return;
+      }
       handleError(err);
     }
   };
@@ -366,32 +473,56 @@ export default function FinanceV2({ isActive = true }) {
 
   const onCreateEntrada = async () => {
     try {
-      const total = Number(form.total || 0);
-      if (!form.customerName || !(total > 0)) {
-        alert('Informe cliente e valor');
+      const items = (form.items || [])
+        .filter((i) => i.name && Number(i.unitPrice) >= 0)
+        .map((i) => {
+          const itemType = i.itemType || 'SERVICE';
+          if (itemType === 'PRODUCT' && !i.productId) {
+            throw Object.assign(new Error(`Escolha o produto no catálogo: ${i.name || 'item'}`), {
+              code: 'PRODUCT_REQUIRED',
+            });
+          }
+          const product = products.find((p) => Number(p.id) === Number(i.productId));
+          if (itemType === 'PRODUCT' && product && Number(product.stock || 0) < Number(i.quantity || 1)) {
+            throw Object.assign(
+              new Error(`Estoque insuficiente para ${product.name}. Disponível: ${product.stock}.`),
+              { code: 'STOCK_INSUFFICIENT' },
+            );
+          }
+          return {
+            itemType,
+            name: i.name,
+            quantity: Math.max(1, Number(i.quantity || 1)),
+            unitPrice: Number(i.unitPrice || 0),
+            productId: itemType === 'PRODUCT' ? Number(i.productId) : null,
+            serviceId: itemType === 'SERVICE' && i.serviceId ? Number(i.serviceId) : null,
+            barberId: i.barberId || null,
+          };
+        });
+      if (!form.customerName?.trim() || !items.length) {
+        alert('Informe cliente e ao menos um item do catálogo.');
         return;
       }
       if (form.payNow && !form.cashSessionId) {
         alert('Selecione o caixa do dia para confirmar o recebimento.');
         return;
       }
+      const total = itemsSubtotal(items);
+      const discount = Math.max(0, Number(form.discountAmount || 0));
+      const tip = Math.max(0, Number(form.tipAmount || 0));
+      const payable = Math.round((total - discount + tip) * 100) / 100;
       const comanda = await financeV2.createComanda({
-        customerName: form.customerName,
+        customerName: form.customerName.trim(),
         origin: 'MANUAL',
         total,
-        items: [
-          {
-            itemType: 'SERVICE',
-            name: form.itemName || 'Receita manual',
-            quantity: 1,
-            unitPrice: total,
-          },
-        ],
+        items,
       });
       if (form.payNow) {
         await financeV2.settleComanda(comanda.id, {
           cashSessionId: Number(form.cashSessionId),
-          splits: [{ method: form.method || 'Pix', amount: total }],
+          splits: [{ method: form.method || 'Pix', amount: payable }],
+          discountAmount: discount,
+          tipAmount: tip,
         });
       }
       closeModal();
@@ -408,15 +539,52 @@ export default function FinanceV2({ isActive = true }) {
         alert('Selecione o caixa do dia para confirmar o recebimento.');
         return;
       }
-      const splits = (form.splits || []).map((s) => ({
-        method: s.method || 'Pix',
-        amount: Number(s.amount || 0),
-      }));
+      const payable = payableFromForm(form);
+      if (payable < 0) {
+        alert('Desconto não pode exceder o total dos itens.');
+        return;
+      }
+      const splits = (form.splits || []).map((s) => {
+        const method = s.method || 'Pix';
+        const row = {
+          method,
+          amount: Number(s.amount || 0),
+        };
+        if (isCardMethod(method)) {
+          row.cardBrand = s.cardBrand || 'Visa';
+          row.cardKind = s.cardKind
+            || (/d[eé]bito/i.test(method) ? 'DEBIT' : 'CREDIT');
+        }
+        return row;
+      });
+      for (const s of splits) {
+        if (isCardMethod(s.method) && !s.cardBrand) {
+          alert('Informe a bandeira do cartão.');
+          return;
+        }
+      }
+      const splitSum = Math.round(splits.reduce((s, x) => s + Number(x.amount || 0), 0) * 100) / 100;
+      const allowPartial = Boolean(form.allowPartial);
+      const target = form.balanceDue != null && form.balanceDue !== ''
+        ? Number(form.balanceDue)
+        : payable;
+      if (!allowPartial && Math.abs(splitSum - target) > 0.02 && Math.abs(splitSum - payable) > 0.02) {
+        alert(`A soma das formas (${money(splitSum)}) deve igualar o valor a cobrar (${money(target)}).`);
+        return;
+      }
+      if (allowPartial && splitSum <= 0) {
+        alert('Informe um valor maior que zero para o recebimento parcial.');
+        return;
+      }
       await financeV2.settleComanda(form.comandaId, {
         cashSessionId: Number(form.cashSessionId),
         splits,
+        discountAmount: Math.max(0, Number(form.discountAmount || 0)),
+        tipAmount: Math.max(0, Number(form.tipAmount || 0)),
+        allowPartial,
       });
       closeModal();
+      setComandaDetail(null);
       await refreshAll();
       await refreshComandas();
     } catch (err) {
@@ -424,19 +592,48 @@ export default function FinanceV2({ isActive = true }) {
     }
   };
 
+  const openSettleForComanda = (c, opts = {}) => {
+    const meta = c.settlementMeta || {};
+    const isPartial = String(c.status || '').toUpperCase() === 'PARTIAL' || opts.remaining;
+    const balanceDue = Number(
+      opts.balanceDue ?? meta.balanceDue ?? (isPartial ? Math.max(0, Number(c.total || 0) - Number(meta.paidAmount || 0)) : Number(c.total || 0)),
+    );
+    const amount = isPartial ? balanceDue : Number(c.total || 0);
+    openModal('settle', {
+      comandaId: c.id,
+      total: c.total,
+      itemsTotal: c.total,
+      discountAmount: isPartial ? Number(meta.discountAmount || 0) : 0,
+      tipAmount: isPartial ? Number(meta.tipAmount || 0) : 0,
+      customerName: c.customerName,
+      cashSessionId: defaultCashSessionId(),
+      allowPartial: Boolean(opts.allowPartial) || false,
+      balanceDue: isPartial ? balanceDue : null,
+      splits: [{ method: 'Pix', amount }],
+    });
+  };
+
   const onEditComandaItems = async () => {
     try {
       const items = (form.items || [])
         .filter((i) => i.name && Number(i.unitPrice) >= 0)
-        .map((i) => ({
-          itemType: i.itemType || 'SERVICE',
-          name: i.name,
-          quantity: Math.max(1, Number(i.quantity || 1)),
-          unitPrice: Number(i.unitPrice || 0),
-          productId: i.productId || null,
-          serviceId: i.serviceId || null,
-          barberId: i.barberId || null,
-        }));
+        .map((i) => {
+          const itemType = i.itemType || 'SERVICE';
+          if (itemType === 'PRODUCT' && !i.productId) {
+            throw Object.assign(new Error(`Escolha o produto no catálogo: ${i.name || 'item'}`), {
+              code: 'PRODUCT_REQUIRED',
+            });
+          }
+          return {
+            itemType,
+            name: i.name,
+            quantity: Math.max(1, Number(i.quantity || 1)),
+            unitPrice: Number(i.unitPrice || 0),
+            productId: itemType === 'PRODUCT' ? Number(i.productId) : null,
+            serviceId: itemType === 'SERVICE' && i.serviceId ? Number(i.serviceId) : null,
+            barberId: i.barberId || null,
+          };
+        });
       if (!items.length) {
         alert('Informe ao menos um item.');
         return;
@@ -451,6 +648,47 @@ export default function FinanceV2({ isActive = true }) {
     } catch (err) {
       handleError(err);
     }
+  };
+
+  const patchComandaItem = (idx, patch) => {
+    const items = [...(form.items || [])];
+    items[idx] = { ...items[idx], ...patch };
+    setForm({ ...form, items, total: itemsSubtotal(items) });
+  };
+
+  const applyCatalogSelection = (idx, itemType, catalogId) => {
+    const id = Number(catalogId);
+    if (itemType === 'PRODUCT') {
+      const product = products.find((p) => Number(p.id) === id);
+      if (!product) {
+        patchComandaItem(idx, { productId: '', name: '', unitPrice: 0, serviceId: null });
+        return;
+      }
+      patchComandaItem(idx, {
+        itemType: 'PRODUCT',
+        productId: product.id,
+        serviceId: null,
+        name: product.name,
+        unitPrice: Number(product.price || 0),
+        quantity: Math.min(
+          Math.max(1, Number(form.items?.[idx]?.quantity || 1)),
+          Math.max(1, Number(product.stock || 0) || 1),
+        ),
+      });
+      return;
+    }
+    const service = services.find((s) => Number(s.id) === id);
+    if (!service) {
+      patchComandaItem(idx, { serviceId: '', name: '', unitPrice: 0, productId: null });
+      return;
+    }
+    patchComandaItem(idx, {
+      itemType: 'SERVICE',
+      serviceId: service.id,
+      productId: null,
+      name: service.name,
+      unitPrice: Number(service.price || 0),
+    });
   };
 
   const onGenerateFlow = async () => {
@@ -490,7 +728,7 @@ export default function FinanceV2({ isActive = true }) {
     return '';
   };
 
-  const showFilters = ['Extrato', 'Despesas', 'Receitas', 'Comandas', 'Comissões'].includes(tab);
+  const showFilters = ['Extrato', 'Despesas', 'Receitas', 'Comandas', 'Comissões', 'Fechamentos', 'Auditoria'].includes(tab);
   const showKpis = ['Extrato', 'Despesas', 'Receitas'].includes(tab);
 
   const exportLedgerCsv = () => {
@@ -500,7 +738,7 @@ export default function FinanceV2({ isActive = true }) {
       header.join(';'),
       ...rows.map((e) =>
         [
-          e.date,
+          formatDateBr(e.date),
           e.kind === 'IN' ? 'Receita' : 'Despesa',
           `"${String(e.title || '').replace(/"/g, '""')}"`,
           e.paymentMethod || '',
@@ -510,7 +748,7 @@ export default function FinanceV2({ isActive = true }) {
         ].join(';'),
       ),
     ];
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -519,17 +757,64 @@ export default function FinanceV2({ isActive = true }) {
     URL.revokeObjectURL(url);
   };
 
+  const exportDreCsv = () => {
+    if (!dre) return;
+    const prev = dre.previousMonth || {};
+    const header = ['Indicador', 'Mês atual', 'Mês anterior'];
+    const rows = [
+      ['Receita bruta', String(dre.revenueGross).replace('.', ','), String(prev.revenueGross ?? '').replace('.', ',')],
+      ['Descontos', String(dre.discounts).replace('.', ','), String(prev.discounts ?? '').replace('.', ',')],
+      ['Gorjetas', String(dre.tips).replace('.', ','), String(prev.tips ?? '').replace('.', ',')],
+      ['Receita líquida', String(dre.revenueNet).replace('.', ','), String(prev.revenueNet ?? '').replace('.', ',')],
+      ['Comissões', String(dre.commissions).replace('.', ','), String(prev.commissions ?? '').replace('.', ',')],
+      ['Despesas', String(dre.expensesTotal).replace('.', ','), String(prev.expensesTotal ?? '').replace('.', ',')],
+      ['Resultado', String(dre.result).replace('.', ','), String(prev.result ?? '').replace('.', ',')],
+      ...(dre.expensesByCategory || []).map((c) => [
+        `Despesa · ${c.category}`,
+        String(c.amount).replace('.', ','),
+        '',
+      ]),
+    ];
+    downloadCsv(`dre-${dre.month || dreMonth}.csv`, header, rows);
+  };
+
+  const applyHeroSearch = async () => {
+    const term = heroSearch.trim();
+    setQ(term);
+    setTab('Comandas');
+    setComandaFilter('OPEN');
+    try {
+      const data = await financeV2.listComandas({
+        status: 'OPEN',
+        startDate,
+        endDate,
+        q: term,
+      });
+      setComandas(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="finance-page finv2-page">
-      <header className="finv2-hero">
+      <header className="finv2-hero finv2-hero--compact">
         <div className="finv2-hero__copy">
           <p className="finv2-eyebrow">Gestão</p>
           <h1>Financeiro</h1>
-          <p className="finv2-hero__lead">
-            Caixa do dia, comandas e lançamentos — no mesmo visual do painel Sloot.
-          </p>
         </div>
         <div className="finv2-hero__actions">
+          <div className="finv2-search finv2-hero__search">
+            <Search size={15} strokeWidth={2} />
+            <input
+              value={heroSearch}
+              onChange={(e) => setHeroSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') applyHeroSearch();
+              }}
+              placeholder="Buscar comanda (nº ou cliente)"
+            />
+          </div>
           <button
             type="button"
             className="finv2-btn finv2-btn--ghost-danger"
@@ -554,6 +839,10 @@ export default function FinanceV2({ isActive = true }) {
                 payNow: true,
                 method: 'Pix',
                 cashSessionId: defaultCashSessionId(),
+                customerName: '',
+                discountAmount: 0,
+                tipAmount: 0,
+                items: [{ itemType: 'SERVICE', serviceId: '', productId: '', name: '', quantity: 1, unitPrice: 0 }],
               })
             }
           >
@@ -563,69 +852,58 @@ export default function FinanceV2({ isActive = true }) {
         </div>
       </header>
 
-      <section className={`glass-card finv2-cash-card ${cash ? 'is-open' : 'is-closed'}`}>
-        <div className="finv2-cash-card__left">
-          <div className="finv2-cash-card__icon">
-            <Wallet size={20} strokeWidth={2} />
-          </div>
-          <div>
-            <div className="finv2-cash-card__row">
-              <h2>Caixa do dia</h2>
-              <StatusPill tone={cash ? 'ok' : 'muted'}>{cash ? 'Aberto' : 'Fechado'}</StatusPill>
-            </div>
-            {cash ? (
-              <p>
-                Aberto por <strong>{cash.openedByName || 'equipe'}</strong>
-                {' · '}
-                {formatWhen(cash.openedAt)}
-              </p>
-            ) : (
-              <p>Abra o caixa para confirmar recebimentos e pagar saídas na conta Caixa.</p>
-            )}
-          </div>
-        </div>
-        {cash ? (
-          <div className="finv2-cash-metrics">
-            <div>
-              <span>Entradas</span>
-              <strong className="is-in">{money(cash.totals?.totalIn)}</strong>
-            </div>
-            <div>
-              <span>Saídas</span>
-              <strong className="is-out">{money(cash.totals?.totalOut)}</strong>
-            </div>
-            <div>
-              <span>Dinheiro esperado</span>
-              <strong>{money(cash.totals?.expectedCash)}</strong>
-            </div>
-          </div>
-        ) : isGerente ? (
-          <button
-            type="button"
-            className="btn-primary finv2-btn-primary"
-            onClick={() => {
-              setTab('Caixas');
-              openModal('openCash', { openingFloat: 0, date: todayIsoLocal() });
-            }}
-          >
-            Abrir caixa
-          </button>
-        ) : null}
-      </section>
+      <CashStatusBar
+        cash={cash}
+        isGerente={isGerente}
+        onOpenCash={() => {
+          setTab('Caixas');
+          openModal('openCash', { openingFloat: 0, date: todayIsoLocal() });
+        }}
+        onAdjust={() => openModal('adjust', { type: 'OUT', method: 'Dinheiro' })}
+        onCloseCash={() =>
+          openModal('closeCash', {
+            countedCash: cash?.totals?.expectedCash ?? 0,
+          })
+        }
+      />
 
       <nav className="finance-tab-nav finv2-tabs" aria-label="Seções do financeiro">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            className={tab === t.id ? 'active' : ''}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-            {tab === t.id ? <span className="finv2-tab-underline" /> : null}
-          </button>
-        ))}
+        {GROUPS.map((g) => {
+          const isActive = g.tabs.some((t) => t.id === tab);
+          return (
+            <button
+              key={g.id}
+              type="button"
+              className={isActive ? 'active' : ''}
+              onClick={() => setTab(g.tabs[0].id)}
+            >
+              {g.label}
+              {isActive ? <span className="finv2-tab-underline" /> : null}
+            </button>
+          );
+        })}
       </nav>
+
+      {(() => {
+        const activeGroup = GROUPS.find((g) => g.tabs.some((t) => t.id === tab));
+        if (!activeGroup || activeGroup.tabs.length < 2) return null;
+        return (
+          <div className="finv2-subtabs">
+            <div className="finv2-segment">
+              {activeGroup.tabs.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className={tab === t.id ? 'is-active' : ''}
+                  onClick={() => setTab(t.id)}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {showFilters && (
         <div className="glass-card finv2-filters">
@@ -689,6 +967,52 @@ export default function FinanceV2({ isActive = true }) {
         </div>
       )}
 
+      {tab === 'Extrato' && kpis ? (
+        <div className="dash-kpi-row finv2-kpi-row" style={{ marginTop: showKpis ? 0 : undefined }}>
+          <div className="dash-kpi-card">
+            <div className="dash-kpi-top"><span className="dash-kpi-label">Ticket médio</span></div>
+            <div className="dash-kpi-value">{money(kpis.ticketMedio)}</div>
+          </div>
+          <div className="dash-kpi-card">
+            <div className="dash-kpi-top"><span className="dash-kpi-label">Mix serviço / produto</span></div>
+            <div className="dash-kpi-value" style={{ fontSize: '1.15rem' }}>
+              {Number(kpis.mixServicePct || 0).toFixed(0)}% / {Number(kpis.mixProductPct || 0).toFixed(0)}%
+            </div>
+          </div>
+          <div className="dash-kpi-card">
+            <div className="dash-kpi-top"><span className="dash-kpi-label">Descontos</span></div>
+            <div className="dash-kpi-value">{money(kpis.discountTotal)}</div>
+          </div>
+          <div className="dash-kpi-card">
+            <div className="dash-kpi-top"><span className="dash-kpi-label">Gorjetas</span></div>
+            <div className="dash-kpi-value">{money(kpis.tipsTotal)}</div>
+          </div>
+          {kpis.monthlyRevenueGoal != null ? (
+            <div className="dash-kpi-card">
+              <div className="dash-kpi-top"><span className="dash-kpi-label">Meta do mês</span></div>
+              <div className="dash-kpi-value" style={{ fontSize: '1.15rem' }}>
+                {kpis.goalProgress != null ? `${Number(kpis.goalProgress).toFixed(0)}%` : '—'}
+              </div>
+              <div className="dash-kpi-subtitle">Meta {money(kpis.monthlyRevenueGoal)}</div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {tab === 'Visão geral' && (
+        <OverviewTab
+          kpis={kpis}
+          summary={summary}
+          entries={ledger.entries || []}
+          openComandas={overviewComandas}
+          onOpenComanda={openComandaDetail}
+          onGoToComandas={() => {
+            setComandaFilter('OPEN');
+            setTab('Comandas');
+          }}
+        />
+      )}
+
       {tab === 'Extrato' && (
         <div className="glass-card finv2-panel">
           <div className="finv2-panel__head">
@@ -702,7 +1026,7 @@ export default function FinanceV2({ isActive = true }) {
           </div>
           {filteredEntries.length ? (
             <div className="finv2-table-wrap">
-              <table className="finv2-table">
+              <table className="finv2-table finv2-table--cards">
                 <thead>
                   <tr>
                     <th>Data</th>
@@ -716,14 +1040,17 @@ export default function FinanceV2({ isActive = true }) {
                 <tbody>
                   {filteredEntries.map((e) => (
                     <tr key={e.id}>
-                      <td className="is-muted">{e.date}</td>
-                      <td className="is-strong">{e.title}</td>
-                      <td>{e.paymentMethod || '—'}</td>
-                      <td>{e.category}</td>
-                      <td className={`is-right is-strong ${e.amount < 0 ? 'is-out' : 'is-in'}`}>
+                      <td className="is-muted" data-label="Data">{formatDateBr(e.date)}</td>
+                      <td className="is-strong" data-label="Título">{e.title}</td>
+                      <td data-label="Forma">{e.paymentMethod || '—'}</td>
+                      <td data-label="Categoria">{e.category}</td>
+                      <td
+                        className={`is-right is-strong finv2-num ${e.amount < 0 ? 'is-out' : 'is-in'}`}
+                        data-label="Valor"
+                      >
                         {money(e.amount)}
                       </td>
-                      <td>
+                      <td data-label="Status">
                         <StatusPill tone="ok">Pago</StatusPill>
                       </td>
                     </tr>
@@ -741,21 +1068,32 @@ export default function FinanceV2({ isActive = true }) {
         <div className="glass-card finv2-panel">
           <div className="finv2-panel__head">
             <h3>Despesas</h3>
-            <button
-              type="button"
-              className="finv2-btn finv2-btn--ghost-danger"
-              onClick={() =>
-                openModal('saida', {
-                  dueDate: todayIsoLocal(),
-                  competenceDate: todayIsoLocal(),
-                  account: 'CAIXA',
-                  payNow: true,
-                  paymentMethod: 'Dinheiro',
-                })
-              }
-            >
-              <Plus size={15} /> Nova saída
-            </button>
+            <div className="finv2-inline-actions">
+              {isGerente ? (
+                <button
+                  type="button"
+                  className="finv2-btn"
+                  onClick={() => openModal('categories', { name: '', kind: 'EXPENSE' })}
+                >
+                  Gerenciar categorias
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="finv2-btn finv2-btn--ghost-danger"
+                onClick={() =>
+                  openModal('saida', {
+                    dueDate: todayIsoLocal(),
+                    competenceDate: todayIsoLocal(),
+                    account: 'CAIXA',
+                    payNow: true,
+                    paymentMethod: 'Dinheiro',
+                  })
+                }
+              >
+                <Plus size={15} /> Nova saída
+              </button>
+            </div>
           </div>
           {expenses.length ? (
             <div className="finv2-table-wrap">
@@ -777,7 +1115,7 @@ export default function FinanceV2({ isActive = true }) {
                     const unpaid = st.tone !== 'ok';
                     return (
                       <tr key={e.id}>
-                        <td className="is-muted">{e.dueDate || e.date}</td>
+                        <td className="is-muted">{formatDateBr(e.dueDate || e.date)}</td>
                         <td className="is-strong">{e.title || e.description}</td>
                         <td>{e.paymentMethod || '—'}</td>
                         <td>{e.financeCategory?.name || e.category || '—'}</td>
@@ -956,7 +1294,7 @@ export default function FinanceV2({ isActive = true }) {
                         <td>{m.type === 'IN' ? 'Entrada' : 'Saída'}</td>
                         <td>{m.method}</td>
                         <td className="is-strong">{m.description}</td>
-                        <td className={`is-right is-strong ${m.type === 'IN' ? 'is-in' : 'is-out'}`}>
+                        <td className={`is-right is-strong finv2-num ${m.type === 'IN' ? 'is-in' : 'is-out'}`}>
                           {money(m.type === 'IN' ? m.amount : -m.amount)}
                         </td>
                       </tr>
@@ -1046,7 +1384,8 @@ export default function FinanceV2({ isActive = true }) {
             <div className="finv2-segment">
               {[
                 { id: 'OPEN', label: 'Abertas' },
-                { id: 'QUITADA', label: 'Finalizadas' },
+                { id: 'PARTIAL', label: 'Parciais' },
+                { id: 'QUITADA', label: 'Quitadas' },
               ].map((opt) => (
                 <button
                   key={opt.id}
@@ -1061,11 +1400,12 @@ export default function FinanceV2({ isActive = true }) {
           </div>
           {comandas.length ? (
             <div className="finv2-table-wrap">
-              <table className="finv2-table">
+              <table className="finv2-table finv2-table--cards">
                 <thead>
                   <tr>
                     <th>Comanda</th>
                     <th>Cliente</th>
+                    <th>Status</th>
                     <th>Caixa</th>
                     <th>Abertura</th>
                     <th className="is-right">Valor</th>
@@ -1073,122 +1413,138 @@ export default function FinanceV2({ isActive = true }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {comandas.map((c) => (
-                    <tr key={c.id}>
-                      <td className="is-strong">Nº{String(c.number).padStart(4, '0')}</td>
-                      <td>{c.customerName}</td>
-                      <td className="is-muted">
-                        {c.cashSession
-                          ? `${c.cashSession.openedByName || 'Caixa'} · ${formatWhen(c.cashSession.openedAt)}`
-                          : cash
-                            ? cash.openedByName || 'Caixa atual'
-                            : 'Sem caixa'}
-                      </td>
-                      <td className="is-muted">{formatWhen(c.openedAt)}</td>
-                      <td className="is-right is-strong">{money(c.total)}</td>
-                      <td className="is-right">
-                        <div className="finv2-row-actions">
-                          <button
-                            type="button"
-                            className="finv2-icon-btn"
-                            title="Detalhes"
-                            onClick={() => openComandaDetail(c.id)}
-                          >
-                            <Eye size={15} />
-                          </button>
-                          {c.status === 'OPEN' ? (
-                            <>
+                  {comandas.map((c) => {
+                    const balanceDue = comandaBalanceDue(c);
+                    return (
+                      <tr key={c.id}>
+                        <td className="is-strong" data-label="Comanda">
+                          {comandaSeriesLabel(c)}
+                          <div className="is-muted" style={{ fontSize: '0.75rem', fontWeight: 400 }}>
+                            #{c.number}
+                          </div>
+                        </td>
+                        <td data-label="Cliente">{c.customerName}</td>
+                        <td data-label="Status">
+                          <StatusPill tone={comandaStatusTone(c.status)}>
+                            {comandaStatusLabel(c.status)}
+                          </StatusPill>
+                          {String(c.status).toUpperCase() === 'PARTIAL' && balanceDue > 0 ? (
+                            <div className="is-muted" style={{ fontSize: '0.75rem', marginTop: 4 }}>
+                              Em aberto {money(balanceDue)}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td className="is-muted" data-label="Caixa">
+                          {c.cashSession
+                            ? `${c.cashSession.openedByName || 'Caixa'} · ${formatWhen(c.cashSession.openedAt)}`
+                            : cash
+                              ? cash.openedByName || 'Caixa atual'
+                              : 'Sem caixa'}
+                        </td>
+                        <td className="is-muted" data-label="Abertura">{formatWhen(c.openedAt)}</td>
+                        <td className="is-right is-strong finv2-num" data-label="Valor">{money(c.total)}</td>
+                        <td className="is-right">
+                          <div className="finv2-row-actions">
+                            <button
+                              type="button"
+                              className="finv2-icon-btn"
+                              title="Detalhes"
+                              onClick={() => openComandaDetail(c.id)}
+                            >
+                              <Eye size={15} />
+                            </button>
+                            {c.status === 'OPEN' || c.status === 'PARTIAL' ? (
+                              <>
+                                {c.status === 'OPEN' ? (
+                                  <button
+                                    type="button"
+                                    className="finv2-btn finv2-btn-sm"
+                                    onClick={() =>
+                                      openModal('editComanda', {
+                                        comandaId: c.id,
+                                        customerName: c.customerName,
+                                        items: (c.items || []).map((i) => ({
+                                          itemType: i.itemType || 'SERVICE',
+                                          name: i.name,
+                                          quantity: i.quantity || 1,
+                                          unitPrice: i.unitPrice || 0,
+                                          productId: i.productId || '',
+                                          serviceId: i.serviceId || '',
+                                          barberId: i.barberId || '',
+                                        })),
+                                      })
+                                    }
+                                  >
+                                    <Pencil size={14} /> Itens
+                                  </button>
+                                ) : null}
+                                <button
+                                  type="button"
+                                  className="btn-primary finv2-btn-primary finv2-btn-sm"
+                                  onClick={() => openSettleForComanda(c, { remaining: c.status === 'PARTIAL' })}
+                                >
+                                  {c.status === 'PARTIAL' ? 'Receber restante' : 'Confirmar'}
+                                </button>
+                                {isGerente && c.status === 'OPEN' ? (
+                                  <button
+                                    type="button"
+                                    className="finv2-icon-btn finv2-icon-btn--danger"
+                                    title="Cancelar"
+                                    onClick={async () => {
+                                      if (!confirm('Cancelar esta comanda?')) return;
+                                      try {
+                                        await financeV2.cancelComanda(c.id);
+                                        await refreshComandas();
+                                        await refreshLedger();
+                                      } catch (err) {
+                                        handleError(err);
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 size={15} />
+                                  </button>
+                                ) : null}
+                              </>
+                            ) : null}
+                            {c.status === 'QUITADA' && isGerente ? (
                               <button
                                 type="button"
                                 className="finv2-btn finv2-btn-sm"
-                                onClick={() =>
-                                  openModal('editComanda', {
-                                    comandaId: c.id,
-                                    customerName: c.customerName,
-                                    items: (c.items || []).map((i) => ({
-                                      itemType: i.itemType || 'SERVICE',
-                                      name: i.name,
-                                      quantity: i.quantity || 1,
-                                      unitPrice: i.unitPrice || 0,
-                                      productId: i.productId || '',
-                                      serviceId: i.serviceId || '',
-                                      barberId: i.barberId || '',
-                                    })),
-                                  })
-                                }
+                                onClick={async () => {
+                                  if (!confirm('Estornar esta comanda? O valor sai do caixa e ela volta a aberta.')) return;
+                                  try {
+                                    await financeV2.reverseComanda(c.id, { restoreStock: true });
+                                    await refreshAll();
+                                    await refreshComandas();
+                                  } catch (err) {
+                                    handleError(err);
+                                  }
+                                }}
                               >
-                                <Pencil size={14} /> Itens
+                                Estornar
                               </button>
-                              <button
-                                type="button"
-                                className="btn-primary finv2-btn-primary finv2-btn-sm"
-                                onClick={() =>
-                                  openModal('settle', {
-                                    comandaId: c.id,
-                                    total: c.total,
-                                    customerName: c.customerName,
-                                    cashSessionId: defaultCashSessionId(),
-                                    splits: [{ method: 'Pix', amount: Number(c.total || 0) }],
-                                  })
-                                }
-                              >
-                                Confirmar
-                              </button>
-                              {isGerente ? (
-                                <button
-                                  type="button"
-                                  className="finv2-icon-btn finv2-icon-btn--danger"
-                                  title="Cancelar"
-                                  onClick={async () => {
-                                    if (!confirm('Cancelar esta comanda?')) return;
-                                    try {
-                                      await financeV2.cancelComanda(c.id);
-                                      await refreshComandas();
-                                      await refreshLedger();
-                                    } catch (err) {
-                                      handleError(err);
-                                    }
-                                  }}
-                                >
-                                  <Trash2 size={15} />
-                                </button>
-                              ) : null}
-                            </>
-                          ) : null}
-                          {c.status === 'QUITADA' && isGerente ? (
-                            <button
-                              type="button"
-                              className="finv2-btn finv2-btn-sm"
-                              onClick={async () => {
-                                if (!confirm('Estornar esta comanda? O valor sai do caixa e ela volta a aberta.')) return;
-                                try {
-                                  await financeV2.reverseComanda(c.id, { restoreStock: true });
-                                  await refreshAll();
-                                  await refreshComandas();
-                                } catch (err) {
-                                  handleError(err);
-                                }
-                              }}
-                            >
-                              Estornar
-                            </button>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            ) : null}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           ) : (
             <EmptyState
-              title={comandaFilter === 'OPEN' ? 'Nenhuma comanda aberta' : 'Nenhuma comanda finalizada'}
+              title={
+                comandaFilter === 'OPEN'
+                  ? 'Nenhuma comanda aberta'
+                  : comandaFilter === 'PARTIAL'
+                    ? 'Nenhuma comanda parcial'
+                    : 'Nenhuma comanda quitada'
+              }
               hint="Ao finalizar um atendimento com pagamento, a comanda entra aqui."
             />
           )}
         </div>
-      )}
-
       )}
 
       {tab === 'Comissões' && (
@@ -1199,18 +1555,50 @@ export default function FinanceV2({ isActive = true }) {
               <div className="dash-kpi-value">{money(commissions.totals?.totalGross)}</div>
             </div>
             <div className="dash-kpi-card">
-              <div className="dash-kpi-top"><span className="dash-kpi-label">A repassar</span></div>
+              <div className="dash-kpi-top"><span className="dash-kpi-label">A repassar (líq.)</span></div>
               <div className="dash-kpi-value">{money(commissions.totals?.totalBarber)}</div>
+            </div>
+            <div className="dash-kpi-card">
+              <div className="dash-kpi-top"><span className="dash-kpi-label">Taxa cartão</span></div>
+              <div className="dash-kpi-value">{money(commissions.totals?.totalCardFee)}</div>
             </div>
             <div className="dash-kpi-card">
               <div className="dash-kpi-top"><span className="dash-kpi-label">Retenção casa</span></div>
               <div className="dash-kpi-value">{money(commissions.totals?.totalHouse)}</div>
             </div>
+            <div className="dash-kpi-card">
+              <div className="dash-kpi-top"><span className="dash-kpi-label">Já pago</span></div>
+              <div className="dash-kpi-value">{money(commissions.totals?.totalPaid)}</div>
+            </div>
+            <div className="dash-kpi-card">
+              <div className="dash-kpi-top"><span className="dash-kpi-label">Em aberto</span></div>
+              <div className="dash-kpi-value">{money(commissions.totals?.totalOwed)}</div>
+            </div>
           </div>
           <div className="glass-card finv2-panel">
             <div className="finv2-panel__head">
               <h3>Por profissional</h3>
-              <span>{(commissions.byBarber || []).length} profissionais</span>
+              <div className="finv2-inline-actions">
+                <span>{(commissions.byBarber || []).length} profissionais</span>
+                {isGerente ? (
+                  <button
+                    type="button"
+                    className="btn-primary finv2-btn-primary finv2-btn-sm"
+                    onClick={() =>
+                      openModal('commissionPayout', {
+                        barberId: '',
+                        amount: '',
+                        method: 'CAIXA',
+                        periodStart: startDate,
+                        periodEnd: endDate,
+                        cashSessionId: defaultCashSessionId(),
+                      })
+                    }
+                  >
+                    Registrar repasse
+                  </button>
+                ) : null}
+              </div>
             </div>
             {(commissions.byBarber || []).length ? (
               <div className="finv2-table-wrap">
@@ -1220,7 +1608,10 @@ export default function FinanceV2({ isActive = true }) {
                       <th>Profissional</th>
                       <th className="is-right">Serviços</th>
                       <th className="is-right">Bruto</th>
-                      <th className="is-right">Repasse</th>
+                      <th className="is-right">Taxa cartão</th>
+                      <th className="is-right">Repasse líq.</th>
+                      <th className="is-right">Pago</th>
+                      <th className="is-right">Em aberto</th>
                       <th className="is-right">Casa</th>
                     </tr>
                   </thead>
@@ -1230,7 +1621,10 @@ export default function FinanceV2({ isActive = true }) {
                         <td className="is-strong">{b.barberName}</td>
                         <td className="is-right">{b.count}</td>
                         <td className="is-right">{money(b.totalGross)}</td>
+                        <td className="is-right is-out">{money(b.totalCardFee)}</td>
                         <td className="is-right is-in is-strong">{money(b.totalBarber)}</td>
+                        <td className="is-right">{money(b.paid)}</td>
+                        <td className="is-right is-strong">{money(b.owed ?? b.due)}</td>
                         <td className="is-right">{money(b.totalHouse)}</td>
                       </tr>
                     ))}
@@ -1238,7 +1632,43 @@ export default function FinanceV2({ isActive = true }) {
                 </table>
               </div>
             ) : (
-              <EmptyState title="Sem comissões no período" hint="Quitações de serviços alimentam este relatório. Configure % por serviço em Configurações." />
+              <EmptyState title="Sem comissões no período" hint="Defina a % em Equipe → Taxas ou em Configurações → Serviços." />
+            )}
+          </div>
+          <div className="glass-card finv2-panel">
+            <div className="finv2-panel__head">
+              <h3>Repasses recentes</h3>
+              <span>{commissionPayouts.length} registros</span>
+            </div>
+            {commissionPayouts.length ? (
+              <div className="finv2-table-wrap">
+                <table className="finv2-table">
+                  <thead>
+                    <tr>
+                      <th>Quando</th>
+                      <th>Profissional</th>
+                      <th>Período</th>
+                      <th>Método</th>
+                      <th className="is-right">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {commissionPayouts.map((p) => (
+                      <tr key={p.id}>
+                        <td className="is-muted">{formatWhen(p.createdAt || p.paidAt)}</td>
+                        <td className="is-strong">{p.barberName || barbers.find((b) => Number(b.id) === Number(p.barberId))?.name || `#${p.barberId}`}</td>
+                        <td className="is-muted">
+                          {formatDateBr(p.periodStart)} → {formatDateBr(p.periodEnd)}
+                        </td>
+                        <td>{p.method || '—'}</td>
+                        <td className="is-right is-in is-strong">{money(p.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <EmptyState title="Nenhum repasse registrado" hint="Use Registrar repasse para lançar pagamentos de comissão." />
             )}
           </div>
           <div className="glass-card finv2-panel">
@@ -1257,7 +1687,8 @@ export default function FinanceV2({ isActive = true }) {
                       <th>Profissional</th>
                       <th className="is-right">%</th>
                       <th className="is-right">Bruto</th>
-                      <th className="is-right">Repasse</th>
+                      <th className="is-right">Taxa cartão</th>
+                      <th className="is-right">Líquido</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1270,6 +1701,9 @@ export default function FinanceV2({ isActive = true }) {
                         <td>{r.barberName}</td>
                         <td className="is-right">{r.commissionPct}%</td>
                         <td className="is-right">{money(r.gross)}</td>
+                        <td className="is-right is-out" title={r.cardFeeLabel || undefined}>
+                          {Number(r.cardFeeDebit || 0) > 0 ? money(r.cardFeeDebit) : '—'}
+                        </td>
                         <td className="is-right is-in is-strong">{money(r.barberPayout)}</td>
                       </tr>
                     ))}
@@ -1281,6 +1715,148 @@ export default function FinanceV2({ isActive = true }) {
         </div>
       )}
 
+      {tab === 'Taxas' && (
+        <div className="finv2-stack">
+          <div className="glass-card finv2-panel">
+            <div className="finv2-panel__head">
+              <div>
+                <h3>Comissão por serviço</h3>
+                <p className="finv2-panel__hint">Percentual que o profissional recebe em cada serviço</p>
+              </div>
+            </div>
+            {(services || []).length ? (
+              <div className="finv2-table-wrap">
+                <table className="finv2-table">
+                  <thead>
+                    <tr>
+                      <th>Serviço</th>
+                      <th className="is-right">Preço</th>
+                      <th className="is-right">% profissional</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(services || []).map((s) => (
+                      <tr key={s.id}>
+                        <td className="is-strong">{s.name}</td>
+                        <td className="is-right">{money(s.price)}</td>
+                        <td className="is-right">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            style={{ width: 88, textAlign: 'right' }}
+                            value={servicePctDraft[s.id] ?? String(s.commissionPct ?? 50)}
+                            disabled={!isGerente}
+                            onChange={(e) =>
+                              setServicePctDraft((prev) => ({ ...prev, [s.id]: e.target.value }))
+                            }
+                          />
+                        </td>
+                        <td className="is-right">
+                          {isGerente ? (
+                            <button
+                              type="button"
+                              className="finv2-btn finv2-btn-sm"
+                              onClick={async () => {
+                                try {
+                                  await updateService(s.id, {
+                                    commissionPct: Number(servicePctDraft[s.id] ?? s.commissionPct ?? 50),
+                                  });
+                                  alert('Comissão do serviço atualizada.');
+                                } catch (err) {
+                                  handleError(err);
+                                }
+                              }}
+                            >
+                              Salvar
+                            </button>
+                          ) : null}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <EmptyState title="Nenhum serviço" hint="Cadastre serviços em Configurações." />
+            )}
+          </div>
+          <div className="glass-card finv2-panel">
+            <div className="finv2-panel__head">
+              <div>
+                <h3>Maquininha</h3>
+                <p className="finv2-panel__hint">
+                  Taxa por bandeira (débito/crédito). Debitada da comissão do barbeiro no pagamento com cartão.
+                </p>
+              </div>
+            </div>
+            {cardFeeRates.length ? (
+              <div className="finv2-table-wrap">
+                <table className="finv2-table">
+                  <thead>
+                    <tr>
+                      <th>Bandeira</th>
+                      <th>Tipo</th>
+                      <th className="is-right">Taxa %</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cardFeeRates.map((rate) => (
+                      <tr key={rate.id || `${rate.brand}-${rate.kind}`}>
+                        <td className="is-strong">{rate.brand}</td>
+                        <td>{rate.kind === 'DEBIT' ? 'Débito' : 'Crédito'}</td>
+                        <td className="is-right">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            style={{ width: 88, textAlign: 'right' }}
+                            defaultValue={rate.feePct}
+                            disabled={!isGerente}
+                            id={`card-fee-${rate.brand}-${rate.kind}`}
+                          />
+                        </td>
+                        <td className="is-right">
+                          {isGerente ? (
+                            <button
+                              type="button"
+                              className="finv2-btn finv2-btn-sm"
+                              onClick={async () => {
+                                const el = document.getElementById(`card-fee-${rate.brand}-${rate.kind}`);
+                                const feePct = Number(el?.value ?? rate.feePct);
+                                try {
+                                  await financeV2.upsertCardFee({
+                                    brand: rate.brand,
+                                    kind: rate.kind,
+                                    feePct,
+                                  });
+                                  await refreshTaxas();
+                                  alert('Taxa da maquininha salva.');
+                                } catch (err) {
+                                  handleError(err);
+                                }
+                              }}
+                            >
+                              Salvar
+                            </button>
+                          ) : null}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <EmptyState title="Sem taxas cadastradas" hint="Abra esta aba como Gerente para gerar as bandeiras padrão." />
+            )}
+          </div>
+        </div>
+      )}
+
       {tab === 'Fluxo' && (
         <div className="glass-card finv2-panel">
           <div className="finv2-panel__head">
@@ -1288,6 +1864,15 @@ export default function FinanceV2({ isActive = true }) {
               <h3>Fluxo de caixa</h3>
               <p className="finv2-panel__hint">Árvore por categoria no mês selecionado</p>
             </div>
+            {isGerente ? (
+              <button
+                type="button"
+                className="finv2-btn"
+                onClick={() => openModal('categories', { name: '', kind: 'EXPENSE' })}
+              >
+                Gerenciar categorias
+              </button>
+            ) : null}
           </div>
           <div className="finv2-flow-toolbar">
             <Field label="Mês">
@@ -1317,6 +1902,256 @@ export default function FinanceV2({ isActive = true }) {
             </div>
           ) : (
             <EmptyState title="Gere o fluxo" hint="Escolha o mês e clique em Gerar fluxo." />
+          )}
+        </div>
+      )}
+
+      {tab === 'Contas' && (
+        <div className="finv2-stack">
+          <div className="dash-kpi-row finv2-kpi-row">
+            <div className="dash-kpi-card">
+              <div className="dash-kpi-top"><span className="dash-kpi-label">Saldo Caixa</span></div>
+              <div className="dash-kpi-value">{money(accountBalances?.CAIXA)}</div>
+            </div>
+            <div className="dash-kpi-card">
+              <div className="dash-kpi-top"><span className="dash-kpi-label">Saldo Banco</span></div>
+              <div className="dash-kpi-value">{money(accountBalances?.BANCO)}</div>
+            </div>
+          </div>
+          <div className="glass-card finv2-panel">
+            <div className="finv2-panel__head">
+              <h3>Contas</h3>
+              {isGerente ? (
+                <button
+                  type="button"
+                  className="btn-primary finv2-btn-primary"
+                  onClick={() =>
+                    openModal('transferAccounts', {
+                      from: 'CAIXA',
+                      to: 'BANCO',
+                      amount: '',
+                      description: '',
+                    })
+                  }
+                >
+                  Transferir
+                </button>
+              ) : null}
+            </div>
+            <p className="finv2-panel__hint">
+              Saldos consolidados das contas Caixa e Banco. Transferências exigem perfil de gestão.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {tab === 'Fechamentos' && (
+        <div className="glass-card finv2-panel">
+          <div className="finv2-panel__head">
+            <h3>Fechamentos de período</h3>
+            {isGerente ? (
+              <button
+                type="button"
+                className="btn-primary finv2-btn-primary"
+                onClick={async () => {
+                  if (!confirm(`Fechar o período de ${formatDateBr(startDate)} a ${formatDateBr(endDate)}?`)) return;
+                  try {
+                    await financeV2.createClosing({ periodStart: startDate, periodEnd: endDate });
+                    await refreshClosings();
+                    alert('Período fechado com sucesso.');
+                  } catch (err) {
+                    handleError(err);
+                  }
+                }}
+              >
+                Fechar período
+              </button>
+            ) : null}
+          </div>
+          {closings.length ? (
+            <div className="finv2-table-wrap">
+              <table className="finv2-table">
+                <thead>
+                  <tr>
+                    <th>Período</th>
+                    <th>Fechado em</th>
+                    <th>Por</th>
+                    <th className="is-right">Receita</th>
+                    <th className="is-right">Despesas</th>
+                    <th className="is-right">Resultado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {closings.map((c) => {
+                    const snap = c.snapshot || {};
+                    const revenue = snap.comandasQuitada?.total
+                      ?? snap.revenue
+                      ?? snap.totalReceitas
+                      ?? snap.comandas?.total;
+                    const exp = snap.expensesPaid?.total
+                      ?? snap.expenses?.total
+                      ?? snap.totalDespesas
+                      ?? snap.expensesTotal;
+                    const payoutsTotal = snap.payouts?.total ?? 0;
+                    const result = snap.result ?? snap.resultado
+                      ?? (revenue != null && exp != null
+                        ? Number(revenue) - Number(exp) - Number(payoutsTotal)
+                        : null);
+                    return (
+                      <tr key={c.id}>
+                        <td className="is-strong">
+                          {formatDateBr(c.periodStart)} → {formatDateBr(c.periodEnd)}
+                        </td>
+                        <td className="is-muted">{formatWhen(c.createdAt || c.closedAt)}</td>
+                        <td>{c.closedByName || '—'}</td>
+                        <td className="is-right is-in">{revenue != null ? money(revenue) : '—'}</td>
+                        <td className="is-right is-out">{exp != null ? money(exp) : '—'}</td>
+                        <td className="is-right is-strong">{result != null ? money(result) : '—'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <EmptyState title="Nenhum fechamento" hint="Feche um período para travar lançamentos e gerar o snapshot." />
+          )}
+        </div>
+      )}
+
+      {tab === 'DRE' && (
+        <div className="glass-card finv2-panel">
+          <div className="finv2-panel__head">
+            <div>
+              <h3>DRE</h3>
+              <p className="finv2-panel__hint">Demonstrativo do resultado do exercício</p>
+            </div>
+            <div className="finv2-inline-actions">
+              <button type="button" className="finv2-btn" onClick={exportDreCsv} disabled={!dre}>
+                <Download size={15} /> CSV
+              </button>
+            </div>
+          </div>
+          <div className="finv2-flow-toolbar">
+            <Field label="Mês">
+              <input type="month" value={dreMonth} onChange={(e) => setDreMonth(e.target.value)} />
+            </Field>
+            <button
+              type="button"
+              className="btn-primary finv2-btn-primary"
+              onClick={async () => {
+                try {
+                  const data = await financeV2.getDre({ month: dreMonth });
+                  setDre(data);
+                } catch (err) {
+                  handleError(err);
+                }
+              }}
+            >
+              Gerar DRE
+            </button>
+          </div>
+          {dre ? (
+            <div className="finv2-form finv2-form--2" style={{ alignItems: 'start' }}>
+              <div>
+                <h4 style={{ margin: '0 0 8px' }}>Mês {dre.month || dreMonth}</h4>
+                <div className="finv2-table-wrap">
+                  <table className="finv2-table">
+                    <tbody>
+                      <tr><td>Receita bruta</td><td className="is-right is-in is-strong">{money(dre.revenueGross)}</td></tr>
+                      <tr><td>Descontos</td><td className="is-right is-out">{money(dre.discounts)}</td></tr>
+                      <tr><td>Gorjetas</td><td className="is-right is-in">{money(dre.tips)}</td></tr>
+                      <tr><td>Receita líquida</td><td className="is-right is-strong">{money(dre.revenueNet)}</td></tr>
+                      <tr><td>Comissões</td><td className="is-right is-out">{money(dre.commissions)}</td></tr>
+                      <tr><td>Despesas</td><td className="is-right is-out">{money(dre.expensesTotal)}</td></tr>
+                      <tr><td className="is-strong">Resultado</td><td className="is-right is-strong">{money(dre.result)}</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                {(dre.expensesByCategory || []).length ? (
+                  <div style={{ marginTop: 12 }}>
+                    <h4 style={{ margin: '0 0 8px', fontSize: '0.9rem' }}>Despesas por categoria</h4>
+                    <div className="finv2-table-wrap">
+                      <table className="finv2-table">
+                        <thead>
+                          <tr>
+                            <th>Categoria</th>
+                            <th className="is-right">Valor</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dre.expensesByCategory.map((c) => (
+                            <tr key={c.category}>
+                              <td>{c.category}</td>
+                              <td className="is-right is-out">{money(c.amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+              {dre.previousMonth ? (
+                <div>
+                  <h4 style={{ margin: '0 0 8px' }}>Mês anterior ({dre.previousMonth.month})</h4>
+                  <div className="finv2-table-wrap">
+                    <table className="finv2-table">
+                      <tbody>
+                        <tr><td>Receita bruta</td><td className="is-right is-in">{money(dre.previousMonth.revenueGross)}</td></tr>
+                        <tr><td>Descontos</td><td className="is-right is-out">{money(dre.previousMonth.discounts)}</td></tr>
+                        <tr><td>Gorjetas</td><td className="is-right is-in">{money(dre.previousMonth.tips)}</td></tr>
+                        <tr><td>Receita líquida</td><td className="is-right is-strong">{money(dre.previousMonth.revenueNet)}</td></tr>
+                        <tr><td>Comissões</td><td className="is-right is-out">{money(dre.previousMonth.commissions)}</td></tr>
+                        <tr><td>Despesas</td><td className="is-right is-out">{money(dre.previousMonth.expensesTotal)}</td></tr>
+                        <tr><td className="is-strong">Resultado</td><td className="is-right is-strong">{money(dre.previousMonth.result)}</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <EmptyState title="Gere o DRE" hint="Escolha o mês e clique em Gerar DRE." />
+          )}
+        </div>
+      )}
+
+      {tab === 'Auditoria' && (
+        <div className="glass-card finv2-panel">
+          <div className="finv2-panel__head">
+            <h3>Auditoria</h3>
+            <span>{isGerente ? `${auditLog.length} eventos` : ''}</span>
+          </div>
+          {!isGerente ? (
+            <EmptyState title="Apenas gestão" hint="O log de auditoria fica disponível para o perfil Gerente." />
+          ) : auditLog.length ? (
+            <div className="finv2-table-wrap">
+              <table className="finv2-table">
+                <thead>
+                  <tr>
+                    <th>Quando</th>
+                    <th>Usuário</th>
+                    <th>Ação</th>
+                    <th>Entidade</th>
+                    <th>Id</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLog.map((row) => (
+                    <tr key={row.id}>
+                      <td className="is-muted">{formatWhen(row.createdAt)}</td>
+                      <td>{row.userName || '—'}</td>
+                      <td className="is-strong">{row.action}</td>
+                      <td>{row.entity || '—'}</td>
+                      <td className="is-muted">{row.entityId ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <EmptyState title="Sem eventos" hint="Ajuste o período para ver o histórico de ações." />
           )}
         </div>
       )}
@@ -1554,7 +2389,7 @@ export default function FinanceV2({ isActive = true }) {
       )}
 
       {modal === 'entrada' && (
-        <ModalShell title="Nova entrada" subtitle="Cria uma comanda manual" onClose={closeModal}>
+        <ModalShell title="Nova entrada" subtitle="Comanda com itens do catálogo" onClose={closeModal} wide>
           <div className="finv2-form">
             <Field label="Cliente" full>
               <input
@@ -1562,22 +2397,122 @@ export default function FinanceV2({ isActive = true }) {
                 onChange={(e) => setForm({ ...form, customerName: e.target.value })}
               />
             </Field>
-            <Field label="Descrição" full>
-              <input
-                value={form.itemName || ''}
-                onChange={(e) => setForm({ ...form, itemName: e.target.value })}
-                placeholder="Serviço / produto"
-              />
-            </Field>
-            <Field label="Valor (R$)" full>
+          </div>
+          <div className="finv2-settle-list">
+            {(form.items || []).map((item, idx) => {
+              const itemType = item.itemType || 'SERVICE';
+              const product = products.find((p) => Number(p.id) === Number(item.productId));
+              return (
+                <div key={idx} className="finv2-form finv2-form--2">
+                  <Field label="Tipo">
+                    <select
+                      value={itemType}
+                      onChange={(e) =>
+                        patchComandaItem(idx, {
+                          itemType: e.target.value,
+                          productId: '',
+                          serviceId: '',
+                          name: '',
+                          unitPrice: 0,
+                        })
+                      }
+                    >
+                      <option value="SERVICE">Serviço</option>
+                      <option value="PRODUCT">Produto</option>
+                    </select>
+                  </Field>
+                  <Field label={itemType === 'PRODUCT' ? 'Produto' : 'Serviço'}>
+                    {itemType === 'PRODUCT' ? (
+                      <select
+                        value={item.productId || ''}
+                        onChange={(e) => applyCatalogSelection(idx, 'PRODUCT', e.target.value)}
+                      >
+                        <option value="">Selecione o produto</option>
+                        {products.map((p) => (
+                          <option key={p.id} value={p.id} disabled={Number(p.stock || 0) <= 0}>
+                            {p.name} · est. {p.stock ?? 0} · {money(p.price)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <select
+                        value={item.serviceId || ''}
+                        onChange={(e) => applyCatalogSelection(idx, 'SERVICE', e.target.value)}
+                      >
+                        <option value="">Selecione o serviço</option>
+                        {services.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name} · {money(s.price)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </Field>
+                  <Field label="Qtd">
+                    <input
+                      type="number"
+                      min="1"
+                      max={itemType === 'PRODUCT' ? Math.max(1, Number(product?.stock || 1)) : undefined}
+                      value={item.quantity || 1}
+                      onChange={(e) => patchComandaItem(idx, { quantity: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Unitário">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={item.unitPrice || 0}
+                      onChange={(e) => patchComandaItem(idx, { unitPrice: e.target.value })}
+                    />
+                  </Field>
+                  {itemType === 'PRODUCT' && product ? (
+                    <p className="finv2-field__label" style={{ gridColumn: '1 / -1', margin: 0 }}>
+                      Estoque disponível: {product.stock ?? 0}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            className="finv2-btn finv2-btn--block"
+            onClick={() =>
+              setForm({
+                ...form,
+                items: [
+                  ...(form.items || []),
+                  { itemType: 'SERVICE', serviceId: '', productId: '', name: '', quantity: 1, unitPrice: 0 },
+                ],
+              })
+            }
+          >
+            <Plus size={15} /> Item
+          </button>
+          <div className="finv2-form finv2-form--2" style={{ marginTop: 12 }}>
+            <Field label="Desconto (R$)">
               <input
                 type="number"
                 step="0.01"
-                value={form.total || ''}
-                onChange={(e) => setForm({ ...form, total: e.target.value })}
+                min="0"
+                value={form.discountAmount || 0}
+                onChange={(e) => setForm({ ...form, discountAmount: e.target.value })}
+              />
+            </Field>
+            <Field label="Gorjeta (R$)">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.tipAmount || 0}
+                onChange={(e) => setForm({ ...form, tipAmount: e.target.value })}
               />
             </Field>
           </div>
+          <p className="finv2-field__label" style={{ marginTop: 8 }}>
+            Subtotal {money(itemsSubtotal(form.items))} · a cobrar{' '}
+            <strong>{money(payableFromForm({ ...form, total: itemsSubtotal(form.items) }))}</strong>
+          </p>
           <label className="finv2-check">
             <input
               type="checkbox"
@@ -1639,7 +2574,9 @@ export default function FinanceV2({ isActive = true }) {
       {modal === 'settle' && (
         <ModalShell
           title="Confirmar recebimento"
-          subtitle={`${form.customerName || 'Cliente'} · total ${money(form.total)}`}
+          subtitle={`${form.customerName || 'Cliente'} · itens ${money(form.itemsTotal ?? form.total)} · a cobrar ${money(
+            form.balanceDue != null ? form.balanceDue : payableFromForm(form),
+          )}`}
           onClose={closeModal}
         >
           <Field label="Caixa do dia" full>
@@ -1657,37 +2594,149 @@ export default function FinanceV2({ isActive = true }) {
               ))}
             </select>
           </Field>
+          <label className="finv2-check">
+            <input
+              type="checkbox"
+              checked={Boolean(form.allowPartial)}
+              onChange={(e) => {
+                const allowPartial = e.target.checked;
+                const next = { ...form, allowPartial };
+                if (!allowPartial && form.balanceDue == null) {
+                  const payable = payableFromForm(next);
+                  const splits = [...(form.splits || [])];
+                  if (splits.length === 1) splits[0] = { ...splits[0], amount: payable };
+                  next.splits = splits;
+                }
+                setForm(next);
+              }}
+            />
+            <span>Recebimento parcial (fiado)</span>
+          </label>
+          {!form.balanceDue ? (
+            <div className="finv2-form finv2-form--2">
+              <Field label="Desconto (R$)">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.discountAmount || 0}
+                  disabled={Boolean(form.allowPartial)}
+                  onChange={(e) => {
+                    const discountAmount = e.target.value;
+                    const next = { ...form, discountAmount };
+                    const payable = payableFromForm(next);
+                    const splits = [...(form.splits || [])];
+                    if (splits.length === 1 && !form.allowPartial) {
+                      splits[0] = { ...splits[0], amount: payable };
+                    }
+                    setForm({ ...next, splits });
+                  }}
+                />
+              </Field>
+              <Field label="Gorjeta (R$)">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.tipAmount || 0}
+                  disabled={Boolean(form.allowPartial)}
+                  onChange={(e) => {
+                    const tipAmount = e.target.value;
+                    const next = { ...form, tipAmount };
+                    const payable = payableFromForm(next);
+                    const splits = [...(form.splits || [])];
+                    if (splits.length === 1 && !form.allowPartial) {
+                      splits[0] = { ...splits[0], amount: payable };
+                    }
+                    setForm({ ...next, splits });
+                  }}
+                />
+              </Field>
+            </div>
+          ) : (
+            <p className="finv2-panel__hint" style={{ margin: '8px 0' }}>
+              Saldo em aberto: <strong>{money(form.balanceDue)}</strong>
+            </p>
+          )}
           <div className="finv2-settle-list">
             {(form.splits || []).map((split, idx) => (
-              <div key={idx} className="finv2-form finv2-form--2">
-                <Field label="Forma">
-                  <select
-                    value={split.method}
-                    onChange={(e) => {
-                      const splits = [...form.splits];
-                      splits[idx] = { ...splits[idx], method: e.target.value };
-                      setForm({ ...form, splits });
-                    }}
-                  >
-                    {PAY_METHODS.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Valor">
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={split.amount}
-                    onChange={(e) => {
-                      const splits = [...form.splits];
-                      splits[idx] = { ...splits[idx], amount: e.target.value };
-                      setForm({ ...form, splits });
-                    }}
-                  />
-                </Field>
+              <div key={idx} className="finv2-stack" style={{ gap: 8 }}>
+                <div className="finv2-form finv2-form--2">
+                  <Field label="Forma">
+                    <select
+                      value={split.method}
+                      onChange={(e) => {
+                        const method = e.target.value;
+                        const splits = [...form.splits];
+                        const next = { ...splits[idx], method };
+                        if (isCardMethod(method)) {
+                          next.cardKind = /d[eé]bito/i.test(method) ? 'DEBIT' : 'CREDIT';
+                          next.cardBrand = next.cardBrand || 'Visa';
+                        } else {
+                          delete next.cardBrand;
+                          delete next.cardKind;
+                          delete next.feePct;
+                          delete next.feeAmount;
+                        }
+                        splits[idx] = next;
+                        setForm({ ...form, splits });
+                      }}
+                    >
+                      {PAY_METHODS.map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Valor">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={split.amount}
+                      onChange={(e) => {
+                        const splits = [...form.splits];
+                        splits[idx] = { ...splits[idx], amount: e.target.value };
+                        setForm({ ...form, splits });
+                      }}
+                    />
+                  </Field>
+                </div>
+                {isCardMethod(split.method) ? (
+                  <div className="finv2-form finv2-form--2">
+                    <Field label="Bandeira">
+                      <select
+                        value={split.cardBrand || 'Visa'}
+                        onChange={(e) => {
+                          const splits = [...form.splits];
+                          splits[idx] = { ...splits[idx], cardBrand: e.target.value };
+                          setForm({ ...form, splits });
+                        }}
+                      >
+                        {(cardFeeBrands.length ? cardFeeBrands : CARD_BRANDS_UI).map((b) => (
+                          <option key={b} value={b}>{b}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Taxa estimada">
+                      <input
+                        type="text"
+                        readOnly
+                        value={(() => {
+                          const kind = split.cardKind
+                            || (/d[eé]bito/i.test(split.method) ? 'DEBIT' : 'CREDIT');
+                          const brand = split.cardBrand || 'Visa';
+                          const rate = cardFeeRates.find(
+                            (r) => r.brand === brand && r.kind === kind,
+                          );
+                          const pct = Number(rate?.feePct || 0);
+                          const fee = Math.round(Number(split.amount || 0) * (pct / 100) * 100) / 100;
+                          return `${pct}% → ${money(fee)} (debita da comissão)`;
+                        })()}
+                      />
+                    </Field>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
@@ -1708,7 +2757,7 @@ export default function FinanceV2({ isActive = true }) {
               Cancelar
             </button>
             <button type="button" className="btn-primary" onClick={onSettleComanda}>
-              Finalizar e salvar
+              {form.allowPartial || form.balanceDue != null ? 'Registrar recebimento' : 'Finalizar e salvar'}
             </button>
           </div>
         </ModalShell>
@@ -1722,57 +2771,79 @@ export default function FinanceV2({ isActive = true }) {
           wide
         >
           <div className="finv2-settle-list">
-            {(form.items || []).map((item, idx) => (
-              <div key={idx} className="finv2-form finv2-form--2">
-                <Field label="Tipo">
-                  <select
-                    value={item.itemType || 'SERVICE'}
-                    onChange={(e) => {
-                      const items = [...form.items];
-                      items[idx] = { ...items[idx], itemType: e.target.value };
-                      setForm({ ...form, items });
-                    }}
-                  >
-                    <option value="SERVICE">Serviço</option>
-                    <option value="PRODUCT">Produto</option>
-                  </select>
-                </Field>
-                <Field label="Nome">
-                  <input
-                    value={item.name || ''}
-                    onChange={(e) => {
-                      const items = [...form.items];
-                      items[idx] = { ...items[idx], name: e.target.value };
-                      setForm({ ...form, items });
-                    }}
-                  />
-                </Field>
-                <Field label="Qtd">
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity || 1}
-                    onChange={(e) => {
-                      const items = [...form.items];
-                      items[idx] = { ...items[idx], quantity: e.target.value };
-                      setForm({ ...form, items });
-                    }}
-                  />
-                </Field>
-                <Field label="Unitário">
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={item.unitPrice || 0}
-                    onChange={(e) => {
-                      const items = [...form.items];
-                      items[idx] = { ...items[idx], unitPrice: e.target.value };
-                      setForm({ ...form, items });
-                    }}
-                  />
-                </Field>
-              </div>
-            ))}
+            {(form.items || []).map((item, idx) => {
+              const itemType = item.itemType || 'SERVICE';
+              const product = products.find((p) => Number(p.id) === Number(item.productId));
+              return (
+                <div key={idx} className="finv2-form finv2-form--2">
+                  <Field label="Tipo">
+                    <select
+                      value={itemType}
+                      onChange={(e) =>
+                        patchComandaItem(idx, {
+                          itemType: e.target.value,
+                          productId: '',
+                          serviceId: '',
+                          name: '',
+                          unitPrice: 0,
+                        })
+                      }
+                    >
+                      <option value="SERVICE">Serviço</option>
+                      <option value="PRODUCT">Produto</option>
+                    </select>
+                  </Field>
+                  <Field label={itemType === 'PRODUCT' ? 'Produto' : 'Serviço'}>
+                    {itemType === 'PRODUCT' ? (
+                      <select
+                        value={item.productId || ''}
+                        onChange={(e) => applyCatalogSelection(idx, 'PRODUCT', e.target.value)}
+                      >
+                        <option value="">Selecione o produto</option>
+                        {products.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} · est. {p.stock ?? 0} · {money(p.price)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <select
+                        value={item.serviceId || ''}
+                        onChange={(e) => applyCatalogSelection(idx, 'SERVICE', e.target.value)}
+                      >
+                        <option value="">Selecione o serviço</option>
+                        {services.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name} · {money(s.price)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </Field>
+                  <Field label="Qtd">
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity || 1}
+                      onChange={(e) => patchComandaItem(idx, { quantity: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Unitário">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={item.unitPrice || 0}
+                      onChange={(e) => patchComandaItem(idx, { unitPrice: e.target.value })}
+                    />
+                  </Field>
+                  {itemType === 'PRODUCT' && product ? (
+                    <p className="finv2-field__label" style={{ gridColumn: '1 / -1', margin: 0 }}>
+                      Estoque disponível: {product.stock ?? 0}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
           <button
             type="button"
@@ -1782,13 +2853,16 @@ export default function FinanceV2({ isActive = true }) {
                 ...form,
                 items: [
                   ...(form.items || []),
-                  { itemType: 'SERVICE', name: '', quantity: 1, unitPrice: 0 },
+                  { itemType: 'SERVICE', serviceId: '', productId: '', name: '', quantity: 1, unitPrice: 0 },
                 ],
               })
             }
           >
             <Plus size={15} /> Item
           </button>
+          <p className="finv2-field__label" style={{ marginTop: 8 }}>
+            Total: <strong>{money(itemsSubtotal(form.items))}</strong>
+          </p>
           <div className="finv2-modal__actions">
             <button type="button" className="btn-secondary" onClick={closeModal}>
               Cancelar
@@ -1883,6 +2957,241 @@ export default function FinanceV2({ isActive = true }) {
         </ModalShell>
       )}
 
+      {modal === 'categories' && (
+        <ModalShell title="Gerenciar categorias" subtitle="Crie ou remova categorias financeiras" onClose={closeModal}>
+          <div className="finv2-form finv2-form--2">
+            <Field label="Nome" full>
+              <input
+                value={form.name || ''}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Ex.: Aluguel, Produtos…"
+              />
+            </Field>
+            <Field label="Tipo">
+              <select
+                value={form.kind || 'EXPENSE'}
+                onChange={(e) => setForm({ ...form, kind: e.target.value })}
+              >
+                <option value="EXPENSE">Despesa</option>
+                <option value="INCOME">Receita</option>
+              </select>
+            </Field>
+          </div>
+          <div className="finv2-modal__actions" style={{ marginBottom: 12 }}>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={async () => {
+                try {
+                  if (!form.name?.trim()) {
+                    alert('Informe o nome da categoria.');
+                    return;
+                  }
+                  await financeV2.createCategory({ name: form.name.trim(), kind: form.kind || 'EXPENSE' });
+                  const cats = await financeV2.listCategories();
+                  setCategories(cats);
+                  setForm({ ...form, name: '' });
+                } catch (err) {
+                  handleError(err);
+                }
+              }}
+            >
+              Criar
+            </button>
+          </div>
+          <div className="finv2-table-wrap">
+            <table className="finv2-table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Tipo</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {categories.map((c) => (
+                  <tr key={c.id}>
+                    <td className="is-strong">{c.name}</td>
+                    <td>{c.kind === 'INCOME' ? 'Receita' : 'Despesa'}</td>
+                    <td className="is-right">
+                      <button
+                        type="button"
+                        className="finv2-icon-btn finv2-icon-btn--danger"
+                        title="Excluir"
+                        onClick={async () => {
+                          if (!confirm(`Excluir categoria "${c.name}"?`)) return;
+                          try {
+                            await financeV2.deleteCategory(c.id);
+                            setCategories(await financeV2.listCategories());
+                          } catch (err) {
+                            handleError(err);
+                          }
+                        }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="finv2-modal__actions">
+            <button type="button" className="btn-secondary" onClick={closeModal}>Fechar</button>
+          </div>
+        </ModalShell>
+      )}
+
+      {modal === 'transferAccounts' && (
+        <ModalShell title="Transferir entre contas" onClose={closeModal}>
+          <div className="finv2-form finv2-form--2">
+            <Field label="De">
+              <select value={form.from || 'CAIXA'} onChange={(e) => setForm({ ...form, from: e.target.value })}>
+                <option value="CAIXA">Caixa</option>
+                <option value="BANCO">Banco</option>
+              </select>
+            </Field>
+            <Field label="Para">
+              <select value={form.to || 'BANCO'} onChange={(e) => setForm({ ...form, to: e.target.value })}>
+                <option value="CAIXA">Caixa</option>
+                <option value="BANCO">Banco</option>
+              </select>
+            </Field>
+            <Field label="Valor (R$)" full>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.amount || ''}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+              />
+            </Field>
+            <Field label="Descrição" full>
+              <input
+                value={form.description || ''}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Ex.: Depósito bancário"
+              />
+            </Field>
+          </div>
+          <div className="finv2-modal__actions">
+            <button type="button" className="btn-secondary" onClick={closeModal}>Cancelar</button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={async () => {
+                try {
+                  await financeV2.transferAccounts({
+                    from: form.from || 'CAIXA',
+                    to: form.to || 'BANCO',
+                    amount: Number(form.amount || 0),
+                    description: form.description || '',
+                  });
+                  closeModal();
+                  await refreshAccounts();
+                  await refreshCash();
+                  await refreshLedger();
+                } catch (err) {
+                  handleError(err);
+                }
+              }}
+            >
+              Transferir
+            </button>
+          </div>
+        </ModalShell>
+      )}
+
+      {modal === 'commissionPayout' && (
+        <ModalShell title="Registrar repasse" subtitle="Pagamento de comissão ao profissional" onClose={closeModal}>
+          <div className="finv2-form finv2-form--2">
+            <Field label="Profissional" full>
+              <select
+                value={form.barberId || ''}
+                onChange={(e) => setForm({ ...form, barberId: e.target.value })}
+              >
+                <option value="">Selecione…</option>
+                {(barbers || []).filter((b) => b.role === 'Barbeiro' || !b.role).map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Valor (R$)">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.amount || ''}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+              />
+            </Field>
+            <Field label="Método">
+              <select
+                value={form.method || 'CAIXA'}
+                onChange={(e) => setForm({ ...form, method: e.target.value })}
+              >
+                {PAYOUT_METHODS.map((m) => (
+                  <option key={m} value={m}>{m === 'CAIXA' ? 'Caixa' : m}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Início do período">
+              <input
+                type="date"
+                value={form.periodStart || startDate}
+                onChange={(e) => setForm({ ...form, periodStart: e.target.value })}
+              />
+            </Field>
+            <Field label="Fim do período">
+              <input
+                type="date"
+                value={form.periodEnd || endDate}
+                onChange={(e) => setForm({ ...form, periodEnd: e.target.value })}
+              />
+            </Field>
+            {['CAIXA', 'DINHEIRO', 'PIX'].includes(String(form.method || 'CAIXA').toUpperCase()) ? (
+              <Field label="Caixa" full>
+                <select
+                  value={form.cashSessionId || ''}
+                  onChange={(e) => setForm({ ...form, cashSessionId: e.target.value })}
+                >
+                  <option value="">{openSessions.length ? 'Selecione o caixa' : 'Nenhum caixa aberto'}</option>
+                  {openSessions.map((s) => (
+                    <option key={s.id} value={s.id}>{cashOptionLabel(s)}</option>
+                  ))}
+                </select>
+              </Field>
+            ) : null}
+          </div>
+          <div className="finv2-modal__actions">
+            <button type="button" className="btn-secondary" onClick={closeModal}>Cancelar</button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={async () => {
+                try {
+                  await financeV2.createCommissionPayout({
+                    barberId: Number(form.barberId),
+                    amount: Number(form.amount || 0),
+                    method: form.method || 'CAIXA',
+                    periodStart: form.periodStart || startDate,
+                    periodEnd: form.periodEnd || endDate,
+                    cashSessionId: form.cashSessionId ? Number(form.cashSessionId) : undefined,
+                  });
+                  closeModal();
+                  await refreshCommissions();
+                  await refreshCash();
+                } catch (err) {
+                  handleError(err);
+                }
+              }}
+            >
+              Registrar
+            </button>
+          </div>
+        </ModalShell>
+      )}
+
       {closeReport && (
         <ModalShell
           title="Caixa fechado"
@@ -1899,244 +3208,45 @@ export default function FinanceV2({ isActive = true }) {
       )}
 
       {sessionDetail && (
-        <ModalShell
-          title={`Caixa #${sessionDetail.id}`}
-          subtitle={`${sessionDetail.status === 'OPEN' ? 'Aberto' : 'Fechado'} · ${formatWhen(sessionDetail.openedAt)}`}
+        <SessionDetailModal
+          session={sessionDetail}
+          canReopen={sessionDetail.status !== 'OPEN' && isGerente && !cash}
           onClose={() => setSessionDetail(null)}
-          wide
-        >
-          <CashCloseReport session={sessionDetail} />
-          {sessionDetail.movements?.length ? (
-            <div className="finv2-table-wrap" style={{ marginTop: 16 }}>
-              <table className="finv2-table">
-                <thead>
-                  <tr>
-                    <th>Quando</th>
-                    <th>Tipo</th>
-                    <th>Método</th>
-                    <th>Descrição</th>
-                    <th className="is-right">Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessionDetail.movements.map((m) => (
-                    <tr key={m.id}>
-                      <td className="is-muted">{formatWhen(m.createdAt)}</td>
-                      <td>{m.type === 'IN' ? 'Entrada' : 'Saída'}</td>
-                      <td>{m.method}</td>
-                      <td>{m.description}</td>
-                      <td className={`is-right is-strong ${m.type === 'IN' ? 'is-in' : 'is-out'}`}>
-                        {money(m.type === 'IN' ? m.amount : -m.amount)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-          <div className="finv2-modal__actions">
-            {sessionDetail.status !== 'OPEN' && isGerente && !cash ? (
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => onReopenCash(sessionDetail.id)}
-              >
-                Reabrir caixa
-              </button>
-            ) : null}
-            <button type="button" className="btn-secondary" onClick={() => setSessionDetail(null)}>
-              Fechar
-            </button>
-          </div>
-        </ModalShell>
+          onOpenComanda={async (id) => {
+            setSessionDetail(null);
+            await openComandaDetail(id);
+          }}
+          onReopenCash={onReopenCash}
+        />
       )}
 
       {comandaDetail && (
-        <ModalShell
-          title={`Comanda Nº${String(comandaDetail.number).padStart(4, '0')}`}
-          subtitle={`${comandaDetail.customerName} · ${comandaDetail.status === 'QUITADA' ? 'Quitada' : comandaDetail.status === 'CANCELLED' ? 'Cancelada' : 'Aberta'}`}
+        <ComandaDetailModal
+          comanda={comandaDetail}
+          businessInfo={businessInfo}
+          isGerente={isGerente}
           onClose={() => setComandaDetail(null)}
-          wide
-        >
-          <div className="finv2-cash-metrics" style={{ marginBottom: 16 }}>
-            <div>
-              <span>Total</span>
-              <strong>{money(comandaDetail.total)}</strong>
-            </div>
-            <div>
-              <span>Abertura</span>
-              <strong style={{ fontSize: '0.9rem' }}>{formatWhen(comandaDetail.openedAt)}</strong>
-            </div>
-            <div>
-              <span>Quitação</span>
-              <strong style={{ fontSize: '0.9rem' }}>{formatWhen(comandaDetail.closedAt)}</strong>
-            </div>
-          </div>
-          {(comandaDetail.items || []).length ? (
-            <div className="finv2-table-wrap">
-              <table className="finv2-table">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Tipo</th>
-                    <th className="is-right">Qtd</th>
-                    <th className="is-right">Unit.</th>
-                    <th className="is-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {comandaDetail.items.map((item) => (
-                    <tr key={item.id}>
-                      <td className="is-strong">{item.name}</td>
-                      <td>{item.itemType === 'PRODUCT' ? 'Produto' : 'Serviço'}</td>
-                      <td className="is-right">{item.quantity}</td>
-                      <td className="is-right">{money(item.unitPrice)}</td>
-                      <td className="is-right is-strong">{money(item.total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <EmptyState title="Sem itens" hint="Comanda sem itens detalhados." />
-          )}
-          {Array.isArray(comandaDetail.payments?.splits) && comandaDetail.payments.splits.length ? (
-            <div style={{ marginTop: 16 }}>
-              <h4 style={{ margin: '0 0 8px', fontSize: '0.9rem' }}>Pagamentos</h4>
-              <div className="finv2-table-wrap">
-                <table className="finv2-table">
-                  <thead>
-                    <tr>
-                      <th>Forma</th>
-                      <th className="is-right">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {comandaDetail.payments.splits.map((s, i) => (
-                      <tr key={i}>
-                        <td>{s.method}</td>
-                        <td className="is-right is-in is-strong">{money(s.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : null}
-          <div className="finv2-modal__actions">
-            {comandaDetail.status === 'OPEN' ? (
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => {
-                  setComandaDetail(null);
-                  openModal('settle', {
-                    comandaId: comandaDetail.id,
-                    total: comandaDetail.total,
-                    customerName: comandaDetail.customerName,
-                    cashSessionId: defaultCashSessionId(),
-                    splits: [{ method: 'Pix', amount: Number(comandaDetail.total || 0) }],
-                  });
-                }}
-              >
-                Confirmar recebimento
-              </button>
-            ) : null}
-            {comandaDetail.status === 'QUITADA' && isGerente ? (
-              <button
-                type="button"
-                className="finv2-btn"
-                onClick={async () => {
-                  if (!confirm('Estornar esta comanda?')) return;
-                  try {
-                    await financeV2.reverseComanda(comandaDetail.id, { restoreStock: true });
-                    setComandaDetail(null);
-                    await refreshAll();
-                    await refreshComandas();
-                  } catch (err) {
-                    handleError(err);
-                  }
-                }}
-              >
-                Estornar
-              </button>
-            ) : null}
-            <button type="button" className="btn-secondary" onClick={() => setComandaDetail(null)}>
-              Fechar
-            </button>
-          </div>
-        </ModalShell>
+          onSettle={(c, opts) => {
+            setComandaDetail(null);
+            openSettleForComanda(c, opts);
+          }}
+          onReverse={async (c) => {
+            if (!confirm('Estornar esta comanda?')) return;
+            try {
+              await financeV2.reverseComanda(c.id, { restoreStock: true });
+              setComandaDetail(null);
+              await refreshAll();
+              await refreshComandas();
+            } catch (err) {
+              handleError(err);
+            }
+          }}
+          onViewSession={async (sessionId) => {
+            setComandaDetail(null);
+            await openSessionDetail(sessionId);
+          }}
+        />
       )}
-    </div>
-  );
-}
-
-function CashCloseReport({ session }) {
-  const totals = session?.totals || session?.snapshot || {};
-  const byMethod = totals.byMethod || {};
-  const counted = session?.countedCash ?? totals.countedCash;
-  const expected = totals.expectedCash;
-  const difference =
-    totals.difference != null
-      ? totals.difference
-      : counted != null && expected != null
-        ? Number(counted) - Number(expected)
-        : null;
-
-  return (
-    <div className="finv2-close-report">
-      <div className="finv2-cash-metrics">
-        <div>
-          <span>Entradas</span>
-          <strong className="is-in">{money(totals.totalIn)}</strong>
-        </div>
-        <div>
-          <span>Saídas</span>
-          <strong className="is-out">{money(totals.totalOut)}</strong>
-        </div>
-        <div>
-          <span>Saldo movimentos</span>
-          <strong>{money(totals.balance)}</strong>
-        </div>
-      </div>
-      <div className="finv2-cash-metrics" style={{ marginTop: 12 }}>
-        <div>
-          <span>Dinheiro esperado</span>
-          <strong>{money(expected)}</strong>
-        </div>
-        <div>
-          <span>Dinheiro contado</span>
-          <strong>{counted != null ? money(counted) : '—'}</strong>
-        </div>
-        <div>
-          <span>Diferença</span>
-          <strong className={difference > 0 ? 'is-in' : difference < 0 ? 'is-out' : ''}>
-            {difference != null ? money(difference) : '—'}
-          </strong>
-        </div>
-      </div>
-      {Object.keys(byMethod).length ? (
-        <div className="finv2-table-wrap" style={{ marginTop: 16 }}>
-          <table className="finv2-table">
-            <thead>
-              <tr>
-                <th>Forma</th>
-                <th className="is-right">Entradas</th>
-                <th className="is-right">Saídas</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(byMethod).map(([method, vals]) => (
-                <tr key={method}>
-                  <td className="is-strong">{method}</td>
-                  <td className="is-right is-in">{money(vals.in)}</td>
-                  <td className="is-right is-out">{money(vals.out)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -2197,7 +3307,7 @@ function ReceitasTable({ financeV2, startDate, endDate, q }) {
                   : '—'}
               </td>
               <td className="is-muted">{formatWhen(c.closedAt)}</td>
-              <td className="is-right is-strong is-in">{money(c.total)}</td>
+              <td className="is-right is-strong is-in finv2-num">{money(c.total)}</td>
             </tr>
           ))}
         </tbody>

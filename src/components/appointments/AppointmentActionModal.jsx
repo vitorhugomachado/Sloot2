@@ -209,7 +209,7 @@ export default function AppointmentActionModal({
               </select>
               {!cashSessionsLoading && openCashSessions.length === 0 ? (
                 <p style={{ margin: '10px 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  Abra o caixa em Financeiro novo antes de confirmar o recebimento.
+                  Abra o caixa em Financeiro antes de confirmar o recebimento.
                 </p>
               ) : null}
             </div>
@@ -223,38 +223,56 @@ export default function AppointmentActionModal({
               </div>
               <div className="action-modal-panel__stack">
                 {paymentSplits.map((split, index) => (
-                  <div key={index} className="fade-in action-modal-panel__split-row">
-                    <select
-                      className="action-modal-field"
-                      value={split.method}
-                      onChange={(e) => handleSplitChange(index, 'method', e.target.value)}
-                    >
-                      <option value="Pix">Pix</option>
-                      <option value="Cartão de Crédito">Cartão de Crédito</option>
-                      <option value="Cartão de Débito">Cartão de Débito</option>
-                      <option value="Dinheiro">Dinheiro</option>
-                    </select>
-                    <div className="action-modal-field--amount-wrap">
-                      <span className="action-modal-field__currency">R$</span>
-                      <input
-                        type="number"
-                        className="action-modal-field action-modal-field--with-currency"
-                        min="0"
-                        step="0.01"
-                        value={split.amount}
-                        onChange={(e) => handleSplitChange(index, 'amount', e.target.value)}
-                      />
-                    </div>
-                    {paymentSplits.length > 1 && (
-                      <button
-                        type="button"
-                        className="action-modal-remove-row"
-                        onClick={() => setPaymentSplits(paymentSplits.filter((_, i) => i !== index))}
-                        aria-label="Remover forma de pagamento"
+                  <div key={index} className="fade-in action-modal-panel__stack" style={{ gap: 8 }}>
+                    <div className="action-modal-panel__split-row">
+                      <select
+                        className="action-modal-field"
+                        value={split.method}
+                        onChange={(e) => handleSplitChange(index, 'method', e.target.value)}
                       >
-                        <X size={18} />
-                      </button>
-                    )}
+                        <option value="Pix">Pix</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                        <option value="Cartão de Débito">Cartão de Débito</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                      </select>
+                      <div className="action-modal-field--amount-wrap">
+                        <span className="action-modal-field__currency">R$</span>
+                        <input
+                          type="number"
+                          className="action-modal-field action-modal-field--with-currency"
+                          min="0"
+                          step="0.01"
+                          value={split.amount}
+                          onChange={(e) => handleSplitChange(index, 'amount', e.target.value)}
+                        />
+                      </div>
+                      {paymentSplits.length > 1 && (
+                        <button
+                          type="button"
+                          className="action-modal-remove-row"
+                          onClick={() => setPaymentSplits(paymentSplits.filter((_, i) => i !== index))}
+                          aria-label="Remover forma de pagamento"
+                        >
+                          <X size={18} />
+                        </button>
+                      )}
+                    </div>
+                    {/cart[aã]o/i.test(String(split.method || '')) ? (
+                      <select
+                        className="action-modal-field"
+                        value={split.cardBrand || ''}
+                        onChange={(e) => handleSplitChange(index, 'cardBrand', e.target.value)}
+                        required
+                      >
+                        <option value="">Bandeira do cartão</option>
+                        <option value="Visa">Visa</option>
+                        <option value="Mastercard">Mastercard</option>
+                        <option value="Elo">Elo</option>
+                        <option value="Amex">Amex</option>
+                        <option value="Hipercard">Hipercard</option>
+                        <option value="Outra">Outra</option>
+                      </select>
+                    ) : null}
                   </div>
                 ))}
               </div>

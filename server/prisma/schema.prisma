@@ -27,6 +27,8 @@ model Tenant {
   show_facebook  Boolean  @default(false)
   show_whatsapp  Boolean  @default(false)
   enabledModules Json     @default("[\"dashboard\",\"scheduler\",\"clients\",\"finance\",\"users\",\"inventory\",\"settings\"]")
+  /// Meta mensal de receita (KPIs Financeiro V2)
+  monthlyRevenueGoal Float?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -47,6 +49,12 @@ model Tenant {
   cashSessions            CashSession[]
   cashMovements           CashMovement[]
   comandas                Comanda[]
+  commissionPayouts       CommissionPayout[]
+  accountMovements        AccountMovement[]
+  ledgerEntries           LedgerEntry[]
+  financeAuditLogs        FinanceAuditLog[]
+  financeClosings         FinanceClosing[]
+  cardFeeRates            CardFeeRate[]
 }
 
 model Barber {
@@ -159,13 +167,17 @@ model ProductSale {
   barberId     Int?
   customerId   Int?
   customerName String?
+  /// Vínculo com comanda do Financeiro V2 (null = venda legada / avulsa antiga)
+  comandaId    Int?
   tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   Barber       Barber?   @relation(fields: [barberId], references: [id])
   Customer     Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  comanda      Comanda?  @relation(fields: [comandaId], references: [id], onDelete: SetNull)
 
   @@index([tenantId], map: "idx_productsale_tenant")
   @@index([date], map: "idx_productsale_date")
   @@index([customerId], map: "idx_productsale_customer")
+  @@index([comandaId], map: "idx_productsale_comanda")
 }
 
 model Expense {
@@ -282,6 +294,7 @@ model Comanda {
   cashSession   CashSession? @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
   financeCategory FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   items         ComandaItem[]
+  productSales  ProductSale[]
 
   @@unique([tenantId, number], map: "Comanda_tenantId_number_key")
   @@index([tenantId], map: "idx_comanda_tenant")
@@ -306,6 +319,113 @@ model ComandaItem {
   comanda       Comanda @relation(fields: [comandaId], references: [id], onDelete: Cascade)
 
   @@index([comandaId], map: "idx_comanda_item_comanda")
+}
+
+/// Status de Comanda é String — PARTIAL (pagamento parcial) funciona sem migration adicional.
+model CommissionPayout {
+  id            Int      @id @default(autoincrement())
+  tenantId      Int
+  barberId      Int
+  periodStart   String
+  periodEnd     String
+  amount        Float
+  method        String   @default("CAIXA")
+  cashSessionId Int?
+  notes         String?
+  createdById   Int?
+  createdAt     DateTime @default(now())
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId], map: "idx_commission_payout_tenant")
+  @@index([barberId], map: "idx_commission_payout_barber")
+}
+
+/// Taxa da maquininha por bandeira e tipo (débito/crédito). Debitada da comissão do barbeiro.
+model CardFeeRate {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  brand     String // Visa | Mastercard | Elo | Amex | Hipercard | Outra
+  kind      String // DEBIT | CREDIT
+  feePct    Float    @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, brand, kind], map: "CardFeeRate_tenant_brand_kind_key")
+  @@index([tenantId], map: "idx_card_fee_rate_tenant")
+}
+
+model AccountMovement {
+  id             Int      @id @default(autoincrement())
+  tenantId       Int
+  account        String // CAIXA | BANCO
+  type           String // IN | OUT | TRANSFER
+  amount         Float
+  date           String // YYYY-MM-DD
+  description    String
+  referenceType  String?
+  referenceId    Int?
+  counterAccount String? // for transfers
+  cashSessionId  Int?
+  createdById    Int?
+  createdAt      DateTime @default(now())
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId], map: "idx_account_movement_tenant")
+  @@index([tenantId, account], map: "idx_account_movement_tenant_account")
+  @@index([date], map: "idx_account_movement_date")
+}
+
+model LedgerEntry {
+  id            Int      @id @default(autoincrement())
+  tenantId      Int
+  occurredAt    DateTime @default(now())
+  kind          String // INCOME | EXPENSE | ADJUSTMENT | COMMISSION | TRANSFER
+  amount        Float // positive; direction via direction field
+  direction     String // IN | OUT
+  method        String?
+  account       String   @default("CAIXA")
+  referenceType String?
+  referenceId   Int?
+  description   String
+  createdById   Int?
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId], map: "idx_ledger_entry_tenant")
+  @@index([tenantId, occurredAt], map: "idx_ledger_entry_tenant_occurred")
+  @@index([referenceType, referenceId], map: "idx_ledger_entry_reference")
+}
+
+model FinanceAuditLog {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  userId    Int?
+  userName  String?
+  action    String
+  entity    String
+  entityId  Int?
+  payload   Json?
+  createdAt DateTime @default(now())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt], map: "idx_finance_audit_tenant_created")
+}
+
+model FinanceClosing {
+  id           Int      @id @default(autoincrement())
+  tenantId     Int
+  periodStart  String
+  periodEnd    String
+  closedAt     DateTime @default(now())
+  closedById   Int?
+  closedByName String?
+  snapshot     Json
+  notes        String?
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, periodStart, periodEnd], map: "FinanceClosing_tenant_period_key")
+  @@index([tenantId], map: "idx_finance_closing_tenant")
 }
 
 model MonthClosing {

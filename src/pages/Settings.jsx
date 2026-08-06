@@ -370,14 +370,14 @@ const Settings = () => {
         <input
           type="number"
           className="set-mobile-form-input"
-          placeholder="% comissão do profissional"
+          placeholder="Comissão do profissional (%)"
           min="0"
           max="100"
           value={newService.commissionPct}
           onChange={(e) => setNewService({ ...newService, commissionPct: e.target.value })}
         />
         <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-          Percentual que o profissional recebe neste serviço (ex.: 40 = 40%).
+          Cada serviço pode ter uma % diferente (ex.: 40 = o profissional recebe 40%).
         </p>
       </div>
       <div className="set-mobile-modal__actions">
@@ -706,11 +706,7 @@ const Settings = () => {
                 </div>
               )}
               {/* Finance & Aditional info */}
-              <div className="settings-barber-finance-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr', gap: '1.25rem', marginBottom: '2.5rem' }}>
-                 <div>
-                   <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>Comissão (%)</label>
-                   <input type="number" value={newBarber.commission} onChange={e => setNewBarber({...newBarber, commission: e.target.value})} style={{ width: '100%', padding: '14px', background: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', color: 'var(--text-primary)', fontWeight: 600 }} />
-                 </div>
+              <div className="settings-barber-finance-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.25rem', marginBottom: '2.5rem' }}>
                  <div>
                    <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>Chave PIX (Pagamentos)</label>
                    <input type="text" placeholder="CPF ou Chave Aleatória" value={newBarber.chave_pix} onChange={e => setNewBarber({...newBarber, chave_pix: e.target.value})} style={{ width: '100%', padding: '14px', background: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', color: 'var(--text-primary)' }} />
@@ -720,6 +716,9 @@ const Settings = () => {
                    <input type="date" value={newBarber.data_admissao} onChange={e => setNewBarber({...newBarber, data_admissao: e.target.value})} style={{ width: '100%', padding: '14px', background: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', color: 'var(--text-primary)' }} />
                  </div>
               </div>
+              <p style={{ margin: '-1.5rem 0 2rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                A comissão do profissional é definida por serviço (Configurações → Serviços ou Financeiro → Equipe → Taxas).
+              </p>
               {/* Status Toggle */}
               <div className="settings-barber-status-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', background: 'var(--panel-bg)', borderRadius: '16px', border: '1px solid var(--card-outline)', marginBottom: '3rem' }}>
                 <div>
@@ -917,8 +916,11 @@ const Settings = () => {
                       {['30 min', '60 min', '90 min', '120 min'].map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                     <input type="number" placeholder="Preço (R$)" value={newService.price} onChange={e => setNewService({...newService, price: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }} />
-                    <input type="number" placeholder="% profissional" min="0" max="100" value={newService.commissionPct} onChange={e => setNewService({...newService, commissionPct: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }} title="Comissão do profissional (%)" />
+                    <input type="number" placeholder="Comissão do profissional (%)" min="0" max="100" value={newService.commissionPct} onChange={e => setNewService({...newService, commissionPct: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }} title="Percentual que o profissional recebe neste serviço" />
                   </div>
+                  <p style={{ margin: '8px 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    Cada serviço pode ter uma % diferente de comissão do profissional.
+                  </p>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1rem' }}>
                     <button onClick={resetServiceForm} style={{ padding: '10px 14px', borderRadius: '9999px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-primary)', cursor: 'pointer' }}>
                       Cancelar
