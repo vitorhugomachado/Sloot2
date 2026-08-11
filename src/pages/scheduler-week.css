@@ -78,7 +78,8 @@ button {
   justify-content: space-between;
   gap: 1rem;
   min-height: 56px;
-  padding: 0.55rem 1rem;
+  height: auto;
+  padding: 0.65rem 1rem;
   background: var(--swp-surface);
   border: 1px solid var(--swp-line);
   border-radius: 16px;
@@ -87,9 +88,28 @@ button {
 
 .swp-topbar__brand {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.35rem;
   min-width: 0;
-  height: var(--swp-ctrl-h);
+  flex: 0 1 auto;
+  max-width: min(100%, 240px);
+  height: auto;
+  min-height: var(--swp-ctrl-h);
+}
+
+.swp-topbar__brand .swp-cash-indicator {
+  margin-top: 0;
+  max-width: 100%;
+}
+
+.swp-topbar__brand .finv2-cash-indicator-mini {
+  align-self: flex-start;
+  max-width: 100%;
+  flex-wrap: wrap;
+  row-gap: 0.15rem;
+  margin-top: 0;
 }
 
 .swp-topbar__title {
@@ -239,7 +259,10 @@ button {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  height: var(--swp-ctrl-h);
+  flex: 0 0 auto;
+  align-self: center;
+  height: auto;
+  min-height: var(--swp-ctrl-h);
 }
 
 .swp-team {
@@ -1436,7 +1459,17 @@ button {
 @media (max-width: 1080px) {
   .swp-topbar {
     flex-wrap: wrap;
+    align-items: flex-start;
     gap: 0.6rem;
+  }
+
+  .swp-topbar__brand {
+    flex: 1 1 auto;
+    max-width: none;
+  }
+
+  .swp-topbar__right {
+    margin-left: auto;
   }
 
   .swp-topbar__center--desktop {

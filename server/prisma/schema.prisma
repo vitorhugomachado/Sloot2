@@ -50,6 +50,7 @@ model Tenant {
   cashSessions            CashSession[]
   cashMovements           CashMovement[]
   comandas                Comanda[]
+  comandaPayments         ComandaPayment[]
   commissionPayouts       CommissionPayout[]
   accountMovements        AccountMovement[]
   ledgerEntries           LedgerEntry[]
@@ -270,10 +271,22 @@ model FinanceCategory {
   @@index([parentId], map: "idx_finance_category_parent")
 }
 
+enum CashSessionStatus {
+  OPEN
+  CLOSED
+}
+
+enum ComandaStatus {
+  OPEN
+  PARTIAL
+  QUITADA
+  CANCELLED
+}
+
 model CashSession {
-  id            Int       @id @default(autoincrement())
+  id            Int               @id @default(autoincrement())
   tenantId      Int
-  status        String    @default("OPEN")
+  status        CashSessionStatus @default(OPEN)
   openedAt      DateTime  @default(now())
   openedById    Int?
   openedByName  String?
@@ -287,6 +300,7 @@ model CashSession {
   tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   movements     CashMovement[]
   comandas      Comanda[]
+  comandaPayments ComandaPayment[]
   expenses      Expense[]
 
   @@index([tenantId], map: "idx_cash_session_tenant")
@@ -315,14 +329,14 @@ model CashMovement {
 }
 
 model Comanda {
-  id            Int       @id @default(autoincrement())
+  id            Int           @id @default(autoincrement())
   tenantId      Int
   number        Int
   customerName  String
   customerId    Int?
-  appointmentId Int?      @unique
+  appointmentId Int?          @unique
   cashSessionId Int?
-  status        String    @default("OPEN")
+  status        ComandaStatus @default(OPEN)
   origin        String    @default("AGENDA")
   openedAt      DateTime  @default(now())
   closedAt      DateTime?
@@ -336,6 +350,7 @@ model Comanda {
   financeCategory FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   items         ComandaItem[]
   productSales  ProductSale[]
+  paymentsRows  ComandaPayment[]
 
   @@unique([tenantId, number], map: "Comanda_tenantId_number_key")
   @@index([tenantId], map: "idx_comanda_tenant")
@@ -362,7 +377,28 @@ model ComandaItem {
   @@index([comandaId], map: "idx_comanda_item_comanda")
 }
 
-/// Status de Comanda é String — PARTIAL (pagamento parcial) funciona sem migration adicional.
+model ComandaPayment {
+  id            Int         @id @default(autoincrement())
+  tenantId      Int
+  comandaId     Int
+  cashSessionId Int
+  amount        Float
+  method        String      @default("Outro")
+  cardBrand     String?
+  cardKind      String?
+  cardFee       Float?
+  paidAt        DateTime    @default(now())
+  createdById   Int?
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  comanda       Comanda     @relation(fields: [comandaId], references: [id], onDelete: Cascade)
+  cashSession   CashSession @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId], map: "idx_comanda_payment_tenant")
+  @@index([comandaId], map: "idx_comanda_payment_comanda")
+  @@index([cashSessionId], map: "idx_comanda_payment_session")
+}
+
+/// Status de Comanda — enum ComandaStatus (OPEN | PARTIAL | QUITADA | CANCELLED).
 model CommissionPayout {
   id            Int      @id @default(autoincrement())
   tenantId      Int

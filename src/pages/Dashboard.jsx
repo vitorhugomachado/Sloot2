@@ -2,6 +2,8 @@
 import { Users, Calendar, Clock, X, ShoppingBag, Plus, LayoutGrid, Play, CheckCircle, XCircle } from 'lucide-react';
 import WhatsAppIcon from '../components/icons/WhatsAppIcon';
 import AppointmentActionModal from '../components/appointments/AppointmentActionModal';
+import CashIndicatorMini from '../components/financev2/CashIndicatorMini';
+import OpenCashModal from '../components/financev2/OpenCashModal';
 import { useApp } from '../context/AppContext';
 import { useAppointmentActions, formatCheckoutCurrency } from '../hooks/useAppointmentActions';
 import { filterAvailableBookingTimes, isBookingSlotTaken } from '../utils/bookingAvailability';
@@ -10,6 +12,7 @@ import { getAppointmentStatusConfig, isInServiceStatus } from '../utils/appointm
 import { normalizePhoneForWhatsApp } from '../utils/appointmentWhatsApp';
 import { STAFF_DASHBOARD_TIME_SLOTS } from '../utils/publicBookingSlots';
 import { getStaffBookingFormError } from '../utils/staffBookingForm';
+import { showFinanceError, showStaffToast } from '../utils/staffToast';
 
 const EMPTY_DIRECT_SALE = {
   customerName: '',
@@ -165,8 +168,6 @@ const Dashboard = () => {
   const isBarber = currentUser?.role === 'Barbeiro';
   const isGerente = currentUser?.role === 'Gerente';
   const [isOpenCashModal, setIsOpenCashModal] = useState(false);
-  const [openCashFloat, setOpenCashFloat] = useState('0');
-  const [openingCash, setOpeningCash] = useState(false);
   const [kpis, setKpis] = useState({ revenue: 0, ticketMedio: 0, byBarber: [], comandaCount: 0 });
   const [kpiTick, setKpiTick] = useState(0);
 
@@ -400,32 +401,13 @@ const Dashboard = () => {
     }
   };
 
-  const handleOpenCashFromDashboard = async () => {
-    if (!isGerente) return;
-    setOpeningCash(true);
-    try {
-      await financeV2.openCash({
-        openingFloat: Number(openCashFloat || 0),
-        date: todayIsoLocal(),
-      });
-      setIsOpenCashModal(false);
-      setOpenCashFloat('0');
-      await refreshCashBrief();
-    } catch (err) {
-      alert(err.message || 'Não foi possível abrir o caixa.');
-    } finally {
-      setOpeningCash(false);
-    }
-  };
-
   const promptOpenCashOrFinanceiro = (message) => {
     if (isGerente) {
-      const openNow = window.confirm(`${message}\n\nAbrir o caixa agora?`);
-      if (openNow) setIsOpenCashModal(true);
+      showStaffToast(`${message} Abra o caixa para continuar.`, { variant: 'warning' });
+      setIsOpenCashModal(true);
       return;
     }
-    const go = window.confirm(`${message}\n\nAbrir o Financeiro agora?`);
-    if (go) window.location.assign(`/${window.location.pathname.split('/')[1]}/dashboard/financeiro`);
+    showFinanceError({ code: 'CASH_REQUIRED', message });
   };
 
   const handleConfirmDirectSale = async () => {
@@ -476,7 +458,7 @@ const Dashboard = () => {
       if (err?.code === 'CASH_CLOSED' || err?.code === 'CASH_REQUIRED') {
         promptOpenCashOrFinanceiro(err.message);
       } else {
-        alert(err.message || 'Não foi possível concluir a venda.');
+        showFinanceError(err);
       }
     }
   };
@@ -633,7 +615,10 @@ const Dashboard = () => {
 
       {/* ═══════ HEADER ═══════ */}
       <div className="dash-header">
-        <h1>{isBarber ? `Meu Dashboard` : 'Dashboard'}</h1>
+        <div>
+          <h1>{isBarber ? `Meu Dashboard` : 'Dashboard'}</h1>
+          <CashIndicatorMini financeV2={financeV2} isGerente={isGerente} className="dash-cash-indicator" />
+        </div>
         <div className="dash-header-actions">
           {!isBarber && (
             <button className="dash-action-btn secondary" onClick={() => setIsSaleModalOpen(true)}>
@@ -939,52 +924,17 @@ const Dashboard = () => {
       </div>
       </div>
 
-      {isOpenCashModal && isGerente && (
-        <div className="modal-backdrop" onClick={() => !openingCash && setIsOpenCashModal(false)}>
-          <div
-            className="modal-glass-panel fade-in scheduler-modal-panel"
-            style={{ width: '95%', maxWidth: '400px', padding: '1.5rem' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="booking-reserve-form__title-row">
-              <h2 className="booking-reserve-form__title">Abrir caixa</h2>
-              <button
-                type="button"
-                className="booking-reserve-form__close"
-                onClick={() => setIsOpenCashModal(false)}
-                aria-label="Fechar"
-                disabled={openingCash}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="booking-reserve-form" style={{ marginTop: '1rem' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-                Fundo de troco (R$)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                className="booking-reserve-form__field"
-                value={openCashFloat}
-                onChange={(e) => setOpenCashFloat(e.target.value)}
-              />
-              <button
-                type="button"
-                className="btn-primary booking-reserve-form__submit"
-                disabled={openingCash}
-                onClick={handleOpenCashFromDashboard}
-              >
-                {openingCash ? 'Abrindo…' : 'Abrir caixa do dia'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {isGerente ? (
+        <OpenCashModal
+          open={isOpenCashModal}
+          onClose={() => setIsOpenCashModal(false)}
+          onSuccess={refreshCashBrief}
+        />
+      ) : null}
 
       <AppointmentActionModal
         {...appointmentActions}
+        isGerente={isGerente}
         services={services}
         products={products}
       />

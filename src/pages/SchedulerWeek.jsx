@@ -16,6 +16,7 @@ import {
 } from '../utils/bookingAvailability';
 import WhatsAppIcon from '../components/icons/WhatsAppIcon';
 import AppointmentActionModal from '../components/appointments/AppointmentActionModal';
+import CashIndicatorMini from '../components/financev2/CashIndicatorMini';
 import { useAppointmentActions } from '../hooks/useAppointmentActions';
 import { toIsoLocal } from '../utils/dateLocal';
 import { API_URL } from '../config/apiUrl';
@@ -910,6 +911,7 @@ export default function SchedulerWeek() {
     apiFetch,
     token,
     financeV2,
+    currentUser,
   } = useApp();
   const location = useLocation();
 
@@ -1199,12 +1201,14 @@ export default function SchedulerWeek() {
   const mobileFilterBarber = barberFilter !== 'all'
     ? activeBarbers.find((b) => String(b.id) === String(barberFilter))
     : null;
+  const isGerente = currentUser?.role === 'Gerente';
 
   return (
     <div className="swp">
       <header className="swp-topbar">
         <div className="swp-topbar__brand">
           <h1 className="swp-topbar__title">Agenda Semanal</h1>
+          <CashIndicatorMini financeV2={financeV2} isGerente={isGerente} className="swp-cash-indicator" />
         </div>
 
         <div className="swp-topbar__center swp-topbar__center--desktop">
@@ -1571,6 +1575,7 @@ export default function SchedulerWeek() {
 
       <AppointmentActionModal
         {...appointmentActions}
+        isGerente={isGerente}
         services={services}
         products={products}
       />

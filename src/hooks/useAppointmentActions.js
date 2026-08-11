@@ -1,6 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { todayIsoLocal } from '../utils/dateLocal';
 import { openWhatsAppConfirm } from '../utils/appointmentWhatsApp';
+import { CASH_STATUS_CHANGED } from '../utils/cashStatusEvents';
+import { showStaffToast } from '../utils/staffToast';
+import { useCashStatus } from './useCashStatus';
 
 const EMPTY_CHECKOUT_PRODUCT = { productId: '', quantity: 1 };
 const WHATSAPP_CONFIRMABLE = new Set(['Agendado', 'Pendente']);
@@ -40,6 +43,15 @@ export function useAppointmentActions({
   const [openCashSessions, setOpenCashSessions] = useState([]);
   const [cashSessionId, setCashSessionId] = useState('');
   const [cashSessionsLoading, setCashSessionsLoading] = useState(false);
+  const [checkoutDiscount, setCheckoutDiscount] = useState(0);
+  const [checkoutTip, setCheckoutTip] = useState(0);
+  const [checkoutAllowPartial, setCheckoutAllowPartial] = useState(false);
+  const [cardFeeRates, setCardFeeRates] = useState([]);
+  const {
+    isOpen: cashOpen,
+    loading: cashStatusLoading,
+    refresh: refreshCashStatus,
+  } = useCashStatus(financeV2, { enabled: Boolean(financeV2?.getCurrentCash) });
 
   const checkoutServiceTotal = Number(actionModal.app?.price || 0);
 
@@ -54,52 +66,89 @@ export function useAppointmentActions({
   }, [checkoutProducts, products]);
 
   const checkoutGrandTotal = checkoutServiceTotal + checkoutProductsTotal;
+  const checkoutPayableTotal = Math.max(
+    0,
+    Math.round((checkoutGrandTotal - Number(checkoutDiscount || 0) + Number(checkoutTip || 0)) * 100) / 100,
+  );
 
   useEffect(() => {
     if (!(actionModal.open && actionModal.step === 'payment')) return;
+    if (checkoutAllowPartial) return;
     setPaymentSplits((prev) => {
       if (prev.length !== 1) return prev;
       const currentAmount = Number(prev[0]?.amount || 0);
-      if (Math.abs(currentAmount - checkoutGrandTotal) < 0.01) return prev;
-      return [{ ...prev[0], amount: checkoutGrandTotal }];
+      if (Math.abs(currentAmount - checkoutPayableTotal) < 0.01) return prev;
+      return [{ ...prev[0], amount: checkoutPayableTotal }];
     });
-  }, [actionModal.open, actionModal.step, checkoutGrandTotal]);
+  }, [actionModal.open, actionModal.step, checkoutPayableTotal, checkoutAllowPartial]);
 
   useEffect(() => {
     if (!(actionModal.open && actionModal.step === 'payment') || !financeV2?.listCashSessions) {
       return undefined;
     }
     let cancelled = false;
-    setCashSessionsLoading(true);
-    financeV2
-      .listCashSessions()
-      .then((sessions) => {
-        if (cancelled) return;
-        const open = (Array.isArray(sessions) ? sessions : []).filter((s) => s.status === 'OPEN');
-        setOpenCashSessions(open);
-        setCashSessionId((prev) => {
-          if (prev && open.some((s) => String(s.id) === String(prev))) return prev;
-          return open.length === 1 ? String(open[0].id) : '';
+    const loadOpenSessions = () => {
+      setCashSessionsLoading(true);
+      financeV2
+        .listCashSessions()
+        .then((sessions) => {
+          if (cancelled) return;
+          const open = (Array.isArray(sessions) ? sessions : []).filter((s) => s.status === 'OPEN');
+          setOpenCashSessions(open);
+          setCashSessionId((prev) => {
+            if (prev && open.some((s) => String(s.id) === String(prev))) return prev;
+            return open.length === 1 ? String(open[0].id) : '';
+          });
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setOpenCashSessions([]);
+            setCashSessionId('');
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setCashSessionsLoading(false);
         });
+    };
+    loadOpenSessions();
+    window.addEventListener(CASH_STATUS_CHANGED, loadOpenSessions);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(CASH_STATUS_CHANGED, loadOpenSessions);
+    };
+  }, [actionModal.open, actionModal.step, financeV2]);
+
+  useEffect(() => {
+    if (!(actionModal.open && actionModal.step === 'payment') || !financeV2?.listCardFees) {
+      return undefined;
+    }
+    let cancelled = false;
+    financeV2.listCardFees()
+      .then((rates) => {
+        if (!cancelled) setCardFeeRates(Array.isArray(rates) ? rates : []);
       })
       .catch(() => {
-        if (!cancelled) {
-          setOpenCashSessions([]);
-          setCashSessionId('');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setCashSessionsLoading(false);
+        if (!cancelled) setCardFeeRates([]);
       });
     return () => {
       cancelled = true;
     };
   }, [actionModal.open, actionModal.step, financeV2]);
 
+  useEffect(() => {
+    if (!actionModal.open) return undefined;
+    if (!['choose', 'confirm-start', 'payment'].includes(actionModal.step)) return undefined;
+    refreshCashStatus();
+    return undefined;
+  }, [actionModal.open, actionModal.step, refreshCashStatus]);
+
   const resetCheckoutState = (app) => {
     setPaymentSplits([{ method: 'Pix', amount: Number(app?.price || 0) }]);
     setCheckoutProducts([EMPTY_CHECKOUT_PRODUCT]);
     setCashSessionId('');
+    setCheckoutDiscount(0);
+    setCheckoutTip(0);
+    setCheckoutAllowPartial(false);
   };
 
   const openActionModal = (app) => {
@@ -115,6 +164,10 @@ export function useAppointmentActions({
   };
 
   const handleMarkInProgress = async () => {
+    if (financeV2?.getCurrentCash) {
+      const session = await refreshCashStatus();
+      if (!session?.id) return;
+    }
     const success = await updateAppointmentStatus(actionModal.app.id, 'Em progresso');
     if (success) closeActionModal();
   };
@@ -126,7 +179,7 @@ export function useAppointmentActions({
 
   const handleFinalizePayment = async () => {
     if (!cashSessionId) {
-      alert('Selecione o caixa do dia para confirmar o recebimento.');
+      showStaffToast('Selecione o caixa do dia para confirmar o recebimento.', { variant: 'warning' });
       return;
     }
 
@@ -142,11 +195,11 @@ export function useAppointmentActions({
     for (const item of selectedProducts) {
       const product = products.find((p) => Number(p.id) === item.productId);
       if (!product) {
-        alert('Um produto selecionado não está cadastrado.');
+        showStaffToast('Um produto selecionado não está cadastrado.', { variant: 'error' });
         return;
       }
       if (Number(product.stock || 0) < item.quantity) {
-        alert(`Estoque insuficiente para ${product.name}. Disponível: ${product.stock}.`);
+        showStaffToast(`Estoque insuficiente para ${product.name}. Disponível: ${product.stock}.`, { variant: 'error' });
         return;
       }
       const subtotal = Number(product.price || 0) * item.quantity;
@@ -160,25 +213,40 @@ export function useAppointmentActions({
       });
     }
 
-    const requiredTotal = Number(actionModal.app.price || 0) + productsTotal;
-    const totalPaid = paymentSplits.reduce((acc, curr) => acc + Number(curr.amount), 0);
-    if (Math.abs(totalPaid - requiredTotal) > 0.01) {
-      alert(
-        `O valor total pago (R$ ${totalPaid.toFixed(2)}) deve ser igual ao total do checkout (R$ ${requiredTotal.toFixed(2)}).`
+    const requiredTotal = checkoutPayableTotal;
+    const totalPaid = paymentSplits.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    const isFullPayment = totalPaid >= requiredTotal - 0.01;
+
+    if (!checkoutAllowPartial && !isFullPayment) {
+      showStaffToast(
+        `O valor total pago (R$ ${totalPaid.toFixed(2)}) deve ser igual ao total a receber (R$ ${requiredTotal.toFixed(2)}).`,
+        { variant: 'warning' },
+      );
+      return;
+    }
+    if (checkoutAllowPartial && totalPaid <= 0) {
+      showStaffToast('Informe um valor maior que zero para o recebimento parcial.', { variant: 'warning' });
+      return;
+    }
+    if (checkoutAllowPartial && totalPaid > requiredTotal + 0.01) {
+      showStaffToast(
+        `Pagamento (R$ ${totalPaid.toFixed(2)}) excede o total (R$ ${requiredTotal.toFixed(2)}).`,
+        { variant: 'warning' },
       );
       return;
     }
 
     for (const split of paymentSplits) {
       if (/cart[aã]o/i.test(String(split.method || '')) && !String(split.cardBrand || '').trim()) {
-        alert('Informe a bandeira do cartão em cada pagamento com cartão.');
+        showStaffToast('Informe a bandeira do cartão em cada pagamento com cartão.', { variant: 'warning' });
         return;
       }
     }
 
     const paidAt = todayIsoLocal();
+    const nextStatus = isFullPayment ? 'Finalizado' : actionModal.app.status;
 
-    const success = await updateAppointmentStatus(actionModal.app.id, 'Finalizado', {
+    const success = await updateAppointmentStatus(actionModal.app.id, nextStatus, {
       payments: {
         splits: paymentSplits.map((s) => ({
           ...s,
@@ -189,12 +257,23 @@ export function useAppointmentActions({
         products: selectedProductsDetailed,
         serviceTotal: Number(actionModal.app.price || 0),
         productsTotal,
+        itemsTotal: checkoutGrandTotal,
+        discountAmount: Number(checkoutDiscount || 0),
+        tipAmount: Number(checkoutTip || 0),
         totalCheckout: requiredTotal,
         paidAt,
         cashSessionId: Number(cashSessionId),
+        allowPartial: checkoutAllowPartial && !isFullPayment,
       },
     });
-    if (success) closeActionModal();
+    if (success) {
+      if (isFullPayment) {
+        closeActionModal();
+      } else {
+        showStaffToast('Recebimento parcial registrado. Saldo em aberto na comanda.', { variant: 'info' });
+        closeActionModal();
+      }
+    }
   };
 
   const handleAddSplit = () => setPaymentSplits([...paymentSplits, { method: 'Pix', amount: 0 }]);
@@ -273,10 +352,21 @@ export function useAppointmentActions({
     cashSessionId,
     setCashSessionId,
     cashSessionsLoading,
+    cashOpen,
+    cashStatusLoading,
+    cashCheckEnabled: Boolean(financeV2?.getCurrentCash),
+    checkoutDiscount,
+    setCheckoutDiscount,
+    checkoutTip,
+    setCheckoutTip,
+    checkoutAllowPartial,
+    setCheckoutAllowPartial,
+    cardFeeRates,
     formatCashOptionLabel,
     checkoutServiceTotal,
     checkoutProductsTotal,
     checkoutGrandTotal,
+    checkoutPayableTotal,
     openActionModal,
     closeActionModal,
     handleMarkInProgress,

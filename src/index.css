@@ -1921,6 +1921,11 @@ button.action-modal-choice-btn--start:hover {
   border-color: #93c5fd;
 }
 
+button.action-modal-choice-btn--start:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 button.action-modal-choice-btn--start svg {
   color: #000;
   opacity: 1;
@@ -1975,6 +1980,25 @@ button.action-modal-choice-btn--whatsapp svg {
   flex-shrink: 0;
 }
 
+.action-modal-cash-warning {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.06);
+  color: #b91c1c;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.action-modal-cash-warning p {
+  margin: 0 0 0.65rem;
+}
+
+.action-modal-cash-warning .action-modal-panel__chip-btn {
+  color: inherit;
+  border-color: currentColor;
+}
 
 
 
@@ -8492,6 +8516,35 @@ button.nav-item {
   text-decoration: underline;
 }
 
+.staff-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 3200;
+  max-width: min(92vw, 420px);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.45;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.staff-toast--info {
+  background: #1e293b;
+  color: #fff;
+}
+
+.staff-toast--warning {
+  background: rgba(245, 158, 11, 0.95);
+  color: #1a1a1a;
+}
+
+.staff-toast--error {
+  background: rgba(239, 68, 68, 0.95);
+  color: #fff;
+}
+
 .platform-toast {
   position: fixed;
   bottom: 1.5rem;
@@ -9640,6 +9693,91 @@ a.nav-item {
   align-items: center;
   gap: 0.45rem;
   flex-wrap: wrap;
+}
+
+.finv2-cash-indicator-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.finv2-cash-indicator-mini.is-open {
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #15803d;
+}
+
+.finv2-cash-indicator-mini.is-closed {
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #b91c1c;
+}
+
+.finv2-cash-indicator-mini__icon {
+  display: inline-flex;
+}
+
+.finv2-cash-indicator-mini__link {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.finv2-open-cash-modal__panel {
+  width: min(95vw, 400px);
+  padding: 1.5rem;
+}
+
+.finv2-open-cash-modal__hint {
+  margin: 0.85rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.finv2-open-cash-modal__form {
+  margin-top: 1rem;
+}
+
+.finv2-open-cash-modal__label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.finv2-open-cash-modal__error {
+  margin: 0.55rem 0 0;
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
+.finv2-open-cash-modal__note {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.dash-header > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.dash-header .finv2-cash-indicator-mini {
+  align-self: flex-start;
+  max-width: 100%;
 }
 
 /* Segmentos internos abaixo das abas primárias */

@@ -19,6 +19,9 @@ const {
   toLocalDateIso,
   enrichCardSplits,
   allocateCardFeesToBarbers,
+  assertPeriodNotClosed,
+  computePayableTotal,
+  sumComandaPaidAmount,
 } = require('../lib/financeV2');
 
 const IN_SERVICE_STATUSES = new Set(['Em progresso', 'Em atendimento']);
@@ -269,6 +272,12 @@ const updateAppointment = async (req, res) => {
       IN_SERVICE_STATUSES.has(nextStatus) && !IN_SERVICE_STATUSES.has(String(existing.status || ''));
     const isFinalizing =
       nextStatus === 'Finalizado' && existing.status !== 'Finalizado';
+    const finalPaymentsPreview = data.payments;
+    const isPartialCheckout =
+      Boolean(finalPaymentsPreview?.allowPartial)
+      && Array.isArray(finalPaymentsPreview?.splits)
+      && finalPaymentsPreview.splits.length > 0
+      && !isFinalizing;
 
     if (isStartingService) {
       const tenantId = tenantIdFromReq(req);
@@ -305,7 +314,7 @@ const updateAppointment = async (req, res) => {
       }
     }
 
-    if (isFinalizing) {
+    if (isFinalizing || isPartialCheckout) {
       const paidAt = getLocalDateIso();
       let payments = data.payments !== undefined ? data.payments : existing.payments;
       if (payments && typeof payments === 'object' && !Array.isArray(payments)) {
@@ -318,12 +327,18 @@ const updateAppointment = async (req, res) => {
         data.payments = { paidAt };
       }
 
+      if (isPartialCheckout) {
+        delete data.status;
+      }
+
       const tenantId = tenantIdFromReq(req);
       const finalPayments = data.payments;
+      const allowPartial = Boolean(finalPayments?.allowPartial);
       const cashSessionId = finalPayments?.cashSessionId ?? data.cashSessionId;
       delete data.cashSessionId;
 
       try {
+        await assertPeriodNotClosed(tenantId, paidAt);
         await ensureFinanceCategories(tenantId);
         const categoryId = await getSalesIncomeCategoryId(tenantId);
 
@@ -377,13 +392,55 @@ const updateAppointment = async (req, res) => {
             },
             ...productItems,
           ];
-          const total = Number(
-            finalPayments?.totalCheckout != null
-              ? finalPayments.totalCheckout
-              : items.reduce((s, i) => s + Number(i.total || 0), 0),
-          );
+          const itemsTotal = items.reduce((s, i) => s + Number(i.total || 0), 0);
+          const payableMeta = computePayableTotal(itemsTotal, finalPayments);
+          const total = payableMeta.payable;
+          const splits = Array.isArray(finalPayments?.splits) ? finalPayments.splits : [];
+          const splitSum = splits.reduce((s, p) => s + Number(p.amount || 0), 0);
+          const alreadyPartial = String(comanda.status).toUpperCase() === 'PARTIAL';
 
-          validatePaymentSplits(finalPayments?.splits, total);
+          if (!(splitSum > 0)) {
+            const err = new Error('Informe ao menos um pagamento com valor.');
+            err.code = 'PAYMENT_MISMATCH';
+            err.status = 400;
+            throw err;
+          }
+
+          if (!allowPartial && !alreadyPartial) {
+            validatePaymentSplits(splits, total);
+          } else if (!alreadyPartial && allowPartial && splitSum > total + 0.01) {
+            const err = new Error(
+              `Pagamento (R$ ${splitSum.toFixed(2)}) excede o total (R$ ${total.toFixed(2)}).`,
+            );
+            err.code = 'PAYMENT_OVER';
+            err.status = 400;
+            throw err;
+          } else if (alreadyPartial) {
+            const alreadyPaid = await sumComandaPaidAmount(tx, tenantId, comanda.id);
+            const remaining = Math.round((total - alreadyPaid) * 100) / 100;
+            if (splitSum > remaining + 0.01) {
+              const err = new Error(
+                `Pagamento (R$ ${splitSum.toFixed(2)}) excede o saldo (R$ ${remaining.toFixed(2)}).`,
+              );
+              err.code = 'PAYMENT_OVER';
+              err.status = 400;
+              throw err;
+            }
+          }
+
+          const alreadyPaidBefore = await sumComandaPaidAmount(tx, tenantId, comanda.id);
+          const newPaidTotal = Math.round((alreadyPaidBefore + splitSum) * 100) / 100;
+          const isFull = newPaidTotal >= total - 0.01;
+          const willBePartial = !isFull && (allowPartial || alreadyPartial);
+
+          if (!isFull && !allowPartial && !alreadyPartial) {
+            const err = new Error(
+              `Total pago (R$ ${splitSum.toFixed(2)}) deve igualar o total (R$ ${total.toFixed(2)}).`,
+            );
+            err.code = 'PAYMENT_MISMATCH';
+            err.status = 400;
+            throw err;
+          }
 
           if (comanda.status !== 'QUITADA') {
             await tx.comandaItem.deleteMany({ where: { comandaId: comanda.id } });
@@ -399,20 +456,26 @@ const updateAppointment = async (req, res) => {
               include: { items: true },
             });
 
-            await applyProductStockFromItems(tx, {
-              tenantId,
-              items,
-              barberId: updated.barberId || null,
-              customerId: updated.customer_id || null,
-              customerName: updated.customer,
-              saleDate: paidAt || toLocalDateIso(new Date()),
-              comandaId: comanda.id,
-            });
+            const stockAlreadyApplied = Boolean(
+              alreadyPartial
+              && (await tx.productSale.count({ where: { tenantId, comandaId: comanda.id } })) > 0,
+            );
+            if (isFull && !stockAlreadyApplied) {
+              await applyProductStockFromItems(tx, {
+                tenantId,
+                items,
+                barberId: updated.barberId || null,
+                customerId: updated.customer_id || null,
+                customerName: updated.customer,
+                saleDate: paidAt || toLocalDateIso(new Date()),
+                comandaId: comanda.id,
+              });
+            }
 
             const enrichedSplits = await enrichCardSplits(
               tx,
               tenantId,
-              Array.isArray(finalPayments?.splits) ? finalPayments.splits : [],
+              splits,
             );
             const feeMeta = allocateCardFeesToBarbers(
               enrichedSplits,
@@ -420,22 +483,44 @@ const updateAppointment = async (req, res) => {
               updated.barberId || null,
             );
 
+            const prevPayments = (typeof comanda.payments === 'object' && comanda.payments)
+              ? comanda.payments
+              : {};
+            const prevSplits = Array.isArray(prevPayments.splits) ? prevPayments.splits : [];
+            const allSplits = [...prevSplits, ...enrichedSplits];
+            const paymentPayload = {
+              ...finalPayments,
+              splits: allSplits,
+              cashSessionId: cashSession.id,
+              itemsTotal: payableMeta.itemsTotal,
+              discountAmount: payableMeta.discount,
+              tipAmount: payableMeta.tip,
+              totalCheckout: total,
+              paidAmount: newPaidTotal,
+              cardFeeTotal: feeMeta.cardFeeTotal,
+              cardFeeByBarber: feeMeta.cardFeeByBarber,
+              allowPartial: willBePartial || undefined,
+            };
+
             await settleComandaInTx(tx, {
               tenantId,
               comandaId: comanda.id,
               cashSession,
-              payments: {
-                ...finalPayments,
-                splits: enrichedSplits,
-                cashSessionId: cashSession.id,
-                totalCheckout: total,
-                cardFeeTotal: feeMeta.cardFeeTotal,
-                cardFeeByBarber: feeMeta.cardFeeByBarber,
-              },
+              payments: paymentPayload,
+              splitsToRecord: enrichedSplits,
               userId: req.user?.id,
               description: `Comanda Nº — ${updated.customer} (${updated.service})`,
               totalOverride: total,
+              status: willBePartial ? 'PARTIAL' : 'QUITADA',
             });
+
+            if (isFull) {
+              await tx.appointment.update({
+                where: { id },
+                data: { status: 'Finalizado' },
+              });
+              updated.status = 'Finalizado';
+            }
           }
 
           return updated;
@@ -448,12 +533,14 @@ const updateAppointment = async (req, res) => {
         if (
           settleErr?.code === 'CASH_REQUIRED'
           || settleErr?.code === 'CASH_CLOSED'
-          || settleErr?.code === 'PAYMENT_MISMATCH'
+          ||           settleErr?.code === 'PAYMENT_MISMATCH'
+          || settleErr?.code === 'PAYMENT_OVER'
           || settleErr?.code === 'STOCK_INSUFFICIENT'
           || settleErr?.code === 'PRODUCT_NOT_FOUND'
           || settleErr?.code === 'PRODUCT_REQUIRED'
-          || settleErr?.code === 'CARD_BRAND_REQUIRED'
+          ||           settleErr?.code === 'CARD_BRAND_REQUIRED'
           || settleErr?.code === 'CARD_KIND_REQUIRED'
+          || settleErr?.code === 'PERIOD_CLOSED'
         ) {
           return res.status(settleErr.status || 409).json({
             message: settleErr.message,

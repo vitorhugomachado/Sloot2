@@ -28,7 +28,9 @@ import {
   clearPendingCustomer,
   isCustomerTokenForTenant,
 } from '../utils/tenantAuthStorage';
-import { isStaffRoutePath as isStaffRoutePathFromRoutes, tenantSlugFromPathname } from '../constants/tenantRoutes';
+import { isStaffRoutePath as isStaffRoutePathFromRoutes, tenantDashboardPath, tenantSlugFromPathname } from '../constants/tenantRoutes';
+import { showFinanceError } from '../utils/staffToast';
+import { notifyCashStatusChanged } from '../utils/cashStatusEvents';
 
 const AppContext = createContext();
 
@@ -624,14 +626,11 @@ export const AppProvider = ({ children }) => {
       } else {
           const err = await res.json().catch(() => ({}));
           if (err.code === 'CASH_CLOSED' || err.code === 'CASH_REQUIRED' || /caixa/i.test(err.message || '')) {
-            const go = window.confirm(
-              `${err.message || 'Selecione ou abra o caixa do dia antes de confirmar o recebimento.'}\n\nAbrir o Financeiro agora?`,
-            );
-            if (go && tenantSlug) {
-              window.location.assign(`/${tenantSlug}/dashboard/financeiro`);
-            }
+            showFinanceError({ code: err.code, message: err.message });
+          } else if (err.code === 'PERIOD_CLOSED') {
+            showFinanceError({ code: err.code, message: err.message });
           } else {
-            alert(`Erro ao atualizar agendamento: ${err.message || 'desconhecido'}`);
+            showFinanceError({ message: `Erro ao atualizar agendamento: ${err.message || 'desconhecido'}` });
           }
           return false;
       }
@@ -1060,6 +1059,7 @@ export const AppProvider = ({ children }) => {
         err.status = res.status;
         throw err;
       }
+      notifyCashStatusChanged();
       return body;
     },
     reopenCash: async (id, payload = {}) => {
@@ -1076,6 +1076,7 @@ export const AppProvider = ({ children }) => {
         err.body = body;
         throw err;
       }
+      notifyCashStatusChanged();
       return body;
     },
     closeCash: async (payload) => {
@@ -1092,6 +1093,7 @@ export const AppProvider = ({ children }) => {
         err.body = body;
         throw err;
       }
+      notifyCashStatusChanged();
       return body;
     },
     createCashMovement: async (payload) => {

@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { X, Plus, Play, CheckCircle, XCircle, Banknote } from 'lucide-react';
 import WhatsAppIcon from '../icons/WhatsAppIcon';
+import OpenCashModal from '../financev2/OpenCashModal';
 import { getAppointmentStatusStyle } from '../../utils/appointmentStatus';
 import { formatCheckoutCurrency } from '../../hooks/useAppointmentActions';
 import { normalizePhoneForWhatsApp, openWhatsAppConfirm } from '../../utils/appointmentWhatsApp';
+import { estimateCardFee, isCardMethod } from '../../utils/cardFeeEstimate';
+import { tenantDashboardPath, tenantSlugFromPathname } from '../../constants/tenantRoutes';
 
 /**
  * Modal compartilhado: iniciar, pagar (com produtos), cancelar, trocar serviço.
@@ -19,6 +23,17 @@ export default function AppointmentActionModal({
   cashSessionId = '',
   setCashSessionId,
   cashSessionsLoading = false,
+  cashOpen = null,
+  cashStatusLoading = false,
+  cashCheckEnabled = false,
+  isGerente = false,
+  checkoutDiscount = 0,
+  setCheckoutDiscount,
+  checkoutTip = 0,
+  setCheckoutTip,
+  checkoutAllowPartial = false,
+  setCheckoutAllowPartial,
+  cardFeeRates = [],
   formatCashOptionLabel,
   services,
   products,
@@ -35,15 +50,44 @@ export default function AppointmentActionModal({
   checkoutServiceTotal,
   checkoutProductsTotal,
   checkoutGrandTotal,
+  checkoutPayableTotal: checkoutPayableTotalProp,
 }) {
-  if (!actionModal.open || !actionModal.app) return null;
+  const navigate = useNavigate();
+  const location = useLocation();
+  const tenantSlug = tenantSlugFromPathname(location.pathname);
+  const [openCashModal, setOpenCashModal] = useState(false);
+  const goFinance = () => {
+    if (!tenantSlug) return;
+    closeActionModal();
+    navigate(tenantDashboardPath(tenantSlug, 'financeiro'));
+  };
+  const handleCashClosedAction = () => {
+    if (isGerente) {
+      setOpenCashModal(true);
+      return;
+    }
+    goFinance();
+  };
+
+  if (!actionModal.open || !actionModal.app) {
+    return (
+      <OpenCashModal
+        open={openCashModal}
+        onClose={() => setOpenCashModal(false)}
+        elevated
+      />
+    );
+  }
 
   const app = actionModal.app;
+  const payableTotal = checkoutPayableTotalProp ?? checkoutGrandTotal;
+  const blockStartForCash = cashCheckEnabled && !cashStatusLoading && !cashOpen;
   const statusStyle = getAppointmentStatusStyle(app.status);
   const waPhone = normalizePhoneForWhatsApp(app.phone);
   const canWhatsApp = Boolean(waPhone) && app.status !== 'Cancelado' && app.status !== 'Finalizado';
 
   return (
+    <>
     <div className="modal-backdrop">
       <div
         className="modal-glass-panel scheduler-modal-panel fade-in"
@@ -113,10 +157,19 @@ export default function AppointmentActionModal({
 
         {actionModal.step === 'choose' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {blockStartForCash ? (
+              <div className="action-modal-cash-warning">
+                <p>O caixa está fechado. Abra o caixa antes de iniciar o atendimento.</p>
+                <button type="button" className="action-modal-panel__chip-btn" onClick={handleCashClosedAction}>
+                  {isGerente ? 'Abrir caixa' : 'Ir ao Financeiro'}
+                </button>
+              </div>
+            ) : null}
             {['Agendado', 'Confirmado'].includes(app.status) && (
               <button
                 type="button"
                 className="action-modal-choice-btn action-modal-choice-btn--start"
+                disabled={blockStartForCash || cashStatusLoading}
                 onClick={() => setActionModal({ ...actionModal, step: 'confirm-start' })}
               >
                 <Play size={18} /> Iniciar Atendimento
@@ -156,9 +209,24 @@ export default function AppointmentActionModal({
 
         {actionModal.step === 'confirm-start' && (
           <div>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.6 }}>
               Deseja realmente iniciar o atendimento de <strong>{app.customer}</strong>?
             </p>
+            {!cashStatusLoading && cashOpen === false && cashCheckEnabled ? (
+              <div className="action-modal-cash-warning">
+                <p>
+                  O caixa está fechado. Abra o caixa antes de iniciar o atendimento
+                  (a comanda será criada ao começar o serviço).
+                </p>
+                <button
+                  type="button"
+                  className="action-modal-panel__chip-btn"
+                  onClick={handleCashClosedAction}
+                >
+                  {isGerente ? 'Abrir caixa' : 'Ir ao Financeiro'}
+                </button>
+              </div>
+            ) : null}
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 type="button"
@@ -173,6 +241,7 @@ export default function AppointmentActionModal({
                 onClick={handleMarkInProgress}
                 className="action-modal-cta-btn action-modal-cta-btn--confirm-blue"
                 style={{ flex: 2, padding: '14px' }}
+                disabled={cashStatusLoading || blockStartForCash}
               >
                 <Play size={18} /> Confirmar Início
               </button>
@@ -208,11 +277,64 @@ export default function AppointmentActionModal({
                 ))}
               </select>
               {!cashSessionsLoading && openCashSessions.length === 0 ? (
-                <p style={{ margin: '10px 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  Abra o caixa em Financeiro antes de confirmar o recebimento.
-                </p>
+                <div style={{ margin: '10px 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  <p style={{ margin: 0 }}>
+                    {isGerente
+                      ? 'Abra o caixa antes de confirmar o recebimento.'
+                      : 'Abra o caixa em Financeiro antes de confirmar o recebimento.'}
+                  </p>
+                  <button
+                    type="button"
+                    className="action-modal-panel__chip-btn"
+                    style={{ marginTop: '8px' }}
+                    onClick={handleCashClosedAction}
+                  >
+                    {isGerente ? 'Abrir caixa' : 'Ir ao Financeiro'}
+                  </button>
+                </div>
               ) : null}
             </div>
+
+            <div className="action-modal-panel">
+              <div className="action-modal-panel__head">
+                <span className="action-modal-panel__title">Desconto e gorjeta</span>
+              </div>
+              <div className="action-modal-panel__split-row">
+                <label className="action-modal-field" style={{ flex: 1 }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Desconto (R$)</span>
+                  <input
+                    type="number"
+                    className="action-modal-field"
+                    min="0"
+                    step="0.01"
+                    value={checkoutDiscount}
+                    disabled={checkoutAllowPartial}
+                    onChange={(e) => setCheckoutDiscount?.(Number(e.target.value || 0))}
+                  />
+                </label>
+                <label className="action-modal-field" style={{ flex: 1 }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Gorjeta (R$)</span>
+                  <input
+                    type="number"
+                    className="action-modal-field"
+                    min="0"
+                    step="0.01"
+                    value={checkoutTip}
+                    disabled={checkoutAllowPartial}
+                    onChange={(e) => setCheckoutTip?.(Number(e.target.value || 0))}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <label className="action-modal-panel action-modal-panel--dashed finv2-check" style={{ display: 'flex', gap: '8px', alignItems: 'center', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={Boolean(checkoutAllowPartial)}
+                onChange={(e) => setCheckoutAllowPartial?.(e.target.checked)}
+              />
+              <span style={{ fontSize: '0.82rem' }}>Recebimento parcial (fiado)</span>
+            </label>
 
             <div className="action-modal-panel">
               <div className="action-modal-panel__head">
@@ -257,21 +379,26 @@ export default function AppointmentActionModal({
                         </button>
                       )}
                     </div>
-                    {/cart[aã]o/i.test(String(split.method || '')) ? (
-                      <select
-                        className="action-modal-field"
-                        value={split.cardBrand || ''}
-                        onChange={(e) => handleSplitChange(index, 'cardBrand', e.target.value)}
-                        required
-                      >
-                        <option value="">Bandeira do cartão</option>
-                        <option value="Visa">Visa</option>
-                        <option value="Mastercard">Mastercard</option>
-                        <option value="Elo">Elo</option>
-                        <option value="Amex">Amex</option>
-                        <option value="Hipercard">Hipercard</option>
-                        <option value="Outra">Outra</option>
-                      </select>
+                    {isCardMethod(split.method) ? (
+                      <>
+                        <select
+                          className="action-modal-field"
+                          value={split.cardBrand || ''}
+                          onChange={(e) => handleSplitChange(index, 'cardBrand', e.target.value)}
+                          required
+                        >
+                          <option value="">Bandeira do cartão</option>
+                          <option value="Visa">Visa</option>
+                          <option value="Mastercard">Mastercard</option>
+                          <option value="Elo">Elo</option>
+                          <option value="Amex">Amex</option>
+                          <option value="Hipercard">Hipercard</option>
+                          <option value="Outra">Outra</option>
+                        </select>
+                        <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                          Taxa estimada: {estimateCardFee(split, cardFeeRates).label}
+                        </p>
+                      </>
                     ) : null}
                   </div>
                 ))}
@@ -342,9 +469,9 @@ export default function AppointmentActionModal({
                   paddingTop: '6px',
                 }}
               >
-                <span style={{ fontWeight: 700 }}>Total checkout</span>
+                <span style={{ fontWeight: 700 }}>Total a receber</span>
                 <strong className="action-modal-price action-modal-price--checkout" style={{ fontSize: '0.9rem' }}>
-                  {formatCheckoutCurrency(checkoutGrandTotal)}
+                  {formatCheckoutCurrency(payableTotal)}
                 </strong>
               </div>
             </div>
@@ -369,7 +496,7 @@ export default function AppointmentActionModal({
                 disabled={!cashSessionId}
                 onClick={handleFinalizePayment}
               >
-                <Banknote size={18} /> Finalizar Recebimento
+                <Banknote size={18} /> {checkoutAllowPartial ? 'Registrar recebimento' : 'Finalizar Recebimento'}
               </button>
             </div>
           </div>
@@ -403,5 +530,11 @@ export default function AppointmentActionModal({
         )}
       </div>
     </div>
+    <OpenCashModal
+      open={openCashModal}
+      onClose={() => setOpenCashModal(false)}
+      elevated
+    />
+    </>
   );
 }

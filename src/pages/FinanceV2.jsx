@@ -34,6 +34,7 @@ import CashStatusBar from '../components/financev2/CashStatusBar';
 import OverviewTab from '../components/financev2/OverviewTab';
 import SessionDetailModal from '../components/financev2/SessionDetailModal';
 import ComandaDetailModal from '../components/financev2/ComandaDetailModal';
+import { showFinanceError } from '../utils/staffToast';
 
 /** Abas que mostram KPIs/extrato derivados do ledger. */
 const TABS_NEEDING_LEDGER = new Set(['Visão geral', 'Extrato', 'Despesas', 'Receitas']);
@@ -80,7 +81,7 @@ const GROUPS = [
     tabs: [
       { id: 'Fluxo', label: 'Fluxo' },
       { id: 'DRE', label: 'DRE' },
-      { id: 'Fechamentos', label: 'Fechamentos' },
+      { id: 'Fechamentos', label: 'Fechamento contábil' },
       { id: 'Auditoria', label: 'Auditoria' },
     ],
   },
@@ -158,6 +159,7 @@ export default function FinanceV2({ isActive = true }) {
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
   const [closeReport, setCloseReport] = useState(null);
+  const [closeCashBlockComandas, setCloseCashBlockComandas] = useState([]);
   const [sessionDetail, setSessionDetail] = useState(null);
   const [comandaDetail, setComandaDetail] = useState(null);
 
@@ -340,6 +342,14 @@ export default function FinanceV2({ isActive = true }) {
     }
   };
 
+  const openCloseCashModal = () => {
+    setCloseCashBlockComandas([]);
+    refreshOverview().catch(() => {});
+    openModal('closeCash', {
+      countedCash: cash?.totals?.expectedCash ?? 0,
+    });
+  };
+
   const closeModal = () => {
     setModal(null);
     setForm({});
@@ -347,11 +357,14 @@ export default function FinanceV2({ isActive = true }) {
 
   const handleError = (err) => {
     if (err?.code === 'CASH_CLOSED' || err?.code === 'CASH_REQUIRED' || /caixa/i.test(err?.message || '')) {
-      alert(err.message || 'Selecione ou abra o caixa do dia antes de continuar.');
-      setTab('Caixas');
+      showFinanceError(err, { onCashAction: () => setTab('Caixas') });
       return;
     }
-    alert(err?.message || 'Operação falhou');
+    if (err?.code === 'PERIOD_CLOSED' || err?.code === 'OPEN_COMANDAS') {
+      showFinanceError(err);
+      return;
+    }
+    showFinanceError(err);
   };
 
   const onOpenCash = async () => {
@@ -391,7 +404,7 @@ export default function FinanceV2({ isActive = true }) {
     }
   };
 
-  const onCloseCash = async (opts = {}) => {
+  const onCloseCash = async () => {
     try {
       const closed = await financeV2.closeCash({
         countedCash:
@@ -399,21 +412,16 @@ export default function FinanceV2({ isActive = true }) {
             ? Number(form.countedCash)
             : null,
         notes: form.notes || '',
-        force: Boolean(opts.force),
       });
+      setCloseCashBlockComandas([]);
       closeModal();
       setCloseReport(closed);
       await refreshCash();
       await financeV2.listCashSessions().then(setSessions);
     } catch (err) {
       if (err?.code === 'OPEN_COMANDAS') {
-        const list = (err.body?.comandas || [])
-          .map((c) => `Nº${String(c.number).padStart(4, '0')} · ${c.customerName || '—'} (${comandaStatusLabel(c.status)})`)
-          .join('\n');
-        const msg = `${err.message || 'Há comandas em aberto neste caixa.'}\n\n${list || ''}\n\nFechar mesmo assim?`;
-        if (confirm(msg)) {
-          await onCloseCash({ force: true });
-        }
+        setCloseCashBlockComandas(err.body?.comandas || []);
+        showFinanceError(err);
         return;
       }
       handleError(err);
@@ -746,6 +754,19 @@ export default function FinanceV2({ isActive = true }) {
     [sessions],
   );
 
+  const openBlockingComandas = useMemo(() => {
+    const merged = new Map();
+    [...(overviewComandas || []), ...(comandas || [])].forEach((c) => {
+      const status = String(c?.status || '').toUpperCase();
+      if (['OPEN', 'PARTIAL'].includes(status)) merged.set(c.id, c);
+    });
+    return [...merged.values()];
+  }, [overviewComandas, comandas]);
+
+  const blockingComandasForClose = closeCashBlockComandas.length
+    ? closeCashBlockComandas
+    : openBlockingComandas;
+
   const cashOptionLabel = (session) => {
     if (!session) return 'Caixa';
     return `${session.openedByName || 'Caixa'} · ${formatWhen(session.openedAt)}`;
@@ -889,11 +910,7 @@ export default function FinanceV2({ isActive = true }) {
           openModal('openCash', { openingFloat: 0, date: todayIsoLocal() });
         }}
         onAdjust={() => openModal('adjust', { type: 'OUT', method: 'Dinheiro' })}
-        onCloseCash={() =>
-          openModal('closeCash', {
-            countedCash: cash?.totals?.expectedCash ?? 0,
-          })
-        }
+        onCloseCash={openCloseCashModal}
       />
 
       <nav className="finance-tab-nav finv2-tabs" aria-label="Seções do financeiro">
@@ -1290,11 +1307,7 @@ export default function FinanceV2({ isActive = true }) {
                       <button
                         type="button"
                         className="finv2-btn finv2-btn--ghost-danger"
-                        onClick={() =>
-                          openModal('closeCash', {
-                            countedCash: cash.totals?.expectedCash ?? 0,
-                          })
-                        }
+                        onClick={openCloseCashModal}
                       >
                         Fechar caixa
                       </button>
@@ -1415,6 +1428,7 @@ export default function FinanceV2({ isActive = true }) {
                 { id: 'OPEN', label: 'Abertas' },
                 { id: 'PARTIAL', label: 'Parciais' },
                 { id: 'QUITADA', label: 'Quitadas' },
+                { id: 'CANCELLED', label: 'Canceladas' },
               ].map((opt) => (
                 <button
                   key={opt.id}
@@ -1466,8 +1480,8 @@ export default function FinanceV2({ isActive = true }) {
                         <td className="is-muted" data-label="Caixa">
                           {c.cashSession
                             ? `${c.cashSession.openedByName || 'Caixa'} · ${formatWhen(c.cashSession.openedAt)}`
-                            : cash
-                              ? cash.openedByName || 'Caixa atual'
+                            : c.status === 'OPEN'
+                              ? '—'
                               : 'Sem caixa'}
                         </td>
                         <td className="is-muted" data-label="Abertura">{formatWhen(c.openedAt)}</td>
@@ -1568,7 +1582,9 @@ export default function FinanceV2({ isActive = true }) {
                   ? 'Nenhuma comanda aberta'
                   : comandaFilter === 'PARTIAL'
                     ? 'Nenhuma comanda parcial'
-                    : 'Nenhuma comanda quitada'
+                    : comandaFilter === 'CANCELLED'
+                      ? 'Nenhuma comanda cancelada'
+                      : 'Nenhuma comanda quitada'
               }
               hint="Ao finalizar um atendimento com pagamento, a comanda entra aqui."
             />
@@ -1977,7 +1993,7 @@ export default function FinanceV2({ isActive = true }) {
       {tab === 'Fechamentos' && (
         <div className="glass-card finv2-panel">
           <div className="finv2-panel__head">
-            <h3>Fechamentos de período</h3>
+            <h3>Fechamento contábil de período</h3>
             {isGerente ? (
               <button
                 type="button"
@@ -1993,7 +2009,7 @@ export default function FinanceV2({ isActive = true }) {
                   }
                 }}
               >
-                Fechar período
+                Fechar período contábil
               </button>
             ) : null}
           </div>
@@ -2188,7 +2204,7 @@ export default function FinanceV2({ isActive = true }) {
       {modal === 'openCash' && (
         <ModalShell
           title="Abrir caixa"
-          subtitle="Escolha a data do caixa (hoje ou outro dia) e o troco inicial"
+          subtitle="Escolha a data do caixa e, se quiser, informe o dinheiro na gaveta para conferência no fechamento"
           onClose={closeModal}
         >
           <div className="finv2-form">
@@ -2199,14 +2215,18 @@ export default function FinanceV2({ isActive = true }) {
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
               />
             </Field>
-            <Field label="Troco inicial (R$)" full>
+            <Field label="Dinheiro na gaveta (R$)" full>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={form.openingFloat ?? 0}
                 onChange={(e) => setForm({ ...form, openingFloat: e.target.value })}
+                placeholder="Ex: 50,00 (troco)"
               />
+              <p className="finv2-open-cash-modal__note">
+                Usado na conferência ao fechar o caixa. Deixe <strong>0</strong> se a gaveta está vazia.
+              </p>
             </Field>
             <Field label="Observações" full>
               <textarea
@@ -2228,7 +2248,34 @@ export default function FinanceV2({ isActive = true }) {
       )}
 
       {modal === 'closeCash' && (
-        <ModalShell title="Fechar caixa" subtitle={`Esperado em dinheiro: ${money(cash?.totals?.expectedCash)}`} onClose={closeModal}>
+        <ModalShell title="Fechar caixa do dia" subtitle={`Esperado em dinheiro: ${money(cash?.totals?.expectedCash)}`} onClose={closeModal}>
+          {blockingComandasForClose.length > 0 ? (
+            <div className="action-modal-cash-warning">
+              <p>
+                <strong>Não é possível fechar o caixa.</strong> Existem comandas abertas ou parciais.
+                Quite ou cancele antes de continuar.
+              </p>
+              <ul>
+                {blockingComandasForClose.map((c) => (
+                  <li key={c.id}>
+                    Nº{String(c.number).padStart(4, '0')} · {c.customerName || '—'} (
+                    {comandaStatusLabel(c.status)})
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                className="action-modal-panel__chip-btn"
+                onClick={() => {
+                  closeModal();
+                  setComandaFilter('OPEN');
+                  setTab('Comandas');
+                }}
+              >
+                Ir para Comandas
+              </button>
+            </div>
+          ) : null}
           <div className="finv2-form">
             <Field label="Dinheiro contado (R$)" full>
               <input
@@ -2250,7 +2297,12 @@ export default function FinanceV2({ isActive = true }) {
             <button type="button" className="btn-secondary" onClick={closeModal}>
               Cancelar
             </button>
-            <button type="button" className="btn-primary" onClick={onCloseCash}>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={onCloseCash}
+              disabled={blockingComandasForClose.length > 0}
+            >
               Fechar caixa
             </button>
           </div>

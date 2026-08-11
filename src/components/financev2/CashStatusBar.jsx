@@ -65,7 +65,7 @@ export default function CashStatusBar({ cash, isGerente, onOpenCash, onAdjust, o
                 className="finv2-btn finv2-btn-sm finv2-btn--ghost-danger"
                 onClick={onCloseCash}
               >
-                Fechar caixa
+                Fechar caixa do dia
               </button>
             </>
           )}

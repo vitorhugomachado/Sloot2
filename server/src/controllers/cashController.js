@@ -354,30 +354,25 @@ const closeCash = async (req, res) => {
       return res.status(409).json({ error: 'Não há caixa aberto para fechar.' });
     }
 
-    const force = req.body.force === true;
-    if (!force) {
-      const openComandas = await prisma.comanda.findMany({
-        where: {
-          tenantId,
-          cashSessionId: session.id,
-          status: { in: ['OPEN', 'PARTIAL'] },
-        },
-        select: {
-          id: true,
-          number: true,
-          customerName: true,
-          status: true,
-          total: true,
-        },
+    const openComandas = await prisma.comanda.findMany({
+      where: {
+        tenantId,
+        status: { in: ['OPEN', 'PARTIAL'] },
+      },
+      select: {
+        id: true,
+        number: true,
+        customerName: true,
+        status: true,
+        total: true,
+      },
+    });
+    if (openComandas.length > 0) {
+      return res.status(409).json({
+        error: 'Existem comandas abertas ou parciais. Quite ou cancele antes de fechar o caixa.',
+        code: 'OPEN_COMANDAS',
+        comandas: openComandas,
       });
-      // Também comandas OPEN sem sessão ainda vinculadas indiretamente? Spec: cashSessionId = session.id
-      if (openComandas.length > 0) {
-        return res.status(409).json({
-          error: 'Existem comandas abertas ou parciais neste caixa. Quite-as ou use force=true.',
-          code: 'OPEN_COMANDAS',
-          comandas: openComandas,
-        });
-      }
     }
 
     const countedCash = req.body.countedCash != null ? Number(req.body.countedCash) : null;
@@ -406,7 +401,6 @@ const closeCash = async (req, res) => {
             countedCash,
             difference,
             closedAt: new Date().toISOString(),
-            force: force || false,
           },
         },
       });
@@ -417,7 +411,7 @@ const closeCash = async (req, res) => {
         action: 'CLOSE_CASH',
         entity: 'CashSession',
         entityId: session.id,
-        payload: { countedCash, difference, force: force || false },
+        payload: { countedCash, difference },
       });
       return updated;
     });

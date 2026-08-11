@@ -1,5 +1,6 @@
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
+import StaffToast from './components/StaffToast';
 import Sidebar from './components/Sidebar';
 import StaffLoginPage from './pages/StaffLoginPage';
 import TabLoadingFallback from './components/TabLoadingFallback';
@@ -329,17 +330,9 @@ const StaffArea = () => {
           onLogout={handleLogout}
         />
         <main className={`main-content ${isSidebarCollapsed ? 'expanded' : ''}`}>
-          <header className="desktop-only staff-top-header">
-            <div className="staff-top-header__user">
-              <div className="staff-top-header__avatar">
-                {currentUser?.name?.charAt(0).toUpperCase()}
-              </div>
-              <span className="staff-top-header__name">{currentUser?.name} ({currentUser?.role})</span>
-            </div>
-            <button type="button" className="staff-top-header__logout" onClick={handleLogout}>Sair</button>
-          </header>
           <StaffTabPanels activeTab={activeTab} />
         </main>
+        <StaffToast />
       </div>
     </StaffRoute>
   );

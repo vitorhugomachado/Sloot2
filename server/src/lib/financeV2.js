@@ -146,13 +146,10 @@ async function assertPeriodNotClosed(tenantId, date, tx = prisma) {
  * Soma pagos já lançados (movimentos COMANDA) para uma comanda.
  */
 async function sumComandaPaidAmount(tx, tenantId, comandaId) {
-  const ag = await tx.cashMovement.aggregate({
+  const ag = await tx.comandaPayment.aggregate({
     where: {
       tenantId: Number(tenantId),
-      referenceType: 'Comanda',
-      referenceId: Number(comandaId),
-      source: 'COMANDA',
-      type: 'IN',
+      comandaId: Number(comandaId),
     },
     _sum: { amount: true },
   });
@@ -527,10 +524,14 @@ async function settleComandaInTx(tx, {
   totalOverride,
   status = 'QUITADA',
   writeLedger = true,
+  /** Apenas estes splits geram CashMovement/Ledger (pagamentos novos). Se omitido, usa payments.splits. */
+  splitsToRecord,
 }) {
-  const splits = Array.isArray(payments?.splits) && payments.splits.length > 0
-    ? payments.splits
-    : [{ method: 'Outro', amount: Number(payments?.totalCheckout || payments?.amount || 0) }];
+  const splits = Array.isArray(splitsToRecord) && splitsToRecord.length > 0
+    ? splitsToRecord
+    : (Array.isArray(payments?.splits) && payments.splits.length > 0
+      ? payments.splits
+      : [{ method: 'Outro', amount: Number(payments?.totalCheckout || payments?.amount || 0) }]);
 
   const finalStatus = String(status || 'QUITADA').toUpperCase() === 'PARTIAL' ? 'PARTIAL' : 'QUITADA';
   const desc = description || `Comanda #${comandaId}`;
@@ -555,6 +556,20 @@ async function settleComandaInTx(tx, {
       },
     });
     movements.push(mov);
+
+    await tx.comandaPayment.create({
+      data: {
+        tenantId,
+        comandaId,
+        cashSessionId: cashSession.id,
+        amount,
+        method,
+        cardBrand: split.cardBrand ? String(split.cardBrand) : null,
+        cardKind: split.cardKind ? String(split.cardKind) : null,
+        cardFee: split.cardFee != null ? Number(split.cardFee) : null,
+        createdById: userId || null,
+      },
+    });
 
     if (writeLedger) {
       await writeLedgerEntry(tx, {
@@ -647,6 +662,10 @@ async function reverseSettleComandaInTx(tx, {
       referenceId: comanda.id,
       source: 'COMANDA',
     },
+  });
+
+  await tx.comandaPayment.deleteMany({
+    where: { tenantId, comandaId: comanda.id },
   });
 
   const linkedSales = await tx.productSale.findMany({

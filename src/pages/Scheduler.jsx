@@ -1157,6 +1157,7 @@ const Scheduler = () => {
 
       <AppointmentActionModal
         {...appointmentActions}
+        isGerente={currentUser?.role === 'Gerente'}
         services={services}
         products={products}
       />

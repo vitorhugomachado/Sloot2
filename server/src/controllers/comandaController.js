@@ -491,6 +491,7 @@ const settleComanda = async (req, res) => {
         comandaId: comanda.id,
         cashSession,
         payments: paymentPayload,
+        splitsToRecord: enrichedNewSplits,
         userId: req.user?.id,
         description: `Comanda Nº${String(comanda.number).padStart(4, '0')} — ${comanda.customerName}`,
         totalOverride: payableMeta.payable,
