@@ -5,6 +5,7 @@ const compression = require('compression');
 const apiRoutes = require('./routes/api');
 const { resolveLegacyRedirect } = require('./lib/legacyRouteRedirects');
 const { isSupabaseAuthConfigured } = require('./lib/supabaseAdmin');
+const { stripeWebhook } = require('./controllers/stripeWebhookController');
 
 const app = express();
 
@@ -14,6 +15,8 @@ if (process.env.NODE_ENV === 'production') {
 
 app.use(compression());
 app.use(cors());
+// Stripe exige o corpo bruto para validar a assinatura; deve vir antes de express.json().
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 // Fotos em base64 no cadastro de barbeiro podem passar de 10mb; limite maior evita 500 genérico do body-parser
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));

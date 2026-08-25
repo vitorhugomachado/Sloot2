@@ -113,8 +113,20 @@ const {
 } = require('../controllers/pushController');
 const requirePlatformTenant = require('../middlewares/requirePlatformTenant');
 const platformTenantOpsRoutes = require('./platformTenantOpsRoutes');
+const {
+  createCheckoutSession,
+  createPortalSession,
+  getBillingStatus,
+} = require('../controllers/billingController');
 
 const router = express.Router();
+
+function requireBillingManager(req, res, next) {
+  if (req.user?.role !== 'Gerente') {
+    return res.status(403).json({ message: 'Apenas o gerente pode gerenciar a assinatura.' });
+  }
+  next();
+}
 
 // Platform (sem tenant) — sub-router isolado do requireTenant
 const platformRouter = express.Router();
@@ -155,6 +167,9 @@ router.use(requireTenantAuthMatch);
 
 router.use('/barbers', barberRoutes);
 router.use('/clients', authMiddleware, requireTenantModule('clients'), clientRoutes);
+router.get('/billing/status', authMiddleware, requireBillingManager, getBillingStatus);
+router.post('/billing/checkout', authMiddleware, requireBillingManager, createCheckoutSession);
+router.post('/billing/portal', authMiddleware, requireBillingManager, createPortalSession);
 router.get('/appointments', authMiddleware, requireTenantModule('scheduler'), getAppointments);
 router.patch('/appointments/:id', authMiddleware, requireTenantModule('scheduler'), updateAppointment);
 
