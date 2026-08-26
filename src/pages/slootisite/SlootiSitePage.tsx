@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { About } from './components/About'
 import { Features } from './components/Features'
 import { Hero } from './components/Hero'
+import { Pricing } from './components/Pricing'
 import './slootisite.css'
 
 export default function SlootiSitePage() {
@@ -16,6 +17,7 @@ export default function SlootiSitePage() {
         <Hero />
         <About />
         <Features />
+        <Pricing />
       </main>
     </div>
   )

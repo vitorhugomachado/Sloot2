@@ -29,7 +29,7 @@ function AnimatedLetter({
 
 const BODY_PARAGRAPHS = [
   'A Slooti nasceu da vontade de unir design, tecnologia e resultados reais para negócios que querem crescer com inteligência.',
-  'Construímos produtos digitais — como o Slooti Barbers e o Neura — que transformam operação, experiência e escala em uma mesma jornada.',
+  'Construímos o Slooti Barbers para transformar operação, experiência e escala em uma mesma jornada.',
 ]
 
 export function About() {

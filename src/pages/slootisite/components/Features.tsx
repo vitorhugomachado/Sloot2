@@ -2,7 +2,6 @@ import { motion, useInView } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { STUDIO_WHATSAPP_URL } from '../../landing-teste/landingContact.config'
 import { WordsPullUpMultiStyle } from './WordsPullUpMultiStyle'
 
 const FEATURE_VIDEO = '/feature-canvas.mp4?v=202607310013'
@@ -28,17 +27,6 @@ const CARDS = [
       'Gestão Financeira e Comissões',
       'Agenda individualizada',
       'Barbeiros ilimitados',
-    ],
-  },
-  {
-    type: 'checklist' as const,
-    number: '02',
-    title: 'Neura',
-    icon: '/icone-neutro.svg',
-    href: STUDIO_WHATSAPP_URL,
-    backgroundImage: '/card-neura-bg.png',
-    items: [
-      'Em desenvolvimento',
     ],
   },
 ]

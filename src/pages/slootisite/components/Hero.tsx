@@ -6,6 +6,7 @@ import { WordsPullUp } from './WordsPullUp'
 const NAV_ITEMS = [
   { label: 'Nossa História', href: '#nossa-historia' },
   { label: 'Soluções', href: '#solucoes' },
+  { label: 'Preços', href: '#planos' },
   {
     label: 'Contato',
     href: STUDIO_WHATSAPP_URL,
