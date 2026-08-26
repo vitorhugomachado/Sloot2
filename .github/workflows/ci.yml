@@ -27,6 +27,7 @@ jobs:
       - run: npm ci
       - run: node server/predeploy.js
       - run: npm run db:seed
+      - run: node server/scripts/seed_pilot_tenant.js
       - run: npm run test:run
       - run: npm run build
       - run: docker build --tag slooti-ci .

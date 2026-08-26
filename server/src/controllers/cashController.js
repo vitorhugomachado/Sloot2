@@ -183,6 +183,16 @@ const openCash = async (req, res) => {
     }
 
     const session = await prisma.$transaction(async (tx) => {
+      // Recheck while holding a serializable transaction. The preliminary check
+      // above is useful for the common path, but cannot prevent two concurrent
+      // requests from both observing that no session is open.
+      const concurrentExisting = await getOpenCashSession(tenantId, tx);
+      if (concurrentExisting) {
+        const conflict = new Error('Já existe um caixa aberto para este estabelecimento.');
+        conflict.code = 'CASH_ALREADY_OPEN';
+        throw conflict;
+      }
+
       const openedByName = await resolveStaffName(req.user?.id, tx);
       const created = await tx.cashSession.create({
         data: {
@@ -233,7 +243,7 @@ const openCash = async (req, res) => {
         payload: { openingFloat, notes, openedAt },
       });
       return created;
-    });
+    }, { isolationLevel: 'Serializable' });
 
     const movements = await prisma.cashMovement.findMany({
       where: { cashSessionId: session.id },
@@ -241,7 +251,7 @@ const openCash = async (req, res) => {
     res.status(201).json(sessionPayload(session, movements));
   } catch (error) {
     console.error(error);
-    if (error?.code === 'P2002') {
+    if (['P2002', 'P2034', 'CASH_ALREADY_OPEN'].includes(error?.code)) {
       return res.status(409).json({
         error: 'Já existe um caixa aberto para este estabelecimento.',
         code: 'CASH_ALREADY_OPEN',
