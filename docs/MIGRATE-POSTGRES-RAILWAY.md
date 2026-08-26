@@ -27,9 +27,9 @@ DIRECT_URL=${{Postgres.DATABASE_URL}}
 - **Mantém:** `JWT_SECRET`, `NODE_ENV=production`, `DEFAULT_TENANT_SLUG`, `SUPABASE_*`, `VITE_SUPABASE_*`, `FRONTEND_URL`, etc.
 - **Não** defines `PORT`.
 
-### 3. Redeploy
+### 3. Publicação protegida
 
-**Deploy** → **Redeploy** (ou push em `main`).
+Publique por Pull Request e pelo fluxo protegido descrito em [STAGING-PRODUCTION.md](./STAGING-PRODUCTION.md). Nunca faça push direto em `main` nem use esta migração histórica como autorização para alterar produção.
 
 Nos **Deploy logs** deve aparecer:
 
@@ -94,7 +94,7 @@ Requer [PostgreSQL client](https://www.postgresql.org/download/windows/) no Wind
 
 | Problema | Solução |
 |----------|---------|
-| `relation "Tenant" does not exist` | Redeploy; confirma `DIRECT_URL` definido |
+| `relation "Tenant" does not exist` | Confirme `DIRECT_URL` e publique a correção pelo fluxo protegido |
 | Migrate falha no start | `DATABASE_URL` e `DIRECT_URL` iguais ao Postgres Railway |
 | `/cliente` ou `/barbeiros` na raiz | Redireccionam para a landing; use `/{slug}` (ex.: `/two-brothers`) |
 | Reset de senha | Independente do Postgres — continua Supabase Auth + Redirect URLs |

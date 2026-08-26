@@ -2,6 +2,15 @@
 
 O push em `main` publica somente no projeto Railway de staging. Produção aceita apenas tags `vX.Y.Z` no GitHub Environment `production`, com aprovação manual.
 
+## Fluxo diário
+
+1. Atualize `main` e crie uma branch `feature/*`, `fix/*` ou `chore/*`; nunca faça push direto em `main`.
+2. Execute os testes, faça commit e push da branch e abra um Pull Request.
+3. Aguarde os checks obrigatórios `checks` e `analyze`; faça merge por squash somente com ambos verdes.
+4. O merge publica automaticamente em staging. Valide `/health`, `/ready`, página inicial, SHA e o comportamento alterado.
+5. Somente após staging aprovado e backup restaurado e validado, crie uma tag `vX.Y.Z` no mesmo SHA da `main`.
+6. Aprove manualmente o Environment `production`. O workflow valida e observa a nova versão por 15 minutos antes de concluir o GitHub Release.
+
 ## Configuração externa obrigatória
 
 1. Crie um projeto Railway separado para staging, com PostgreSQL, domínio, variáveis e credenciais próprias. Configure `railway.staging.toml`, `RUN_MIGRATIONS_ON_START=false`, `STAGING_BOOTSTRAP=true` somente nesse projeto e dados sintéticos. O bootstrap existe porque o histórico não contém migration inicial; nunca o habilite em produção.
