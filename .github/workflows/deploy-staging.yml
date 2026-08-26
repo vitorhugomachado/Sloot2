@@ -16,7 +16,9 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_STAGING }}
           RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE_STAGING }}
-        run: npx --yes @railway/cli up --ci --service "$RAILWAY_SERVICE"
+        run: |
+          npx --yes @railway/cli variable set "APP_GIT_SHA=$GITHUB_SHA" --service "$RAILWAY_SERVICE" --skip-deploys
+          npx --yes @railway/cli up --ci --service "$RAILWAY_SERVICE"
       - name: Verify staging
         env:
           STAGING_URL: ${{ vars.STAGING_URL }}
