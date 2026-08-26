@@ -2,11 +2,14 @@
 
 Agendamento multi-tenant — React (Vite) + Express + Prisma.
 
+> **Antes de contribuir:** humanos e agentes de IA devem ler e cumprir [`AGENTS.md`](AGENTS.md). Alterações entram por branch e Pull Request; merge em `main` publica somente em staging.
+
 ## Deploy (produção)
 
 **Railway apenas:** app Docker + PostgreSQL no mesmo projeto.
 
-Guia: [docs/DEPLOY-RAILWAY.md](docs/DEPLOY-RAILWAY.md)
+Fluxo atual: [docs/STAGING-PRODUCTION.md](docs/STAGING-PRODUCTION.md).
+Referência de configuração Railway: [docs/DEPLOY-RAILWAY.md](docs/DEPLOY-RAILWAY.md)
 
 ## Desenvolvimento local
 

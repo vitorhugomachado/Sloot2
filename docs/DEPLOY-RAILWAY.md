@@ -1,5 +1,7 @@
 # Deploy no Railway (app + Postgres)
 
+> **Referência de configuração inicial.** O projeto atual usa o fluxo protegido descrito em [STAGING-PRODUCTION.md](./STAGING-PRODUCTION.md). Não conecte a produção à `main` e não use redeploy manual como fluxo normal de release.
+
 Um único serviço Docker: Express serve `/api` + SPA React (`dist`) na mesma URL.  
 Base de dados: **PostgreSQL no Railway** (não Supabase, não Vercel).
 
@@ -16,7 +18,7 @@ flowchart LR
 ## 1. Projeto Railway
 
 1. [railway.com](https://railway.com) → **New Project**
-2. **+ New** → **GitHub Repo** → `Sloot2` (branch `main`)
+2. **+ New** → **GitHub Repo** → `Sloot2`; para staging use `main`, mas mantenha o autodeploy da produção desativado
 3. **+ New** → **Database** → **PostgreSQL** (no mesmo projeto)
 4. Serviço **app** → **Settings** → Builder: **Dockerfile** ([`railway.toml`](../railway.toml))
 
@@ -47,7 +49,7 @@ VITE_SUPABASE_ANON_KEY=
 | `VITE_API_URL` | **Não definir** |
 | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` | **Backend** — recuperação de senha (ver [SUPABASE-RESET-SENHA.md](./SUPABASE-RESET-SENHA.md)) |
 | `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` | **Frontend** — página `/:slug/redefinir-senha` |
-| `VITE_*` | Entram no **build** Docker — após alterar, **Redeploy** |
+| `VITE_*` | Entram no **build** Docker — após alterar, faça novo Pull Request e promova pelo fluxo protegido |
 
 ## 3. Banco novo (primeira vez)
 
@@ -67,7 +69,7 @@ Ou só schema: `npm run db:migrate:deploy` (o arranque da app também corre `mig
 ## 4. Domínio e deploy
 
 1. App → **Settings** → **Networking** → **Generate Domain**
-2. Actualiza `FRONTEND_URL` com esse domínio → **Redeploy**
+2. Atualize `FRONTEND_URL` com esse domínio e publique pelo workflow correspondente ao ambiente
 3. Logs de deploy: `Migrations aplicadas` + `slooti — produção`
 
 ## 5. Verificar
@@ -107,7 +109,7 @@ Criar barbearias (clientes): [ADMIN-NOVA-BARBEARIA.md](./ADMIN-NOVA-BARBEARIA.md
 
 | Problema | Solução |
 |----------|---------|
-| `dbHost` com `supabase.com` | Variáveis da app ainda apontam ao Supabase — corrige e redeploy |
+| `dbHost` com `supabase.com` | Variáveis da app ainda apontam ao Supabase — corrija e publique pelo workflow protegido |
 | `dbConfigured: false` | Falta `DATABASE_URL` no serviço app |
 | `relation "Tenant" does not exist` | Migrations não correram — vê logs do start; `db:railway:setup` |
 | Healthcheck falha | Não defines `PORT`; confirma `JWT_SECRET` |
