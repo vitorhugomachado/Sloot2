@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   appointmentOccupiesSlot,
   filterAvailableBookingTimes,
@@ -94,6 +94,15 @@ describe('appointmentOccupiesSlot', () => {
 describe('filterAvailableBookingTimes', () => {
   const slots = ['09:00', '09:30', '10:00', '10:30', '11:00'];
 
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(FIXED_NOW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('exclui horários ocupados', () => {
     const available = filterAvailableBookingTimes(
       slots,
@@ -108,21 +117,15 @@ describe('filterAvailableBookingTimes', () => {
   });
 
   it('exclui horários no passado', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(FIXED_NOW);
-    try {
-      const available = filterAvailableBookingTimes(
-        slots,
-        [],
-        '2026-07-12',
-        BARBER_ID,
-        { durationMinutes: 30 }
-      );
-      expect(available).not.toContain('09:00');
-      expect(available).not.toContain('09:30');
-      expect(available).toContain('11:00');
-    } finally {
-      vi.useRealTimers();
-    }
+    const available = filterAvailableBookingTimes(
+      slots,
+      [],
+      '2026-07-12',
+      BARBER_ID,
+      { durationMinutes: 30 }
+    );
+    expect(available).not.toContain('09:00');
+    expect(available).not.toContain('09:30');
+    expect(available).toContain('11:00');
   });
 });
