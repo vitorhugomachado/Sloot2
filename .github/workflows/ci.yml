@@ -19,12 +19,13 @@ jobs:
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/sloot2_test
       JWT_SECRET: ci-only-secret-not-for-production
       NODE_ENV: test
+      STAGING_BOOTSTRAP: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
       - run: npm ci
-      - run: npm run db:migrate:deploy
+      - run: node server/predeploy.js
       - run: npm run db:seed
       - run: npm run test:run
       - run: npm run build

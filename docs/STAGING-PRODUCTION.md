@@ -4,7 +4,7 @@ O push em `main` publica somente no projeto Railway de staging. Produção aceit
 
 ## Configuração externa obrigatória
 
-1. Crie um projeto Railway separado para staging, com PostgreSQL, domínio, variáveis e credenciais próprias. Configure `railway.staging.toml`, `RUN_MIGRATIONS_ON_START=false` e dados sintéticos.
+1. Crie um projeto Railway separado para staging, com PostgreSQL, domínio, variáveis e credenciais próprias. Configure `railway.staging.toml`, `RUN_MIGRATIONS_ON_START=false`, `STAGING_BOOTSTRAP=true` somente nesse projeto e dados sintéticos. O bootstrap existe porque o histórico não contém migration inicial; nunca o habilite em produção.
 2. No Environment `staging`, cadastre `RAILWAY_TOKEN_STAGING`, `RAILWAY_SERVICE_STAGING` e `STAGING_URL`. No `production`, cadastre os equivalentes de produção e o secret `PRODUCTION_BACKUP_ID`.
 3. Antes de conectar o workflow, desative o autodeploy antigo da produção e confirme que o deployment atual continua ativo. Não altere banco, domínio ou credenciais atuais.
 4. Proteja `main` com PR/checks/histórico linear e proteja tags `v*` contra alteração/exclusão. Exija aprovação manual no Environment `production`.
