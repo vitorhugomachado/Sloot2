@@ -3,6 +3,9 @@ on:
   push:
     tags: ['v*.*.*']
 concurrency: production
+
+permissions:
+  contents: write
 jobs:
   promote:
     runs-on: ubuntu-latest
@@ -27,8 +30,25 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PRODUCTION }}
           RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE_PRODUCTION }}
-        run: npx --yes @railway/cli up --ci --service "$RAILWAY_SERVICE"
+        run: |
+          npx --yes @railway/cli variable set "APP_GIT_SHA=$GITHUB_SHA" --service "$RAILWAY_SERVICE" --skip-deploys
+          npx --yes @railway/cli up --ci --service "$RAILWAY_SERVICE"
       - name: Verify production
         env:
           PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
         run: node scripts/verify-environment.mjs "$PRODUCTION_URL" "$GITHUB_SHA"
+      - name: Observe production for 15 minutes
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          for attempt in {1..15}; do
+            echo "Production observation $attempt/15"
+            node scripts/verify-environment.mjs "$PRODUCTION_URL" "$GITHUB_SHA"
+            if [ "$attempt" -lt 15 ]; then sleep 60; fi
+          done
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
+            gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
