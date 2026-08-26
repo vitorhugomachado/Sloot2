@@ -22,12 +22,30 @@ if (process.env.STAGING_BOOTSTRAP === 'true') {
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
+  // A previous staging attempt may have left a failed migration record. Clear
+  // only failed records before marking the schema baseline as applied.
   for (const migration of migrations) {
-    execSync(`npx prisma migrate resolve --applied ${migration}`, {
-      cwd: __dirname,
-      stdio: 'inherit',
-      env: process.env,
-    });
+    try {
+      execSync(`npx prisma migrate resolve --rolled-back ${migration}`, {
+        cwd: __dirname,
+        stdio: 'ignore',
+        env: process.env,
+      });
+    } catch {
+      // The migration was not failed; there is nothing to roll back.
+    }
+  }
+  for (const migration of migrations) {
+    try {
+      execSync(`npx prisma migrate resolve --applied ${migration}`, {
+        cwd: __dirname,
+        stdio: 'inherit',
+        env: process.env,
+      });
+    } catch {
+      // Already-applied migrations are expected when a retry reuses the DB.
+      // The final migrate deploy below still fails closed on any real issue.
+    }
   }
 }
 
