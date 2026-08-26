@@ -62,6 +62,12 @@ function runMigrations() {
   }
 }
 
-runMigrations();
+// Keep the legacy behaviour for the current production deployment. New isolated
+// environments should set RUN_MIGRATIONS_ON_START=false and use predeploy.js.
+if (process.env.RUN_MIGRATIONS_ON_START !== 'false') {
+  runMigrations();
+} else {
+  console.log('Migrations ignoradas no boot; esperado que o pre-deploy já tenha sido executado.');
+}
 require('./scripts/verify_deploy_source');
 require('./src/server');

@@ -6,6 +6,7 @@ const apiRoutes = require('./routes/api');
 const { resolveLegacyRedirect } = require('./lib/legacyRouteRedirects');
 const { isSupabaseAuthConfigured } = require('./lib/supabaseAdmin');
 const { stripeWebhook } = require('./controllers/stripeWebhookController');
+const prisma = require('./lib/prisma');
 
 const app = express();
 
@@ -63,6 +64,24 @@ app.get('/health', (req, res) => {
     supabaseAuthConfigured: isSupabaseAuthConfigured(),
     runtime: process.env.RAILWAY_ENVIRONMENT ? 'railway' : 'node',
   });
+});
+
+// Readiness check: unlike /health, this verifies that the application can reach Postgres.
+// Keep the timeout short so Railway never routes traffic to a hung instance.
+app.get('/ready', async (req, res) => {
+  let timer;
+  try {
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error('database readiness timeout')), 2000);
+    });
+    await Promise.race([prisma.$queryRaw`SELECT 1`, timeout]);
+    return res.status(200).json({ status: 'ready', db: 'ok' });
+  } catch (error) {
+    console.error('[ready] database unavailable:', error.message);
+    return res.status(503).json({ status: 'not_ready', db: 'unavailable' });
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 });
 
 // Produção Railway/Docker: SERVE_SPA=true no Dockerfile

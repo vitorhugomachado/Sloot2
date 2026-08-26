@@ -1,0 +1,31 @@
+name: Deploy production (approved tag only)
+on:
+  push:
+    tags: ['v*.*.*']
+concurrency: production
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Require tag commit on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" "origin/main"
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/check-destructive-migrations.mjs
+      - name: Require registered pre-release backup
+        env: { BACKUP_ID: ${{ secrets.PRODUCTION_BACKUP_ID }} }
+        run: test -n "$BACKUP_ID"
+      - name: Verify same SHA is healthy in staging
+        env: { STAGING_URL: ${{ vars.STAGING_URL }} }
+        run: node scripts/verify-environment.mjs "$STAGING_URL" "$GITHUB_SHA"
+      - name: Deploy approved production tag
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PRODUCTION }}
+          RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE_PRODUCTION }}
+        run: npx --yes @railway/cli up --ci --service "$RAILWAY_SERVICE"
+      - name: Verify production
+        env: { PRODUCTION_URL: ${{ vars.PRODUCTION_URL }} }
+        run: node scripts/verify-environment.mjs "$PRODUCTION_URL" "$GITHUB_SHA"

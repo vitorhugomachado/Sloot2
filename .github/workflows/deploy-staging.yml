@@ -1,0 +1,21 @@
+name: Deploy staging
+on:
+  push:
+    branches: [main]
+concurrency: staging
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Deploy isolated Railway staging
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_STAGING }}
+          RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE_STAGING }}
+        run: npx --yes @railway/cli up --ci --service "$RAILWAY_SERVICE"
+      - name: Verify staging
+        env: { STAGING_URL: ${{ vars.STAGING_URL }} }
+        run: node scripts/verify-environment.mjs "$STAGING_URL" "$GITHUB_SHA"
