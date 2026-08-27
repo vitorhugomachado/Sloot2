@@ -1,0 +1,175 @@
+.mobile-booking-test {
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 28px clamp(18px, 4vw, 56px) 48px;
+  background:
+    radial-gradient(circle at 16% 10%, rgba(255, 255, 255, 0.12), transparent 26%),
+    radial-gradient(circle at 82% 38%, rgba(148, 163, 184, 0.13), transparent 32%),
+    #101114;
+  color: #f8fafc;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.mobile-booking-test::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.mobile-booking-test__toolbar {
+  width: min(1080px, 100%);
+  margin: 0 auto 28px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.mobile-booking-test__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 9px;
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mobile-booking-test__toolbar h1 {
+  margin: 0;
+  font-size: clamp(1.65rem, 4vw, 2.65rem);
+  letter-spacing: -0.045em;
+}
+
+.mobile-booking-test__toolbar p {
+  margin: 8px 0 0;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.mobile-booking-test__official-link {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.mobile-booking-test__stage {
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+}
+
+.mobile-booking-test__device {
+  width: min(430px, 100%);
+  height: min(852px, calc(100dvh - 170px));
+  min-height: 660px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 7px solid #292b31;
+  border-radius: 44px;
+  background: #fff;
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.09);
+}
+
+.mobile-booking-test__device-bar {
+  height: 36px;
+  padding: 7px 22px 0;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  background: #fff;
+  color: #111827;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.mobile-booking-test__device-bar > :last-child { text-align: right; letter-spacing: 2px; }
+
+.mobile-booking-test__island {
+  width: 94px;
+  height: 23px;
+  margin-top: -3px;
+  border-radius: 999px;
+  background: #09090b;
+}
+
+.mobile-booking-test__viewport {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+}
+
+.mobile-booking-test__hub-back {
+  position: absolute;
+  z-index: 12;
+  top: 8px;
+  left: 12px;
+  padding: 7px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: rgba(255,255,255,.94);
+  color: #111827;
+  font-size: .68rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mobile-booking-test__viewport .booking-preview--v2,
+.mobile-booking-test__viewport .bp-flow {
+  min-height: 100%;
+  height: 100%;
+}
+
+.mobile-booking-test__home-indicator {
+  width: 124px;
+  height: 5px;
+  margin: 8px auto 9px;
+  border-radius: 999px;
+  background: #15171b;
+}
+
+.mobile-booking-test__error {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  padding: 24px;
+  background: #101114;
+  color: #f8fafc;
+  text-align: center;
+}
+
+.mobile-booking-test__error span { color: #94a3b8; }
+
+@media (max-width: 640px) {
+  .mobile-booking-test { padding: 0; background: #fff; }
+  .mobile-booking-test__toolbar { display: none; }
+  .mobile-booking-test__device {
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .mobile-booking-test__device-bar,
+  .mobile-booking-test__home-indicator { display: none; }
+}

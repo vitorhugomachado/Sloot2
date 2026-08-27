@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import PublicCustomerLinkField from '../components/PublicCustomerLinkField';
 import BusinessBrandingForm from '../components/business/BusinessBrandingForm';
+import MobileHubSettingsPanel from '../components/business/MobileHubSettingsPanel';
 import SettingsNotificationsSection from '../components/SettingsNotificationsSection';
 import { SETTINGS_TABS, ICON_BLACK, ICON_STROKE } from './settingsConstants';
 
@@ -159,6 +160,7 @@ export default function SettingsMobileView({
             <h2 className="set-mobile-section-title">Perfil do Negócio</h2>
             <p className="set-mobile-section-sub set-mobile-section-sub--spaced">Dados exibidos na reserva online</p>
             <BusinessBrandingForm bInfo={bInfo} setBInfo={setBInfo} compact />
+            <MobileHubSettingsPanel key={tenantSlug} slug={tenantSlug} />
             <PublicCustomerLinkField className="set-mobile-business-link" compact />
             <h3 className="set-mobile-business__heading">Redes sociais</h3>
             <div className="set-mobile-business-blocks">

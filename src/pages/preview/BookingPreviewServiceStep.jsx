@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ChevronRight, Clock, Scissors, Sparkles, User } from 'lucide-react';
+import { Check, ChevronRight, Clock, Scissors, Sparkles, User } from 'lucide-react';
 import { scrollToContinueButton } from '../../hooks/usePublicBookingFlow';
 import BookingPreviewFlowLayout from './BookingPreviewFlowLayout';
 
@@ -14,29 +14,46 @@ function formatDuration(duration) {
 function formatPrice(price) {
   const n = Number(price);
   if (Number.isNaN(n)) return '';
-  return `R$ ${n.toFixed(2)}`;
+  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 export default function BookingPreviewServiceStep({
   services,
   selectedService,
   onPickService,
+  onBack,
   onContinue,
   previewBanner,
+  mobileHubStyle = false,
+  businessTitle,
+  businessTagline,
 }) {
+  const mobileHubSteps = [
+    { id: 1, label: 'Serviço' },
+    { id: 2, label: 'Profissional' },
+    { id: 3, label: 'Data e horário' },
+    { id: 4, label: 'Confirmação' },
+  ];
+
   useEffect(() => {
     if (!selectedService) return;
     scrollToContinueButton();
-  }, [selectedService?.id]);
+  }, [selectedService]);
 
   return (
     <BookingPreviewFlowLayout
       stepperCurrent={1}
       previewBanner={previewBanner}
-      showBack={false}
+      showBack={mobileHubStyle ? Boolean(onBack) : false}
+      onBack={onBack}
       onContinue={onContinue}
       continueDisabled={!selectedService}
       selectionId={selectedService?.id}
+      brandTitle={mobileHubStyle ? businessTitle : null}
+      brandTagline={mobileHubStyle ? businessTagline : null}
+      introTitle={mobileHubStyle ? 'Agende seu horário' : null}
+      introSubtitle={mobileHubStyle ? 'Escolha o serviço ideal para você.' : null}
+      stepperSteps={mobileHubStyle ? mobileHubSteps : undefined}
     >
       <h2 className="bp-section-title">1. Escolha o serviço</h2>
 
@@ -54,7 +71,6 @@ export default function BookingPreviewServiceStep({
             <button
               key={s.id}
               type="button"
-              role="listitem"
               className={`bp-service-card${selected ? ' bp-service-card--selected' : ''}`}
               onClick={() => onPickService(s)}
             >
@@ -68,6 +84,10 @@ export default function BookingPreviewServiceStep({
                   <Clock size={14} strokeWidth={2} aria-hidden />
                   {formatDuration(s.duration) || '—'}
                 </span>
+              </span>
+              <span className="bp-service-card__price">{formatPrice(s.price)}</span>
+              <span className="bp-service-card__check" aria-hidden>
+                <Check size={21} strokeWidth={2.5} />
               </span>
               <ChevronRight className="bp-service-card__chevron" size={22} aria-hidden />
             </button>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Calendar, Clock, ShieldCheck, User } from 'lucide-react';
+import { Calendar, Clock, Info, Phone, ShieldCheck, User } from 'lucide-react';
 import BookingPreviewStepper from './BookingPreviewStepper';
 import BookingPreviewSummaryRow, { getServiceSummaryVisual } from './BookingPreviewSummaryRow';
 import { AuthLoginCard } from './BookingPreviewAuth';
@@ -18,6 +18,17 @@ function formatPrice(price) {
   const n = Number(price);
   if (Number.isNaN(n)) return 'R$ 0,00';
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function formatMobileSummaryDate(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const weekday = date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+  const month = date.toLocaleDateString('pt-BR', { month: 'long' });
+  const weekdayCap = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+  const monthCap = month.charAt(0).toUpperCase() + month.slice(1);
+  return `${weekdayCap}, ${d} de ${monthCap} de ${y}`;
 }
 
 export default function BookingPreviewSummaryStep({
@@ -44,9 +55,19 @@ export default function BookingPreviewSummaryStep({
   onConfirm,
   onEditStep,
   previewBanner,
+  mobileHubStyle = false,
+  businessTitle,
+  businessTagline,
 }) {
   const dateFmt = formatSummaryDate(selectedDate);
   const serviceVisual = getServiceSummaryVisual(services, selectedService);
+  const mobileHubSteps = [
+    { id: 1, label: 'Serviço' },
+    { id: 2, label: 'Profissional' },
+    { id: 3, label: 'Data e horário' },
+    { id: 4, label: 'Confirmação' },
+  ];
+  const contactPhone = currentCustomer?.phone || authData?.phone || 'Não informado';
   const [showAuthCard, setShowAuthCard] = useState(false);
   const pendingConfirmRef = useRef(false);
 
@@ -82,12 +103,30 @@ export default function BookingPreviewSummaryStep({
   }, [showAuthCard]);
 
   return (
-    <div className="bp-flow bp-flow--summary">
+    <div className={`bp-flow bp-flow--summary${mobileHubStyle ? ' bp-flow--mobile-hub-summary' : ''}`}>
       {previewBanner}
 
       <header className="bp-flow__header bp-flow__header--summary">
-        <BookingPreviewStepper current={5} mutedPast />
-        <h2 className="bp-section-title bp-section-title--summary">5. Resumo do agendamento</h2>
+        {mobileHubStyle ? (
+          <>
+            <div className="bp-flow__brand">
+              <h1>{businessTitle}</h1>
+              {businessTagline ? <p>{businessTagline}</p> : null}
+            </div>
+            <h2 className="bp-flow__intro-title">Confirme seu agendamento</h2>
+            <p className="bp-flow__intro-subtitle">Revise as informações antes de finalizar.</p>
+            <BookingPreviewStepper
+              current={4}
+              steps={mobileHubSteps}
+              showDoneCheck
+            />
+          </>
+        ) : (
+          <>
+            <BookingPreviewStepper current={5} mutedPast />
+            <h2 className="bp-section-title bp-section-title--summary">5. Resumo do agendamento</h2>
+          </>
+        )}
       </header>
 
       <div className="bp-flow__scroll bp-flow__scroll--summary">
@@ -99,7 +138,7 @@ export default function BookingPreviewSummaryStep({
             iconVariant="purple"
             label="Serviço"
             value={selectedService?.name || '—'}
-            sub={formatPrice(selectedService?.price)}
+            sub={mobileHubStyle ? null : formatPrice(selectedService?.price)}
             onEdit={() => onEditStep(1)}
           />
           <BookingPreviewSummaryRow
@@ -116,8 +155,8 @@ export default function BookingPreviewSummaryStep({
             icon={Calendar}
             iconVariant="purple"
             label="Data"
-            value={dateFmt.line}
-            sub={dateFmt.sub}
+            value={mobileHubStyle ? formatMobileSummaryDate(selectedDate) : dateFmt.line}
+            sub={mobileHubStyle ? null : dateFmt.sub}
             onEdit={() => onEditStep(3)}
           />
           <BookingPreviewSummaryRow
@@ -127,7 +166,23 @@ export default function BookingPreviewSummaryStep({
             value={selectedTime || '—'}
             onEdit={() => onEditStep(3)}
           />
+          {mobileHubStyle ? (
+            <BookingPreviewSummaryRow
+              icon={Phone}
+              iconVariant="mint"
+              label="Contato"
+              value={contactPhone}
+              onEdit={() => setShowAuthCard(true)}
+            />
+          ) : null}
         </div>
+
+        {mobileHubStyle ? (
+          <div className="bp-time-info bp-mobile-confirm-info">
+            <Info size={18} strokeWidth={1.8} aria-hidden />
+            <span>Você receberá a confirmação pelo WhatsApp.</span>
+          </div>
+        ) : null}
 
         {bookingError && !showAuthCard && <p className="bp-error">{bookingError}</p>}
       </div>
