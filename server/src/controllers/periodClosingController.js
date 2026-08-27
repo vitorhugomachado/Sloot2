@@ -214,7 +214,12 @@ const createPeriodClosing = async (req, res) => {
         return res.status(400).json({ error: 'Para scope BARBER, informe barberId válido.' });
       }
       const b = await prisma.barber.findFirst({
-        where: { id: bid, tenantId: tenantIdFromReq(req), deletedAt: null, role: 'Barbeiro' },
+        where: {
+          id: bid,
+          tenantId: tenantIdFromReq(req),
+          deletedAt: null,
+          role: { in: ['Gerente', 'Barbeiro'] },
+        },
       });
       if (!b) {
         return res.status(400).json({ error: 'Barbeiro não encontrado ou inactivo.' });

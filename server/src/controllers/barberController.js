@@ -4,6 +4,10 @@ const { defaultDateRange } = require('./scheduleBlockController');
 const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
 const { invalidatePublicCache } = require('../middlewares/publicCache');
 const { assertModuleEnabled } = require('../lib/tenantModules');
+const {
+  applyManagerWorkingHours,
+  bookableProfessionalWhere,
+} = require('../lib/bookableProfessionals');
 
 async function attachScheduleBlocks(barbers, from, to) {
   if (!Array.isArray(barbers) || barbers.length === 0) return barbers;
@@ -34,6 +38,7 @@ const BARBER_WRITABLE_KEYS = [
   'data_admissao',
   'permissions',
   'specialties',
+  'acceptsAppointments',
 ];
 
 function pickBarberScalars(body) {
@@ -104,6 +109,7 @@ const barberSelect = {
   permissions: true,
   foto_perfil: true,
   shifts: true,
+  acceptsAppointments: true,
 };
 
 /** Lista pública mínima (agendamento online) — sem email nem permissões */
@@ -114,16 +120,19 @@ const barberPublicSelect = {
   status: true,
   foto_perfil: true,
   shifts: true,
+  acceptsAppointments: true,
 };
 
 async function fetchPublicBarbers(tenantId, from, to) {
   const range = defaultDateRange();
   const fromDate = String(from || range.from);
   const toDate = String(to || range.to);
-  const barbers = await prisma.barber.findMany({
-    where: { tenantId, deletedAt: null, status: 'Ativo', role: 'Barbeiro' },
+  const barbersRaw = await prisma.barber.findMany({
+    where: bookableProfessionalWhere(tenantId),
     select: barberPublicSelect,
+    orderBy: [{ role: 'asc' }, { name: 'asc' }],
   });
+  const barbers = await applyManagerWorkingHours(prisma, tenantId, barbersRaw);
   return attachScheduleBlocks(barbers, fromDate, toDate);
 }
 

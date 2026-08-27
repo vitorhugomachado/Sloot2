@@ -24,9 +24,11 @@ export function getStaffAppointmentsDateRange() {
   return { from: fmt(from), to: fmt(to) };
 }
 
-export function getBootstrapQueryString() {
+export function getBootstrapQueryString(tenantSlug) {
   const { from, to } = getPublicBookingDateRange();
-  return `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+  const params = new URLSearchParams({ from, to });
+  if (tenantSlug) params.set('tenant', String(tenantSlug).trim().toLowerCase());
+  return params.toString();
 }
 
 export function getStaffAppointmentsQueryString(from, to) {

@@ -95,6 +95,7 @@ model Barber {
   password      String
   role          String
   status        String          @default("Ativo")
+  acceptsAppointments Boolean   @default(true)
   foto_perfil   String?
   deletedAt     DateTime?
   permissions   Json

@@ -15,6 +15,8 @@ function cachePublic(ttlSec = DEFAULT_TTL_SEC) {
   return (req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
 
+    res.vary('X-Tenant-Slug');
+
     const key = cacheKey(req);
     const hit = store.get(key);
     if (hit && hit.expires > Date.now()) {

@@ -150,7 +150,7 @@ export const AppProvider = ({ children }) => {
   }, [tenantSlug]);
 
   const loadPublicBootstrap = useCallback(async (signal) => {
-    const qs = getBootstrapQueryString();
+    const qs = getBootstrapQueryString(tenantSlug);
     const url = `${API_URL}/public/bootstrap?${qs}`;
     const slugHeader = String(
       tenantSlug
@@ -588,7 +588,7 @@ export const AppProvider = ({ children }) => {
             })
             .catch((err) => console.error('Erro ao sincronizar agendamentos:', err));
         } else {
-          fetch(`${API_URL}/appointments/public?${getBootstrapQueryString()}`, { headers: tenantHeaders })
+          fetch(`${API_URL}/appointments/public?${getBootstrapQueryString(tenantSlug)}`, { headers: tenantHeaders })
             .then(async (r) => {
               if (r.ok) {
                 const data = await r.json();

@@ -18,6 +18,7 @@ import { STAFF_SCHEDULER_TIME_SLOTS } from '../utils/publicBookingSlots';
 import { toIsoLocal } from '../utils/dateLocal';
 import { getStaffBookingFormError } from '../utils/staffBookingForm';
 import { API_URL } from '../config/apiUrl';
+import { filterBookableProfessionals } from '../utils/bookableProfessionals';
 
 /** Altura dinâmica das linhas da grade conforme agendamentos no horário (semana visível). */
 const SCHEDULER_CELL_PAD = 8;
@@ -296,7 +297,7 @@ const Scheduler = () => {
   }, [selectedDate, isSchedulerNarrow]);
 
   const activeBarbers = useMemo(
-    () => barbers.filter((b) => b.role === 'Barbeiro' && b.status === 'Ativo'),
+    () => filterBookableProfessionals(barbers),
     [barbers]
   );
   const dayHeaderHeight = 64;

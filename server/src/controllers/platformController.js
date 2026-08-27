@@ -44,6 +44,7 @@ const tenantBarberSelect = {
   email: true,
   role: true,
   status: true,
+  acceptsAppointments: true,
 };
 
 const managerSelect = {
@@ -52,6 +53,7 @@ const managerSelect = {
   email: true,
   status: true,
   role: true,
+  acceptsAppointments: true,
 };
 
 async function findManager(tenantId) {

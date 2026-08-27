@@ -51,12 +51,14 @@ function buildBarberUpdateBody(state) {
     email: state.email,
     role: state.role,
     status: state.status,
+    acceptsAppointments: state.acceptsAppointments !== false,
     whatsapp: state.whatsapp || undefined,
     chave_pix: state.chave_pix || undefined,
     data_admissao: state.data_admissao || undefined,
     permissions,
     shifts,
   };
+  if (state.role === 'Gerente') delete body.shifts;
   if (commission !== undefined) body.commission = commission;
   if (state.foto_perfil != null && state.foto_perfil !== '') {
     body.foto_perfil = state.foto_perfil;
@@ -88,7 +90,7 @@ const Settings = () => {
     name: '', role: 'Barbeiro', email: '', password: '', passwordConfirm: '',
     foto_perfil: '', whatsapp: '',
     commission: 50, chave_pix: '', data_admissao: new Date().toISOString().split('T')[0],
-    shifts: defaultShifts, status: 'Ativo'
+    shifts: defaultShifts, status: 'Ativo', acceptsAppointments: true
   };
 
   const [newBarber, setNewBarber] = useState(initialBarberState);
@@ -521,7 +523,14 @@ const Settings = () => {
                 )}
               </div>
               {/* Carga horária — padrão semanal */}
-              <div style={{ marginBottom: '2.5rem' }}>
+              {newBarber.role === 'Gerente' ? (
+                <div style={{ marginBottom: '2.5rem', padding: '1.25rem', borderRadius: '16px', border: '1px solid var(--card-outline)', background: 'var(--panel-bg)' }}>
+                  <strong>Horário de atendimento do gerente</strong>
+                  <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    O gerente usa automaticamente o horário geral configurado para a barbearia.
+                  </p>
+                </div>
+              ) : <div style={{ marginBottom: '2.5rem' }}>
                 <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>Carga horária (padrão semanal)</label>
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.45 }}>
                   Marque os dias de atendimento e configure horários por dia. Use &quot;Fechar tarde&quot; para bloquear a tarde (ex.: quinta à tarde).
@@ -597,7 +606,7 @@ const Settings = () => {
                     );
                   })}
                 </div>
-              </div>
+              </div>}
 
               {editingBarberId && (
                 <div style={{ marginBottom: '2.5rem', padding: '1.25rem', borderRadius: '16px', border: '1px solid var(--card-outline)', background: 'var(--panel-bg)' }}>
@@ -720,6 +729,25 @@ const Settings = () => {
                 A comissão do profissional é definida por serviço (Configurações → Serviços ou Financeiro → Equipe → Taxas).
               </p>
               {/* Status Toggle */}
+              <div className="settings-barber-status-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', background: 'var(--panel-bg)', borderRadius: '16px', border: '1px solid var(--card-outline)', marginBottom: '1rem' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                    {newBarber.role === 'Gerente' ? 'Também realizo atendimentos' : 'Participa da agenda'}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    {newBarber.acceptsAppointments !== false ? 'Aparece como opção nos agendamentos' : 'Não aparece na agenda, mas mantém o acesso ao sistema'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={newBarber.acceptsAppointments !== false}
+                  onClick={() => setNewBarber({ ...newBarber, acceptsAppointments: newBarber.acceptsAppointments === false })}
+                  style={{ border: 0, width: '56px', height: '28px', background: newBarber.acceptsAppointments !== false ? 'var(--accent-color)' : 'var(--brand-300)', borderRadius: '14px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s' }}
+                >
+                  <span style={{ width: '22px', height: '22px', background: '#fff', borderRadius: '50%', position: 'absolute', top: '3px', left: newBarber.acceptsAppointments !== false ? '31px' : '3px', transition: 'all 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
+                </button>
+              </div>
               <div className="settings-barber-status-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', background: 'var(--panel-bg)', borderRadius: '16px', border: '1px solid var(--card-outline)', marginBottom: '3rem' }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Status do Profissional</div>

@@ -12,6 +12,7 @@ const includeBarber = { Barber: { select: { name: true } } };
 const BARBER_WRITABLE_KEYS = [
   'name', 'email', 'role', 'status', 'foto_perfil', 'whatsapp', 'bio',
   'commission', 'chave_pix', 'data_admissao', 'permissions', 'specialties',
+  'acceptsAppointments',
 ];
 
 function pickBarberScalars(body) {
@@ -66,6 +67,7 @@ const barberSelect = {
   shifts: true,
   whatsapp: true,
   commission: true,
+  acceptsAppointments: true,
 };
 
 function nullableString(v) {

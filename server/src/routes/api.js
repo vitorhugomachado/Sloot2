@@ -1,4 +1,5 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { optionalAuthMiddleware } = require('../middlewares/authMiddleware');
 const { requireTenant, requireTenantAuthMatch } = require('../middlewares/tenantMiddleware');
@@ -120,10 +121,24 @@ const {
 } = require('../controllers/billingController');
 
 const router = express.Router();
+const financeManagerRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 180,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { message: 'Muitas requisições financeiras. Tente novamente em instantes.' },
+});
 
 function requireBillingManager(req, res, next) {
   if (req.user?.role !== 'Gerente') {
     return res.status(403).json({ message: 'Apenas o gerente pode gerenciar a assinatura.' });
+  }
+  next();
+}
+
+function requireFinanceManager(req, res, next) {
+  if (req.user?.role !== 'Gerente') {
+    return res.status(403).json({ error: 'Apenas gestão pode acessar estes dados financeiros.' });
   }
   next();
 }
@@ -197,21 +212,21 @@ router.put('/purchase-orders/:id', authMiddleware, requireTenantModule('inventor
 router.post('/purchase-orders/:id/cancel', authMiddleware, requireTenantModule('inventory'), cancelPurchaseOrder);
 router.post('/purchase-orders/:id/receive', authMiddleware, requireTenantModule('inventory'), receivePurchaseOrder);
 
-router.get('/expenses', authMiddleware, requireTenantModule('finance'), getExpenses);
-router.post('/expenses', authMiddleware, requireTenantModule('finance'), createExpense);
-router.put('/expenses/:id', authMiddleware, requireTenantModule('finance'), updateExpense);
-router.delete('/expenses/:id', authMiddleware, requireTenantModule('finance'), deleteExpense);
+router.get('/expenses', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, getExpenses);
+router.post('/expenses', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, createExpense);
+router.put('/expenses/:id', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, updateExpense);
+router.delete('/expenses/:id', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, deleteExpense);
 
-router.get('/month-closings', authMiddleware, requireTenantModule('finance'), getMonthClosings);
-router.post('/month-closings', authMiddleware, requireTenantModule('finance'), createMonthClosing);
+router.get('/month-closings', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, getMonthClosings);
+router.post('/month-closings', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, createMonthClosing);
 
 router.put('/business', authMiddleware, requireTenantModule('settings'), updateBusinessInfo);
 
-router.get('/period-closings', authMiddleware, requireTenantModule('finance'), getPeriodClosings);
-router.post('/period-closings', authMiddleware, requireTenantModule('finance'), createPeriodClosing);
+router.get('/period-closings', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, getPeriodClosings);
+router.post('/period-closings', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, createPeriodClosing);
 
-router.post('/finance/manual-service', authMiddleware, requireTenantModule('finance'), createManualService);
-router.post('/finance/manual-product', authMiddleware, requireTenantModule('finance'), createManualProduct);
+router.post('/finance/manual-service', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, createManualService);
+router.post('/finance/manual-product', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, createManualProduct);
 
 // Financeiro V2 — caixa, comandas, extrato, fluxo
 router.get('/cash/current', authMiddleware, requireTenantModule('finance'), getCurrentCash);
@@ -231,29 +246,29 @@ router.post('/comandas/:id/settle', authMiddleware, requireTenantModule('finance
 router.post('/comandas/:id/reverse', authMiddleware, requireTenantModule('finance'), reverseComanda);
 router.post('/comandas/:id/cancel', authMiddleware, requireTenantModule('finance'), cancelComanda);
 
-router.get('/finance-v2/categories', authMiddleware, requireTenantModule('finance'), listCategories);
+router.get('/finance-v2/categories', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, listCategories);
 router.post('/finance-v2/categories', authMiddleware, requireTenantModule('finance'), createCategory);
 router.put('/finance-v2/categories/:id', authMiddleware, requireTenantModule('finance'), updateCategory);
 router.delete('/finance-v2/categories/:id', authMiddleware, requireTenantModule('finance'), deleteCategory);
-router.get('/finance-v2/expenses', authMiddleware, requireTenantModule('finance'), listFinanceExpenses);
+router.get('/finance-v2/expenses', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, listFinanceExpenses);
 router.post('/finance-v2/expenses', authMiddleware, requireTenantModule('finance'), createFinanceExpense);
 router.put('/finance-v2/expenses/:id', authMiddleware, requireTenantModule('finance'), updateFinanceExpense);
 router.post('/finance-v2/expenses/:id/pay', authMiddleware, requireTenantModule('finance'), payFinanceExpense);
 router.post('/finance-v2/expenses/:id/reverse', authMiddleware, requireTenantModule('finance'), reverseFinanceExpense);
 router.delete('/finance-v2/expenses/:id', authMiddleware, requireTenantModule('finance'), deleteFinanceExpense);
-router.get('/finance-v2/ledger', authMiddleware, requireTenantModule('finance'), getLedgerSummary);
-router.get('/finance-v2/cash-flow', authMiddleware, requireTenantModule('finance'), getCashFlow);
+router.get('/finance-v2/ledger', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, getLedgerSummary);
+router.get('/finance-v2/cash-flow', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, getCashFlow);
 router.get('/finance-v2/commissions', authMiddleware, requireTenantModule('finance'), getCommissions);
 router.get('/finance-v2/commissions/payouts', authMiddleware, requireTenantModule('finance'), listCommissionPayouts);
 router.post('/finance-v2/commissions/payouts', authMiddleware, requireTenantModule('finance'), createCommissionPayout);
 router.get('/finance-v2/card-fees', authMiddleware, requireTenantModule('finance'), listCardFees);
 router.put('/finance-v2/card-fees', authMiddleware, requireTenantModule('finance'), upsertCardFee);
-router.get('/finance-v2/accounts/balances', authMiddleware, requireTenantModule('finance'), getAccountBalances);
+router.get('/finance-v2/accounts/balances', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, getAccountBalances);
 router.post('/finance-v2/accounts/transfer', authMiddleware, requireTenantModule('finance'), transferAccounts);
-router.get('/finance-v2/closings', authMiddleware, requireTenantModule('finance'), listClosings);
+router.get('/finance-v2/closings', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, listClosings);
 router.post('/finance-v2/closings', authMiddleware, requireTenantModule('finance'), createClosing);
-router.get('/finance-v2/dre', authMiddleware, requireTenantModule('finance'), getDre);
-router.get('/finance-v2/audit', authMiddleware, requireTenantModule('finance'), getAuditLog);
-router.get('/finance-v2/kpis', authMiddleware, requireTenantModule('finance'), getKpis);
+router.get('/finance-v2/dre', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, getDre);
+router.get('/finance-v2/audit', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, getAuditLog);
+router.get('/finance-v2/kpis', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, getKpis);
 
 module.exports = router;

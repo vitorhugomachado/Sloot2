@@ -21,6 +21,7 @@ import { useAppointmentActions } from '../hooks/useAppointmentActions';
 import { toIsoLocal } from '../utils/dateLocal';
 import { API_URL } from '../config/apiUrl';
 import './scheduler-week.css';
+import { filterBookableProfessionals } from '../utils/bookableProfessionals';
 
 const HOUR_START = 8;
 const HOUR_END = 21;
@@ -50,12 +51,6 @@ function softDayHaptic() {
   if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
   try { navigator.vibrate(8); } catch { /* ignore */ }
 }
-
-const MOCK_BARBERS_FALLBACK = [
-  { id: 1, name: 'Carlos', foto_perfil: null },
-  { id: 2, name: 'Rafael', foto_perfil: null },
-  { id: 3, name: 'Diego', foto_perfil: null },
-];
 
 function useDebounce(value, delay = 300) {
   const [debounced, setDebounced] = useState(value);
@@ -916,8 +911,7 @@ export default function SchedulerWeek() {
   const location = useLocation();
 
   const activeBarbers = useMemo(() => {
-    const list = barbers.filter((b) => b.role === 'Barbeiro' && b.status === 'Ativo');
-    return list.length ? list : MOCK_BARBERS_FALLBACK;
+    return filterBookableProfessionals(barbers);
   }, [barbers]);
 
   const appointments = useMemo(
