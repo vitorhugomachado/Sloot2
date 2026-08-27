@@ -56,6 +56,7 @@ async function createTenantWithManager(body) {
         password: hashedPassword,
         role: 'Gerente',
         status: 'Ativo',
+        acceptsAppointments: true,
         permissions: [
           'dashboard',
           'scheduler',

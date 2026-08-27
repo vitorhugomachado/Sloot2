@@ -26,11 +26,23 @@ function sessionPayload(session, movements = [], extra = {}) {
   };
 }
 
+function operationalSessionPayload(session) {
+  if (!session) return null;
+  return {
+    id: session.id,
+    status: session.status,
+    openedAt: session.openedAt,
+  };
+}
+
 const getCurrentCash = async (req, res) => {
   try {
     const tenantId = tenantIdFromReq(req);
     const session = await getOpenCashSession(tenantId);
     if (!session) return res.json({ session: null });
+    if (req.user?.role !== 'Gerente') {
+      return res.json({ session: operationalSessionPayload(session) });
+    }
     const movements = await prisma.cashMovement.findMany({
       where: { cashSessionId: session.id, tenantId },
       orderBy: { createdAt: 'desc' },
@@ -45,6 +57,10 @@ const getCurrentCash = async (req, res) => {
 const listCashSessions = async (req, res) => {
   try {
     const tenantId = tenantIdFromReq(req);
+    if (req.user?.role !== 'Gerente') {
+      const session = await getOpenCashSession(tenantId);
+      return res.json(session ? [operationalSessionPayload(session)] : []);
+    }
     const sessions = await prisma.cashSession.findMany({
       where: { tenantId },
       orderBy: { openedAt: 'desc' },
@@ -58,6 +74,7 @@ const listCashSessions = async (req, res) => {
 
 const getCashSession = async (req, res) => {
   try {
+    if (!requireGerente(req, res)) return;
     const tenantId = tenantIdFromReq(req);
     const id = parseInt(req.params.id, 10);
     const session = await prisma.cashSession.findFirst({

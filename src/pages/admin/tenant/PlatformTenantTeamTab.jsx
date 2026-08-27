@@ -21,7 +21,7 @@ export default function PlatformTenantTeamTab({
   const [selected, setSelected] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [createForm, setCreateForm] = useState(EMPTY_CREATE);
-  const [profileForm, setProfileForm] = useState({ name: '', email: '', password: '' });
+  const [profileForm, setProfileForm] = useState({ name: '', email: '', password: '', acceptsAppointments: true });
   const [saving, setSaving] = useState(false);
 
   const enabledForTenant = Array.isArray(tenantEnabledModules) && tenantEnabledModules.length > 0
@@ -48,6 +48,7 @@ export default function PlatformTenantTeamTab({
       name: selected.name || '',
       email: selected.email || '',
       password: '',
+      acceptsAppointments: selected.acceptsAppointments !== false,
     });
   }, [selected]);
 
@@ -98,7 +99,11 @@ export default function PlatformTenantTeamTab({
     setSaving(true);
     onError('');
     try {
-      const body = { name: profileForm.name.trim(), email: profileForm.email.trim() };
+      const body = {
+        name: profileForm.name.trim(),
+        email: profileForm.email.trim(),
+        acceptsAppointments: profileForm.acceptsAppointments !== false,
+      };
       if (profileForm.password.trim()) {
         const pwdErr = validateStrongPassword(profileForm.password);
         if (pwdErr) {
@@ -282,6 +287,14 @@ export default function PlatformTenantTeamTab({
               Nova senha (opcional)
               <input type="password" className="booking-reserve-form__field" value={profileForm.password} onChange={(e) => setProfileForm({ ...profileForm, password: e.target.value })} placeholder="Deixe vazio para manter" autoComplete="new-password" />
               <span className="platform-field-hint">Mín. 8 caracteres, maiúscula, minúscula e número.</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <input
+                type="checkbox"
+                checked={profileForm.acceptsAppointments !== false}
+                onChange={(e) => setProfileForm({ ...profileForm, acceptsAppointments: e.target.checked })}
+              />
+              {selected.role === 'Gerente' ? 'Também realiza atendimentos' : 'Participa da agenda'}
             </label>
             <div className="platform-modal-actions">
               <button type="submit" className="dash-action-btn primary" disabled={saving}>

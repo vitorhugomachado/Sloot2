@@ -1,5 +1,6 @@
 const prisma = require('../lib/prisma.js');
 const { tenantIdFromReq } = require('../lib/tenantHelpers');
+const { bookableProfessionalWhere } = require('../lib/bookableProfessionals');
 const { invalidatePublicCache } = require('../middlewares/publicCache');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -133,7 +134,7 @@ const getPublicScheduleBlocks = async (req, res) => {
 
     const tenantId = tenantIdFromReq(req);
     const activeBarbers = await prisma.barber.findMany({
-      where: { tenantId, deletedAt: null, status: 'Ativo', role: 'Barbeiro' },
+      where: bookableProfessionalWhere(tenantId),
       select: { id: true },
     });
     const ids = activeBarbers.map((b) => b.id);

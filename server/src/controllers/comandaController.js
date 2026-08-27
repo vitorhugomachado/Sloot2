@@ -30,6 +30,23 @@ function parseDateBound(start, end, field = 'openedAt') {
   return { [field]: bounds };
 }
 
+function barberComandaAccess(req) {
+  if (req.user?.role === 'Gerente') return null;
+  const barberId = Number(req.user?.id);
+  return {
+    OR: [
+      { barberId },
+      { items: { some: { barberId } } },
+    ],
+  };
+}
+
+function comandaBelongsToBarber(comanda, barberId) {
+  const id = Number(barberId);
+  return Number(comanda?.barberId) === id
+    || (comanda?.items || []).some((item) => Number(item.barberId) === id);
+}
+
 const listComandas = async (req, res) => {
   try {
     const tenantId = tenantIdFromReq(req);
@@ -38,20 +55,25 @@ const listComandas = async (req, res) => {
     const end = req.query.endDate || req.query.end;
     const q = String(req.query.q || '').trim();
 
+    const access = barberComandaAccess(req);
+    const filters = [];
+    if (q) {
+      filters.push({
+        OR: [
+          { customerName: { contains: q, mode: 'insensitive' } },
+          ...(Number.isFinite(Number(q)) ? [{ number: Number(q) }] : []),
+        ],
+      });
+    }
+    if (access) filters.push(access);
+
     const where = {
       tenantId,
       ...(status && status !== 'QUITADA' ? { status } : {}),
       ...(status && status !== 'QUITADA'
         ? parseDateBound(start, end, 'openedAt')
         : {}),
-      ...(q
-        ? {
-            OR: [
-              { customerName: { contains: q, mode: 'insensitive' } },
-              ...(Number.isFinite(Number(q)) ? [{ number: Number(q) }] : []),
-            ],
-          }
-        : {}),
+      ...(filters.length ? { AND: filters } : {}),
     };
 
     let comandas = await prisma.comanda.findMany({
@@ -106,7 +128,7 @@ const getComanda = async (req, res) => {
     const tenantId = tenantIdFromReq(req);
     const id = parseInt(req.params.id, 10);
     const comanda = await prisma.comanda.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, ...(barberComandaAccess(req) || {}) },
       include: {
         items: true,
         cashSession: { select: { id: true, openedAt: true, openedByName: true, status: true } },
@@ -236,10 +258,15 @@ const createComanda = async (req, res) => {
     if (!customerName) return res.status(400).json({ error: 'Informe o cliente' });
 
     const itemsInput = Array.isArray(req.body.items) ? req.body.items : [];
-    const barberId = req.body.barberId ? Number(req.body.barberId) : null;
+    const barberId = req.user?.role === 'Gerente'
+      ? (req.body.barberId ? Number(req.body.barberId) : null)
+      : Number(req.user.id);
+    const scopedItemsInput = req.user?.role === 'Gerente'
+      ? itemsInput
+      : itemsInput.map((item) => ({ ...item, barberId }));
 
     const comanda = await prisma.$transaction(async (tx) => {
-      const items = await mapItemsWithCommission(tx, tenantId, itemsInput, barberId);
+      const items = await mapItemsWithCommission(tx, tenantId, scopedItemsInput, barberId);
       const total = items.reduce((s, i) => s + i.total, 0) || Number(req.body.total || 0);
       const number = await nextComandaNumber(tenantId, tx);
       return tx.comanda.create({
@@ -286,6 +313,9 @@ const updateComandaItems = async (req, res) => {
       include: { items: true },
     });
     if (!existing) return res.status(404).json({ error: 'Comanda não encontrada' });
+    if (req.user?.role !== 'Gerente' && !comandaBelongsToBarber(existing, req.user.id)) {
+      return res.status(404).json({ error: 'Comanda não encontrada' });
+    }
     if (existing.status !== 'OPEN' && existing.status !== 'PARTIAL') {
       return res.status(409).json({ error: 'Só é possível editar comandas abertas ou parciais.' });
     }
@@ -296,7 +326,10 @@ const updateComandaItems = async (req, res) => {
       });
     }
 
-    const itemsInput = Array.isArray(req.body.items) ? req.body.items : [];
+    const itemsInputRaw = Array.isArray(req.body.items) ? req.body.items : [];
+    const itemsInput = req.user?.role === 'Gerente'
+      ? itemsInputRaw
+      : itemsInputRaw.map((item) => ({ ...item, barberId: Number(req.user.id) }));
     if (!itemsInput.length) {
       return res.status(400).json({ error: 'Informe ao menos um item.' });
     }
@@ -317,7 +350,9 @@ const updateComandaItems = async (req, res) => {
           customerName: req.body.customerName
             ? String(req.body.customerName).trim()
             : existing.customerName,
-          barberId: req.body.barberId != null
+          barberId: req.user?.role !== 'Gerente'
+            ? Number(req.user.id)
+            : req.body.barberId != null
             ? (req.body.barberId ? Number(req.body.barberId) : null)
             : existing.barberId,
           notes: req.body.notes != null ? String(req.body.notes) : existing.notes,
@@ -349,6 +384,9 @@ const settleComanda = async (req, res) => {
       include: { items: true },
     });
     if (!comanda) return res.status(404).json({ error: 'Comanda não encontrada' });
+    if (req.user?.role !== 'Gerente' && !comandaBelongsToBarber(comanda, req.user.id)) {
+      return res.status(404).json({ error: 'Comanda não encontrada' });
+    }
     if (comanda.status === 'QUITADA') {
       return res.status(409).json({ error: 'Comanda já quitada' });
     }
@@ -652,7 +690,9 @@ const createDirectSale = async (req, res) => {
     }
 
     const method = String(req.body.method || 'Pix');
-    const barberId = req.body.barberId ? Number(req.body.barberId) : null;
+    const barberId = req.user?.role === 'Gerente'
+      ? (req.body.barberId ? Number(req.body.barberId) : null)
+      : Number(req.user.id);
     const today = toLocalDateIso(new Date());
     try {
       await assertPeriodNotClosed(tenantId, today);
@@ -667,6 +707,7 @@ const createDirectSale = async (req, res) => {
       const items = await mapItemsWithCommission(tx, tenantId, itemsInput.map((i) => ({
         ...i,
         itemType: 'PRODUCT',
+        ...(req.user?.role === 'Gerente' ? {} : { barberId }),
       })), barberId);
       const total = items.reduce((s, i) => s + i.total, 0);
       if (!(total > 0)) {

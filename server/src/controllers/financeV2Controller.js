@@ -761,7 +761,8 @@ const getCommissions = async (req, res) => {
     const tenantId = tenantIdFromReq(req);
     const start = req.query.startDate || req.query.start;
     const end = req.query.endDate || req.query.end;
-    const barberId = req.query.barberId ? Number(req.query.barberId) : null;
+    const requestedBarberId = req.query.barberId ? Number(req.query.barberId) : null;
+    const barberId = req.user?.role === 'Gerente' ? requestedBarberId : Number(req.user?.id);
 
     const comandas = await prisma.comanda.findMany({
       where: {
@@ -935,7 +936,8 @@ const listCommissionPayouts = async (req, res) => {
     const tenantId = tenantIdFromReq(req);
     const start = req.query.startDate || req.query.start;
     const end = req.query.endDate || req.query.end;
-    const barberId = req.query.barberId ? Number(req.query.barberId) : null;
+    const requestedBarberId = req.query.barberId ? Number(req.query.barberId) : null;
+    const barberId = req.user?.role === 'Gerente' ? requestedBarberId : Number(req.user?.id);
 
     const payouts = await prisma.commissionPayout.findMany({
       where: {

@@ -6,6 +6,7 @@ import { requestCustomerPasswordReset } from '../utils/customerPasswordReset';
 import { getPublicBookingSlotsForDay, hasBarberShiftOnDate } from '../utils/publicBookingSlots';
 import { normalizeBookingTime } from '../utils/bookingAvailability';
 import { toIsoLocal } from '../utils/dateLocal';
+import { filterBookableProfessionals } from '../utils/bookableProfessionals';
 
 export { toIsoLocal } from '../utils/dateLocal';
 
@@ -94,7 +95,7 @@ export function usePublicBookingFlow() {
   const pendingScrollToDateRef = useRef(null);
 
   const activeBarbers = useMemo(
-    () => barbers.filter((b) => b.role === 'Barbeiro' && b.status === 'Ativo'),
+    () => filterBookableProfessionals(barbers),
     [barbers],
   );
 

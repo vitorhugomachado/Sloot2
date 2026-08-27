@@ -121,7 +121,163 @@ function statusMeta(status) {
   }
 }
 
-export default function FinanceV2({ isActive = true }) {
+function BarberFinanceV2({ isActive = true }) {
+  const { financeV2, currentUser } = useApp();
+  const initialRange = monthStartEnd();
+  const [startDate, setStartDate] = useState(initialRange.start);
+  const [endDate, setEndDate] = useState(initialRange.end);
+  const [commissions, setCommissions] = useState({ rows: [], byBarber: [], totals: {} });
+  const [payouts, setPayouts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const [commissionData, payoutData] = await Promise.all([
+        financeV2.getCommissions({ startDate, endDate }),
+        financeV2.listCommissionPayouts({ startDate, endDate }),
+      ]);
+      setCommissions(commissionData || { rows: [], byBarber: [], totals: {} });
+      setPayouts(Array.isArray(payoutData) ? payoutData : []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Não foi possível carregar seu financeiro.');
+    } finally {
+      setLoading(false);
+    }
+  }, [financeV2, startDate, endDate]);
+
+  useEffect(() => {
+    if (isActive) refresh();
+  }, [isActive, refresh]);
+
+  const totals = commissions.totals || {};
+  const rows = commissions.rows || [];
+
+  return (
+    <div className="finance-page finv2-page">
+      <header className="finv2-hero finv2-hero--compact">
+        <div className="finv2-hero__copy">
+          <p className="finv2-eyebrow">Minha área</p>
+          <h1>Meu financeiro</h1>
+          <p>Comissões e repasses de {currentUser?.name || 'profissional'}</p>
+        </div>
+      </header>
+
+      <div className="glass-card finv2-filters">
+        <Field label="Data início">
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+        </Field>
+        <Field label="Data fim">
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+        </Field>
+        <button
+          type="button"
+          className="btn-primary finv2-btn-primary finv2-filters__submit"
+          onClick={refresh}
+          disabled={loading}
+        >
+          {loading ? 'Atualizando…' : 'Buscar'}
+        </button>
+      </div>
+
+      {error ? <div className="glass-card finv2-panel"><p role="alert">{error}</p></div> : null}
+
+      <div className="dash-kpi-row finv2-kpi-row">
+        <div className="dash-kpi-card">
+          <div className="dash-kpi-top"><span className="dash-kpi-label">Serviços realizados</span></div>
+          <div className="dash-kpi-value">{totals.count || 0}</div>
+          <div className="dash-kpi-subtitle">{money(totals.totalGross)} em serviços</div>
+        </div>
+        <div className="dash-kpi-card">
+          <div className="dash-kpi-top"><span className="dash-kpi-label">Minha comissão líquida</span></div>
+          <div className="dash-kpi-value">{money(totals.totalBarber)}</div>
+          <div className="dash-kpi-subtitle">Após taxas de cartão</div>
+        </div>
+        <div className="dash-kpi-card">
+          <div className="dash-kpi-top"><span className="dash-kpi-label">Taxas descontadas</span></div>
+          <div className="dash-kpi-value">{money(totals.totalCardFee)}</div>
+          <div className="dash-kpi-subtitle">Taxas das maquininhas</div>
+        </div>
+        <div className="dash-kpi-card">
+          <div className="dash-kpi-top"><span className="dash-kpi-label">Já recebido</span></div>
+          <div className="dash-kpi-value">{money(totals.totalPaid)}</div>
+          <div className="dash-kpi-subtitle">Repasses registrados</div>
+        </div>
+        <div className="dash-kpi-card">
+          <div className="dash-kpi-top"><span className="dash-kpi-label">A receber</span></div>
+          <div className="dash-kpi-value">{money(totals.totalOwed)}</div>
+          <div className="dash-kpi-subtitle">Saldo do período</div>
+        </div>
+      </div>
+
+      <div className="finv2-stack">
+        <div className="glass-card finv2-panel">
+          <div className="finv2-panel__head">
+            <h3>Meus serviços</h3>
+            <span>{rows.length} registros</span>
+          </div>
+          {rows.length ? (
+            <div className="finv2-table-wrap">
+              <table className="finv2-table">
+                <thead><tr><th>Data</th><th>Comanda</th><th>Cliente</th><th>Serviço</th><th className="is-right">%</th><th className="is-right">Bruto</th><th className="is-right">Taxa</th><th className="is-right">Minha comissão</th></tr></thead>
+                <tbody>
+                  {rows.map((row, index) => (
+                    <tr key={`${row.comandaId}-${index}`}>
+                      <td className="is-muted">{formatDateBr(row.date)}</td>
+                      <td>Nº{String(row.comandaNumber).padStart(4, '0')}</td>
+                      <td>{row.customerName}</td>
+                      <td className="is-strong">{row.itemName}</td>
+                      <td className="is-right">{row.commissionPct}%</td>
+                      <td className="is-right">{money(row.gross)}</td>
+                      <td className="is-right is-out">{money(row.cardFeeDebit)}</td>
+                      <td className="is-right is-in is-strong">{money(row.barberPayout)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <EmptyState title="Nenhum serviço no período" hint="Seus serviços quitados aparecerão aqui." />}
+        </div>
+
+        <div className="glass-card finv2-panel">
+          <div className="finv2-panel__head"><h3>Meus repasses</h3><span>{payouts.length} registros</span></div>
+          {payouts.length ? (
+            <div className="finv2-table-wrap">
+              <table className="finv2-table">
+                <thead><tr><th>Quando</th><th>Período</th><th>Método</th><th>Observação</th><th className="is-right">Valor</th></tr></thead>
+                <tbody>
+                  {payouts.map((payout) => (
+                    <tr key={payout.id}>
+                      <td className="is-muted">{formatWhen(payout.createdAt)}</td>
+                      <td>{formatDateBr(payout.periodStart)} → {formatDateBr(payout.periodEnd)}</td>
+                      <td>{payout.method || '—'}</td>
+                      <td>{payout.notes || '—'}</td>
+                      <td className="is-right is-in is-strong">{money(payout.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <EmptyState title="Nenhum repasse registrado" hint="Os pagamentos de comissão feitos pela gestão aparecerão aqui." />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FinanceV2(props) {
+  const { currentUser } = useApp();
+  return currentUser?.role === 'Gerente'
+    ? <ManagerFinanceV2 {...props} />
+    : <BarberFinanceV2 {...props} />;
+}
+
+export default FinanceV2;
+
+function ManagerFinanceV2({ isActive = true }) {
   const { financeV2, currentUser, products, services, businessInfo, barbers, updateService } = useApp();
   const isGerente = currentUser?.role === 'Gerente';
 
@@ -3192,7 +3348,7 @@ export default function FinanceV2({ isActive = true }) {
                 onChange={(e) => setForm({ ...form, barberId: e.target.value })}
               >
                 <option value="">Selecione…</option>
-                {(barbers || []).filter((b) => b.role === 'Barbeiro' || !b.role).map((b) => (
+                {(barbers || []).filter((b) => b.acceptsAppointments !== false && (b.role === 'Barbeiro' || b.role === 'Gerente' || !b.role)).map((b) => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
               </select>

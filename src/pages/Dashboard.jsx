@@ -25,6 +25,7 @@ import { formatRelativeTime } from '../utils/relativeTime';
 import OccupancyGauge from '../components/OccupancyGauge';
 import DashUpcomingEmpty from '../components/dashboard/DashUpcomingEmpty';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { filterBookableProfessionals } from '../utils/bookableProfessionals';
 
 /* ─────────── KPI Card ─────────── */
 const KpiCard = ({ label, value, subtitle, stagger }) => (
@@ -222,7 +223,7 @@ const Dashboard = () => {
   }, [financeV2, isSaleModalOpen]);
 
   const activeBarbers = useMemo(
-    () => barbers.filter(b => b.role === 'Barbeiro' && b.status === 'Ativo'),
+    () => filterBookableProfessionals(barbers),
     [barbers]
   );
 
@@ -273,7 +274,7 @@ const Dashboard = () => {
   }, [kpis, isBarber, currentUser?.id]);
 
   const ranking = useMemo(() => {
-    let targetBarbers = barbers.filter((b) => b.role === 'Barbeiro');
+    let targetBarbers = filterBookableProfessionals(barbers);
     if (isBarber && currentUser?.id != null) {
       targetBarbers = targetBarbers.filter((b) => Number(b.id) === Number(currentUser.id));
     }

@@ -8,6 +8,7 @@ import { isValidPhone, normalizePhone, PHONE_ERROR } from '../utils/phone';
 import { getPublicBookingSlotsForDay, hasBarberShiftOnDate } from '../utils/publicBookingSlots';
 import { normalizeBookingTime } from '../utils/bookingAvailability';
 import { toIsoLocal } from '../utils/dateLocal';
+import { filterBookableProfessionals } from '../utils/bookableProfessionals';
 
 const INITIAL_VISIBLE_BOOKING_DAYS = 5;
 const LOAD_MORE_BOOKING_DAYS = 5;
@@ -16,6 +17,7 @@ const MAX_BOOKING_HORIZON_DAYS = 60;
 const PublicBooking = ({ onOpenPortal }) => {
   const { barbers, services, appointments, addAppointment, businessInfo, 
     currentCustomer, customerLogin, customerGoogleLogin, customerRegister, customerLogout } = useApp();
+  const activeBarbers = useMemo(() => filterBookableProfessionals(barbers), [barbers]);
   const [step, setStep] = useState(1);
   const [selectedDate, setSelectedDate] = useState(() => toIsoLocal(new Date()));
   const [selectedService, setSelectedService] = useState(null);
@@ -307,12 +309,12 @@ const PublicBooking = ({ onOpenPortal }) => {
           <div className="fade-in">
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Escolha seu barbeiro</h2>
             <div style={{ display: 'grid', gap: '1rem' }}>
-              {barbers.filter(b => b.role === 'Barbeiro' && b.status === 'Ativo').length === 0 ? (
+              {activeBarbers.length === 0 ? (
                 <div style={{ padding: '2rem', textAlign: 'center', background: 'var(--panel-bg)', borderRadius: '12px', border: '1px solid var(--card-outline)', boxSizing: 'border-box' }}>
                   Não há barbeiros disponíveis para agendamento online hoje.
                 </div>
               ) : (
-                barbers.filter(b => b.role === 'Barbeiro' && b.status === 'Ativo').map(b => (
+                activeBarbers.map(b => (
                   <StripedMotionButton
                     key={b.id} 
                     className="glass-card" 

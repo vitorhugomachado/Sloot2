@@ -6,6 +6,7 @@ const { invalidatePublicCache } = require('../middlewares/publicCache');
 const { tenantWhere, tenantIdFromReq } = require('../lib/tenantHelpers');
 const { parseDateRangeFromQuery, parseStaffDateRangeFromQuery, publicBookingDateRange } = require('../lib/bookingHorizon');
 const { scheduleNewAppointmentPush } = require('../services/appointmentPushService');
+const { findBookableProfessional } = require('../lib/bookableProfessionals');
 const {
   getSalesIncomeCategoryId,
   settleComandaInTx,
@@ -118,12 +119,9 @@ const createAppointment = async (req, res) => {
     }
 
     const tenantId = tenantIdFromReq(req);
-    const barber = await prisma.barber.findFirst({
-      where: { id: normalizedBarberId, tenantId, deletedAt: null },
-      include: { shifts: true },
-    });
+    const barber = await findBookableProfessional(prisma, tenantId, normalizedBarberId);
     if (!barber) {
-      return res.status(400).json({ message: 'Profissional inválido para esta barbearia.' });
+      return res.status(400).json({ message: 'Profissional indisponível para agendamentos nesta barbearia.' });
     }
 
     const serviceRow = await prisma.service.findFirst({
