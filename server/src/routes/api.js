@@ -1,5 +1,5 @@
 const express = require('express');
-const { rateLimit } = require('express-rate-limit');
+const rateLimit = require('express-rate-limit');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { optionalAuthMiddleware } = require('../middlewares/authMiddleware');
 const { requireTenant, requireTenantAuthMatch } = require('../middlewares/tenantMiddleware');
@@ -123,7 +123,7 @@ const {
 const router = express.Router();
 const financeManagerRateLimit = rateLimit({
   windowMs: 60 * 1000,
-  limit: 180,
+  max: 180,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { message: 'Muitas requisições financeiras. Tente novamente em instantes.' },
