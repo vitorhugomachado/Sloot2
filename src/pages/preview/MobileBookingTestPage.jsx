@@ -1,0 +1,88 @@
+import React, { Suspense, lazy, useState } from 'react';
+import { ExternalLink, Smartphone } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { AppProvider } from '../../context/AppContext';
+import { TenantProvider, useTenant } from '../../context/TenantContext';
+import TabLoadingFallback from '../../components/TabLoadingFallback';
+import { PREVIEW_DEFAULT_SLUG } from '../../constants/previewTenant';
+import MobileBookingHub from './MobileBookingHub';
+import './mobile-booking-test.css';
+
+const PublicBookingPreview = lazy(() => import('./PublicBookingPreview'));
+
+function MobileBookingTestContent() {
+  const { slug, loading, error } = useTenant();
+  const [bookingOpen, setBookingOpen] = useState(false);
+
+  if (loading) return <TabLoadingFallback />;
+  if (error) {
+    return (
+      <div className="mobile-booking-test__error">
+        <strong>Barbearia não encontrada</strong>
+        <span>{error}</span>
+        <span>Experimente adicionar ?tenant=slug à URL.</span>
+      </div>
+    );
+  }
+
+  return (
+    <main className="mobile-booking-test">
+      <header className="mobile-booking-test__toolbar">
+        <div className="mobile-booking-test__toolbar-copy">
+          <span className="mobile-booking-test__eyebrow">
+            <Smartphone size={14} aria-hidden />
+            Protótipo mobile
+          </span>
+          <h1>Agendamento em tela pequena</h1>
+          <p>Fluxo real da barbearia <strong>{slug}</strong>, isolado para avaliação.</p>
+        </div>
+        <Link to={`/${slug}`} className="mobile-booking-test__official-link">
+          Ver versão atual
+          <ExternalLink size={15} aria-hidden />
+        </Link>
+      </header>
+
+      <section className="mobile-booking-test__stage" aria-label="Prévia mobile do agendamento">
+        <div className="mobile-booking-test__device">
+          <div className="mobile-booking-test__device-bar" aria-hidden>
+            <span>9:41</span>
+            <span className="mobile-booking-test__island" />
+            <span>●●●</span>
+          </div>
+          <div className="mobile-booking-test__viewport">
+            {bookingOpen ? (
+              <>
+                <button type="button" className="mobile-booking-test__hub-back" onClick={() => setBookingOpen(false)}>
+                  Voltar ao hub
+                </button>
+                <Suspense fallback={<TabLoadingFallback />}>
+                  <PublicBookingPreview
+                    forceMobile
+                    mobileHubStyle
+                    showPreviewBanner={false}
+                    portalUrl={`/${slug}/portal`}
+                    onExit={() => setBookingOpen(false)}
+                  />
+                </Suspense>
+              </>
+            ) : <MobileBookingHub onStartBooking={() => setBookingOpen(true)} />}
+          </div>
+          <div className="mobile-booking-test__home-indicator" aria-hidden />
+        </div>
+      </section>
+    </main>
+  );
+}
+
+export default function MobileBookingTestPage() {
+  const [searchParams] = useSearchParams();
+  const slug = (searchParams.get('tenant') || PREVIEW_DEFAULT_SLUG).trim().toLowerCase();
+
+  return (
+    <TenantProvider slug={slug}>
+      <AppProvider>
+        <MobileBookingTestContent />
+      </AppProvider>
+    </TenantProvider>
+  );
+}

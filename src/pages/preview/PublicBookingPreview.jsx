@@ -13,6 +13,7 @@ import BookingPreviewSuccessStep from './BookingPreviewSuccessStep';
 import './booking-preview.css';
 import './booking-preview-v2.css';
 import './booking-preview-desktop.css';
+import './mobile-booking-flow.css';
 
 function scrollEmbedBookingFlowToTop() {
   if (typeof document === 'undefined') return;
@@ -27,7 +28,9 @@ export default function PublicBookingPreview({
   embedMode = false,
   portalUrl: portalUrlProp,
   onOpenPortal,
+  onExit,
   loginRequestBump = 0,
+  mobileHubStyle = false,
 }) {
   const { slug } = useTenant();
   const navigate = useNavigate();
@@ -58,7 +61,6 @@ export default function PublicBookingPreview({
     authData,
     setAuthData,
     authError,
-    setAuthError,
     authInfo,
     googleBusy,
     forgotBusy,
@@ -109,6 +111,7 @@ export default function PublicBookingPreview({
     'booking-preview--v2',
     isDesktop ? 'booking-preview--desktop' : '',
     embedMode ? 'booking-preview--embed' : '',
+    mobileHubStyle && step <= 4 ? 'booking-preview--mobile-hub' : '',
   ].filter(Boolean).join(' ');
 
   if (step === 5) {
@@ -146,8 +149,12 @@ export default function PublicBookingPreview({
         services={services}
         selectedService={selectedService}
         onPickService={pickService}
+        onBack={onExit}
         onContinue={confirmServiceStep}
         previewBanner={previewBanner}
+        mobileHubStyle={mobileHubStyle}
+        businessTitle={flow.businessInfo?.name || 'Slooti Barbers'}
+        businessTagline={flow.businessInfo?.tagline || flow.businessInfo?.slogan || 'Gestão. Agenda. Crescimento.'}
       />,
     );
   }
@@ -161,6 +168,9 @@ export default function PublicBookingPreview({
         onBack={() => goToStep(1)}
         onContinue={confirmBarberStep}
         previewBanner={previewBanner}
+        mobileHubStyle={mobileHubStyle}
+        businessTitle={flow.businessInfo?.name || 'Slooti Barbers'}
+        businessTagline={flow.businessInfo?.tagline || flow.businessInfo?.slogan || 'Gestão. Agenda. Crescimento.'}
       />,
     );
   }
@@ -178,6 +188,9 @@ export default function PublicBookingPreview({
         onContinue={confirmDateTimeStep}
         getSlotsForDay={getSlotsForDay}
         previewBanner={previewBanner}
+        mobileHubStyle={mobileHubStyle}
+        businessTitle={flow.businessInfo?.name || 'Slooti Barbers'}
+        businessTagline={flow.businessInfo?.tagline || flow.businessInfo?.slogan || 'Gestão. Agenda. Crescimento.'}
       />,
     );
   }
@@ -208,6 +221,9 @@ export default function PublicBookingPreview({
         onConfirm={handleFinishBooking}
         onEditStep={goToStep}
         previewBanner={previewBanner}
+        mobileHubStyle={mobileHubStyle}
+        businessTitle={flow.businessInfo?.name || 'Slooti Barbers'}
+        businessTagline={flow.businessInfo?.tagline || flow.businessInfo?.slogan || 'Gestão. Agenda. Crescimento.'}
       />,
     );
   }

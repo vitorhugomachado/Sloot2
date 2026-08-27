@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import BookingPreviewFlowLayout from './BookingPreviewFlowLayout';
 
 function formatDateChip(iso) {
@@ -10,6 +10,13 @@ function formatDateChip(iso) {
   const month = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
   const monthCap = month.charAt(0).toUpperCase() + month.slice(1);
   return { weekday: cap, day: String(d), month: monthCap };
+}
+
+function formatMonthLabel(iso) {
+  if (!iso) return '';
+  const [y, m] = iso.split('-').map(Number);
+  const month = new Date(y, m - 1, 1).toLocaleDateString('pt-BR', { month: 'long' });
+  return `${month.charAt(0).toUpperCase() + month.slice(1)} ${y}`;
 }
 
 export default function BookingPreviewDateTimeStep({
@@ -23,6 +30,9 @@ export default function BookingPreviewDateTimeStep({
   onContinue,
   getSlotsForDay,
   previewBanner,
+  mobileHubStyle = false,
+  businessTitle,
+  businessTagline,
 }) {
   const needsBarber = !selectedBarber;
   const carouselRef = useRef(null);
@@ -38,7 +48,13 @@ export default function BookingPreviewDateTimeStep({
     ? getSlotsForDay(selectedDate)
     : { slotsToDisplay: [], isWithinAnyShift: () => false, taken: new Set() };
 
-  const stepperCurrent = selectedTime ? 4 : 3;
+  const stepperCurrent = mobileHubStyle ? 3 : (selectedTime ? 4 : 3);
+  const mobileHubSteps = [
+    { id: 1, label: 'Serviço' },
+    { id: 2, label: 'Profissional' },
+    { id: 3, label: 'Data e horário' },
+    { id: 4, label: 'Confirmação' },
+  ];
   const timeSectionRef = useRef(null);
 
   useEffect(() => {
@@ -52,12 +68,19 @@ export default function BookingPreviewDateTimeStep({
     <BookingPreviewFlowLayout
       stepperCurrent={stepperCurrent}
       previewBanner={previewBanner}
+      showBack={mobileHubStyle || Boolean(onBack)}
       onBack={onBack}
       onContinue={onContinue}
       continueDisabled={!selectedDate || !selectedTime}
       selectionId={selectedTime ? `${selectedDate}|${selectedTime}` : selectedDate}
+      brandTitle={mobileHubStyle ? businessTitle : null}
+      brandTagline={mobileHubStyle ? businessTagline : null}
+      introTitle={mobileHubStyle ? 'Escolha a data e horário' : null}
+      introSubtitle={mobileHubStyle ? 'Selecione o melhor horário para você.' : null}
+      stepperSteps={mobileHubStyle ? mobileHubSteps : undefined}
+      stepperDoneWithCheck={mobileHubStyle}
     >
-      <h2 className="bp-section-title bp-section-title--inline">3. Escolha a data</h2>
+      {mobileHubStyle ? <div className="bp-date-month-label">{formatMonthLabel(selectedDate)}</div> : null}
 
       <div className="bp-date-carousel-wrap">
         <button
@@ -108,7 +131,7 @@ export default function BookingPreviewDateTimeStep({
         ref={timeSectionRef}
         className="bp-section-title bp-section-title--inline bp-section-title--spaced"
       >
-        4. Escolha o horário
+        {mobileHubStyle ? 'Horários disponíveis' : '4. Escolha o horário'}
       </h2>
 
       {needsBarber ? (
@@ -146,6 +169,13 @@ export default function BookingPreviewDateTimeStep({
       {selectedDate && !selectedTime && (
         <p className="bp-continue-hint">Selecione um horário para ativar o botão Continuar.</p>
       )}
+
+      {mobileHubStyle ? (
+        <div className="bp-time-info">
+          <Info size={15} strokeWidth={1.8} aria-hidden />
+          <span>Os horários são exibidos no<br />horário local da barbearia.</span>
+        </div>
+      ) : null}
     </BookingPreviewFlowLayout>
   );
 }

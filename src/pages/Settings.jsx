@@ -11,6 +11,7 @@ import SettingsMobileView from './SettingsMobileView';
 import SettingsNotificationsSection from '../components/SettingsNotificationsSection';
 import PublicCustomerLinkField from '../components/PublicCustomerLinkField';
 import BusinessBrandingForm from '../components/business/BusinessBrandingForm';
+import MobileHubSettingsPanel from '../components/business/MobileHubSettingsPanel';
 import { compressImageFileToDataUrl } from '../utils/compressImageFile';
 import { getStaffStatusColors } from '../utils/staffStatus';
 import { SETTINGS_TABS, MOBILE_MQ, ICON_BLACK, ICON_STROKE } from './settingsConstants';
@@ -145,7 +146,8 @@ const Settings = () => {
       ok = await updateBarber(editingBarberId, payload);
     } else {
       if (!newBarber.password) return alert("A senha é obrigatória.");
-      const { passwordConfirm, ...toCreate } = newBarber;
+      const toCreate = { ...newBarber };
+      delete toCreate.passwordConfirm;
       ok = await addBarber(toCreate);
     }
     if (ok) closeBarberModal();
@@ -997,6 +999,8 @@ const Settings = () => {
               <h2 style={{ fontSize: '1.3rem', marginBottom: '2rem' }}>Perfil do Negócio</h2>
               <div style={{ maxWidth: '640px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <BusinessBrandingForm bInfo={bInfo} setBInfo={setBInfo} />
+
+                <MobileHubSettingsPanel key={tenantSlug} slug={tenantSlug} />
 
                 <PublicCustomerLinkField />
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Check } from 'lucide-react';
 
 const STEPS = [
   { id: 1, label: 'Serviço' },
@@ -17,11 +18,16 @@ export function mapFlowStepToStepper(flowStep) {
   return 5;
 }
 
-export default function BookingPreviewStepper({ current = 1, mutedPast = false }) {
+export default function BookingPreviewStepper({
+  current = 1,
+  mutedPast = false,
+  steps = STEPS,
+  showDoneCheck = false,
+}) {
   return (
     <nav className="bp-stepper" aria-label="Progresso do agendamento">
       <ol className="bp-stepper__list">
-        {STEPS.map((s, index) => {
+        {steps.map((s, index) => {
           const done = current > s.id;
           const active = current === s.id;
           const pastMuted = mutedPast && done && !active;
@@ -40,7 +46,7 @@ export default function BookingPreviewStepper({ current = 1, mutedPast = false }
                       .filter(Boolean)
                       .join(' ')}
                   >
-                    {s.id}
+                    {done && showDoneCheck ? <Check size={16} strokeWidth={2.5} aria-hidden /> : s.id}
                   </span>
                   <span
                     className={[
@@ -55,7 +61,7 @@ export default function BookingPreviewStepper({ current = 1, mutedPast = false }
                   </span>
                 </div>
               </li>
-              {index < STEPS.length - 1 && (
+              {index < steps.length - 1 && (
                 <li className="bp-stepper__connector" aria-hidden>
                   <span
                     className={[
