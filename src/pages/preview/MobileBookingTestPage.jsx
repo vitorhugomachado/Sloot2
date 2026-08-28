@@ -74,9 +74,9 @@ function MobileBookingTestContent() {
   );
 }
 
-export default function MobileBookingTestPage() {
+export default function MobileBookingTestPage({ tenantSlug: tenantSlugProp = '' }) {
   const [searchParams] = useSearchParams();
-  const slug = (searchParams.get('tenant') || PREVIEW_DEFAULT_SLUG).trim().toLowerCase();
+  const slug = (tenantSlugProp || searchParams.get('tenant') || PREVIEW_DEFAULT_SLUG).trim().toLowerCase();
 
   return (
     <TenantProvider slug={slug}>

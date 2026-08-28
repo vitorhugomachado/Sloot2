@@ -211,8 +211,10 @@ function StaffTabPanels({ activeTab }) {
 // A prévia fica disponível no ambiente local e no domínio isolado de staging,
 // sem expor a rota de teste no domínio de produção.
 const MOBILE_BOOKING_TEST_HOSTS = new Set(['sloot2-staging.up.railway.app']);
+const isMobileBookingStagingHost = typeof window !== 'undefined'
+  && MOBILE_BOOKING_TEST_HOSTS.has(window.location.hostname);
 const mobileBookingTestEnabled = import.meta.env.DEV
-  || (typeof window !== 'undefined' && MOBILE_BOOKING_TEST_HOSTS.has(window.location.hostname));
+  || isMobileBookingStagingHost;
 
 const BookingPreviewShell = import.meta.env.DEV
   ? lazy(() => import('./pages/preview/BookingPreviewShell'))
@@ -388,7 +390,7 @@ function TenantAppContent() {
           </Suspense>
         )}
       >
-        <Route index element={<CustomerBookingIndex />} />
+        {!isMobileBookingStagingHost ? <Route index element={<CustomerBookingIndex />} /> : null}
         <Route path="portal" element={<TenantPortalWrapper />} />
         <Route
           path="redefinir-senha"
@@ -399,6 +401,16 @@ function TenantAppContent() {
           )}
         />
       </Route>
+      {isMobileBookingStagingHost && MobileBookingTestPage ? (
+        <Route
+          index
+          element={(
+            <Suspense fallback={<TabLoadingFallback />}>
+              <MobileBookingTestPage tenantSlug={tenantSlug} />
+            </Suspense>
+          )}
+        />
+      ) : null}
       <Route path="login" element={<StaffLoginPage />} />
       <Route path="dashboard" element={<StaffArea />} />
       <Route path="dashboard/:tab" element={<StaffArea />} />
