@@ -208,6 +208,12 @@ function StaffTabPanels({ activeTab }) {
   );
 }
 
+// A prévia fica disponível no ambiente local e no domínio isolado de staging,
+// sem expor a rota de teste no domínio de produção.
+const MOBILE_BOOKING_TEST_HOSTS = new Set(['sloot2-staging.up.railway.app']);
+const mobileBookingTestEnabled = import.meta.env.DEV
+  || (typeof window !== 'undefined' && MOBILE_BOOKING_TEST_HOSTS.has(window.location.hostname));
+
 const BookingPreviewShell = import.meta.env.DEV
   ? lazy(() => import('./pages/preview/BookingPreviewShell'))
   : null;
@@ -217,7 +223,7 @@ const LoginPreviewShell = import.meta.env.DEV
 const SchedulerWeekPreview = import.meta.env.DEV
   ? lazy(() => import('./pages/preview/SchedulerWeekPreviewShell'))
   : null;
-const MobileBookingTestPage = import.meta.env.DEV
+const MobileBookingTestPage = mobileBookingTestEnabled
   ? lazy(() => import('./pages/preview/MobileBookingTestPage'))
   : null;
 
@@ -488,7 +494,18 @@ function App() {
           <Route path="/telateste" element={<Navigate to="/" replace />} />
           <Route path="/telaloginteste" element={<Navigate to="/" replace />} />
           <Route path="/agenda-teste" element={<Navigate to="/" replace />} />
-          <Route path="/agendamentomobile-teste" element={<Navigate to="/" replace />} />
+          {MobileBookingTestPage ? (
+            <Route
+              path="/agendamentomobile-teste"
+              element={(
+                <Suspense fallback={<TabLoadingFallback />}>
+                  <MobileBookingTestPage />
+                </Suspense>
+              )}
+            />
+          ) : (
+            <Route path="/agendamentomobile-teste" element={<Navigate to="/" replace />} />
+          )}
         </>
       )}
       <Route path="/landingteste" element={<Navigate to="/" replace />} />
