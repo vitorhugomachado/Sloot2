@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { execSync } = require('node:child_process');
+const { isIsolatedRailwayStaging } = require('./scripts/lib/stagingEnvironment');
 
 for (const key of ['DATABASE_URL', 'DIRECT_URL']) {
   if (!process.env[key]?.trim()) throw new Error(`Missing required variable: ${key}`);
@@ -52,3 +53,13 @@ if (process.env.STAGING_BOOTSTRAP === 'true') {
 console.log('[predeploy] Applying Prisma migrations...');
 execSync('npx prisma migrate deploy', { cwd: __dirname, stdio: 'inherit', env: process.env });
 console.log('[predeploy] Migrations completed.');
+
+if (isIsolatedRailwayStaging()) {
+  console.log('[predeploy] Ensuring the isolated staging pilot tenant exists...');
+  execSync('node scripts/seed_pilot_tenant.js --slug=slooti-piloto', {
+    cwd: __dirname,
+    stdio: 'inherit',
+    env: process.env,
+  });
+  console.log('[predeploy] Staging pilot tenant is ready.');
+}
