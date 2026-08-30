@@ -18,6 +18,8 @@ O push em `main` publica somente no projeto Railway de staging. Produção aceit
 3. Antes de conectar o workflow, desative o autodeploy antigo da produção e confirme que o deployment atual continua ativo. Não altere banco, domínio ou credenciais atuais.
 4. Proteja `main` com PR/checks/histórico linear e proteja tags `v*` contra alteração/exclusão. Exija aprovação manual no Environment `production`.
 
+O `preDeployCommand` aplica migrations em cada deployment. Quando, e somente quando, `STAGING_BOOTSTRAP=true` e `RAILWAY_ENVIRONMENT_NAME=staging`, ele também garante de forma idempotente o tenant público `/slooti-piloto`; produção nunca executa esse seed.
+
 Antes da primeira promoção, registre SHA produtivo, `/health` 200, deployment Railway e `pg_dump` criptografado. Restaure o dump em banco descartável e valide tabelas/contagens; só então preencha `PRODUCTION_BACKUP_ID`.
 
 ## Promoção e rollback

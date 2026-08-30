@@ -8,6 +8,7 @@
  *   node scripts/seed_pilot_tenant.js --recreate
  */
 const path = require('path');
+const crypto = require('node:crypto');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const { PrismaClient } = require('@prisma/client');
@@ -22,10 +23,21 @@ const slug = (args.find((a) => a.startsWith('--slug=')) || '--slug=slooti-piloto
   .toLowerCase();
 const recreate = args.includes('--recreate');
 
+const isRailwayStaging = process.env.RAILWAY_ENVIRONMENT_NAME === 'staging';
+const stagingPassword = () => crypto.randomBytes(24).toString('base64url');
 const MANAGER_EMAIL = process.env.PILOT_MANAGER_EMAIL || 'gerente@slooti-piloto.test';
-const MANAGER_PASSWORD = process.env.PILOT_MANAGER_PASSWORD || 'SlootiPiloto123';
+const MANAGER_PASSWORD = process.env.PILOT_MANAGER_PASSWORD || (isRailwayStaging ? stagingPassword() : 'SlootiPiloto123');
 const BARBER_EMAIL = process.env.PILOT_BARBER_EMAIL || 'barbeiro@slooti-piloto.test';
-const BARBER_PASSWORD = process.env.PILOT_BARBER_PASSWORD || 'SlootiPiloto123';
+const BARBER_PASSWORD = process.env.PILOT_BARBER_PASSWORD || (isRailwayStaging ? stagingPassword() : 'SlootiPiloto123');
+
+const PILOT_BOOKING_PAGE_CONFIG = {
+  schemaVersion: 1,
+  heroTitle: 'Mais que um corte. Uma experiência.',
+  heroText: 'Ambiente premium, atendimento de verdade e resultados que falam por si.',
+  about: 'Unimos técnica, estilo e atendimento premium para entregar mais que um corte: uma experiência completa.',
+  coverAssetId: null,
+  galleryAssetIds: [],
+};
 
 const PILOT_SERVICES = [
   { name: 'Corte masculino', price: 45, duration: '45 min', bookingIcon: 'cut' },
@@ -122,7 +134,7 @@ async function main() {
 
   if (!tenant) {
     tenant = await prisma.tenant.create({
-      data: { slug, ...branding },
+      data: { slug, ...branding, bookingPageConfig: PILOT_BOOKING_PAGE_CONFIG },
     });
     console.log(`Tenant criado: ${tenant.name} (/${slug})`);
   } else {
@@ -216,8 +228,8 @@ async function main() {
   console.log(`  Profissionais ativos: ${barberCount}`);
   console.log(`  Turnos ativos: ${shiftCount}`);
   console.log(`  Dias com expediente informado: ${hoursCount}`);
-  console.log(`  Gerente: ${MANAGER_EMAIL} / ${MANAGER_PASSWORD}`);
-  console.log(`  Barbeiro: ${BARBER_EMAIL} / ${BARBER_PASSWORD}`);
+  console.log(`  Gerente: ${MANAGER_EMAIL} (senha não exibida)`);
+  console.log(`  Barbeiro: ${BARBER_EMAIL} (senha não exibida)`);
   console.log(`  Público: /${slug}`);
   console.log(`  Staff: /${slug}/login`);
   console.log(`  Painel: /${slug}/dashboard`);
