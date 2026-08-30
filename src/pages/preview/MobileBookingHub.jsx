@@ -156,11 +156,11 @@ export default function MobileBookingHub({
       <div className="mbh__content">
         <header className="mbh__brand">
           <span className="mbh__brand-spacer" aria-hidden="true" />
-          <div className="mbh__brand-mark">
+          <div className={`mbh__brand-mark${businessName.length > 18 ? ' mbh__brand-mark--long' : ''}`}>
             {businessInfo?.logo_url ? (
               <img src={businessInfo.logo_url} alt={businessName} className="mbh__brand-logo" />
             ) : (
-              <h1><span>{brand.base}</span>{brand.accent ? <> <em>{brand.accent}</em></> : null}</h1>
+              <h1 title={businessName}><span>{brand.base}</span>{brand.accent ? <> <em>{brand.accent}</em></> : null}</h1>
             )}
             {tagline ? <p>{tagline}</p> : null}
           </div>
