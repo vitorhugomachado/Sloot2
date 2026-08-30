@@ -4,6 +4,40 @@ import process from 'node:process';
 const tenant = process.env.PLAYWRIGHT_TENANT || 'slooti-piloto';
 const canonicalPath = `/${tenant}`;
 
+function galleryImage(label, color) {
+  return `data:image/svg+xml,${encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="900" height="560">
+      <rect width="100%" height="100%" fill="${color}"/>
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="58">${label}</text>
+    </svg>
+  `)}`;
+}
+
+async function mockPremiumContent(page) {
+  await page.route(/\/api\/public\/bootstrap(?:\?.*)?$/, async (route) => {
+    const response = await route.fetch();
+    const payload = await response.json();
+    payload.business.tagline = 'Gestão. Agenda. Crescimento.';
+    payload.business.bookingPage = {
+      ...payload.business.bookingPage,
+      heroTitle: 'Mais que um corte. Uma experiência.',
+      heroText: 'Atendimento de verdade e resultados que falam por si.',
+      about: 'Técnica, estilo e atendimento premium para entregar uma experiência completa.',
+      coverUrl: galleryImage('Capa', '#303236'),
+      galleryUrls: [galleryImage('Galeria 1', '#45484d'), galleryImage('Galeria 2', '#25272b')],
+      weeklyHours: [{
+        dayOfWeek: 1,
+        isOpen: true,
+        periods: [{ start: '09:00', end: '20:00' }],
+      }],
+    };
+    if (payload.services?.[0]) payload.services[0].bookingIcon = 'cut';
+    if (payload.services?.[1]) payload.services[1].bookingIcon = 'beard';
+    if (payload.services?.[2]) payload.services[2].bookingIcon = 'combo';
+    await route.fulfill({ response, json: payload });
+  });
+}
+
 test.describe('agendamento mobile definitivo', () => {
   for (const width of [320, 375, 430, 768, 1023]) {
     test(`hub real sem moldura ou overflow em ${width}px`, async ({ page }) => {
@@ -16,8 +50,10 @@ test.describe('agendamento mobile definitivo', () => {
       const layout = await page.evaluate(() => ({
         viewport: window.innerWidth,
         scrollWidth: document.documentElement.scrollWidth,
+        contentWidth: document.querySelector('.mbh__content')?.getBoundingClientRect().width,
       }));
       expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewport);
+      expect(layout.contentWidth).toBeLessThanOrEqual(520);
     });
   }
 
@@ -93,5 +129,25 @@ test.describe('agendamento mobile definitivo', () => {
 
     await page.getByRole('button', { name: 'Entrar na conta' }).click();
     await expect(page.getByText('Entrar na sua conta', { exact: true })).toBeVisible();
+  });
+
+  test('visual premium usa conteúdo real, ícones configurados e galeria acessível', async ({ page }) => {
+    await mockPremiumContent(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(canonicalPath);
+
+    await expect(page.getByRole('heading', { name: 'Mais que um corte. Uma experiência.' })).toBeVisible();
+    await expect(page.locator('.mbh__service-icon')).toHaveCount(3);
+    await expect(page.getByRole('heading', { name: 'Sobre a barbearia' })).toBeVisible();
+    await expect(page.getByText('Avaliações', { exact: true })).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Abrir foto 1 da galeria' }).click();
+    const lightbox = page.getByRole('dialog', { name: 'Galeria de fotos' });
+    await expect(lightbox).toBeVisible();
+    await expect(lightbox).toContainText('2/3');
+    await page.keyboard.press('ArrowRight');
+    await expect(lightbox).toContainText('3/3');
+    await page.keyboard.press('Escape');
+    await expect(lightbox).toBeHidden();
   });
 });

@@ -28,9 +28,9 @@ const BARBER_EMAIL = process.env.PILOT_BARBER_EMAIL || 'barbeiro@slooti-piloto.t
 const BARBER_PASSWORD = process.env.PILOT_BARBER_PASSWORD || 'SlootiPiloto123';
 
 const PILOT_SERVICES = [
-  { name: 'Corte masculino', price: 45, duration: '45 min' },
-  { name: 'Barba completa', price: 35, duration: '30 min' },
-  { name: 'Corte + barba', price: 70, duration: '1h' },
+  { name: 'Corte masculino', price: 45, duration: '45 min', bookingIcon: 'cut' },
+  { name: 'Barba completa', price: 35, duration: '30 min', bookingIcon: 'beard' },
+  { name: 'Corte + barba', price: 70, duration: '1h', bookingIcon: 'combo' },
   { name: 'Sobrancelha', price: 20, duration: '15 min' },
 ];
 

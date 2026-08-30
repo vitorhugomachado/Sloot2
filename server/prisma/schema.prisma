@@ -124,6 +124,7 @@ model Service {
   name          String
   price         Float
   duration      String
+  bookingIcon   String @default("generic")
   /// % que o profissional recebe sobre o preço do serviço (0–100). Default 50.
   commissionPct Float? @default(50)
   tenant        Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)

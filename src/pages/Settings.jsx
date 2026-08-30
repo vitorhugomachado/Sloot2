@@ -12,6 +12,8 @@ import SettingsNotificationsSection from '../components/SettingsNotificationsSec
 import PublicCustomerLinkField from '../components/PublicCustomerLinkField';
 import BusinessBrandingForm from '../components/business/BusinessBrandingForm';
 import MobileHubSettingsPanel from '../components/business/MobileHubSettingsPanel';
+import ServiceBookingIcon from '../components/booking/ServiceBookingIcon';
+import { BOOKING_ICON_OPTIONS } from '../constants/serviceBookingIcons';
 import { compressImageFileToDataUrl, compressImageFileToJpegBlob } from '../utils/compressImageFile';
 import { API_URL } from '../config/apiUrl';
 import {
@@ -132,7 +134,7 @@ const Settings = () => {
   const [editingServiceId, setEditingServiceId] = useState(null);
   const [isServiceFormOpen, setIsServiceFormOpen] = useState(false);
   
-  const [newService, setNewService] = useState({ name: '', duration: '30 min', price: '', commissionPct: '50' });
+  const [newService, setNewService] = useState({ name: '', duration: '30 min', price: '', commissionPct: '50', bookingIcon: 'generic' });
   const [bInfo, setBInfo] = useState(businessInfo);
   const [saving, setSaving] = useState(false);
   const [businessSettingsLoaded, setBusinessSettingsLoaded] = useState(false);
@@ -367,7 +369,7 @@ const Settings = () => {
 
   // Rest of handler functions... (AddService, etc.)
   const resetServiceForm = () => {
-    setNewService({ name: '', duration: '30 min', price: '', commissionPct: '50' });
+    setNewService({ name: '', duration: '30 min', price: '', commissionPct: '50', bookingIcon: 'generic' });
     setEditingServiceId(null);
     setIsServiceFormOpen(false);
   };
@@ -393,6 +395,7 @@ const Settings = () => {
       duration: service.duration || '30 min',
       price: String(service.price ?? ''),
       commissionPct: String(service.commissionPct ?? 50),
+      bookingIcon: service.bookingIcon || 'generic',
     });
     setIsServiceFormOpen(true);
   };
@@ -489,7 +492,7 @@ const Settings = () => {
 
   const openNewService = () => {
     setEditingServiceId(null);
-    setNewService({ name: '', duration: '30 min', price: '', commissionPct: '50' });
+    setNewService({ name: '', duration: '30 min', price: '', commissionPct: '50', bookingIcon: 'generic' });
     setIsServiceFormOpen(true);
   };
 
@@ -520,6 +523,20 @@ const Settings = () => {
             </option>
           ))}
         </select>
+        <select
+          className="set-mobile-form-input"
+          aria-label="Ícone no agendamento"
+          value={newService.bookingIcon}
+          onChange={(e) => setNewService({ ...newService, bookingIcon: e.target.value })}
+        >
+          {BOOKING_ICON_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-secondary)', fontSize: '.75rem' }}>
+          <ServiceBookingIcon icon={newService.bookingIcon} size={30} />
+          Prévia do ícone no agendamento
+        </div>
         <input
           type="number"
           className="set-mobile-form-input"
@@ -1110,13 +1127,19 @@ const Settings = () => {
               {isServiceFormOpen && (
                 <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
                   <h3 style={{ fontSize: '1rem', margin: '0 0 1rem 0' }}>{editingServiceId ? 'Editar Serviço' : 'Novo Serviço'}</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '10px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1.25fr', gap: '10px' }}>
                     <input type="text" placeholder="Nome do serviço" value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }} />
                     <select value={newService.duration} onChange={e => setNewService({...newService, duration: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }}>
                       {['30 min', '60 min', '90 min', '120 min'].map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                     <input type="number" placeholder="Preço (R$)" value={newService.price} onChange={e => setNewService({...newService, price: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }} />
                     <input type="number" placeholder="Comissão do profissional (%)" min="0" max="100" value={newService.commissionPct} onChange={e => setNewService({...newService, commissionPct: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }} title="Percentual que o profissional recebe neste serviço" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                      <ServiceBookingIcon icon={newService.bookingIcon} size={30} />
+                      <select aria-label="Ícone no agendamento" value={newService.bookingIcon} onChange={e => setNewService({...newService, bookingIcon: e.target.value})} style={{ width: '100%', minWidth: 0, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }}>
+                        {BOOKING_ICON_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                      </select>
+                    </div>
                   </div>
                   <p style={{ margin: '8px 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                     Cada serviço pode ter uma % diferente de comissão do profissional.

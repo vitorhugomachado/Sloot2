@@ -17,14 +17,14 @@ const slug = (process.argv.find((a) => a.startsWith('--slug=')) || '--slug=lanot
 const prisma = new PrismaClient();
 
 const SERVICE_TEMPLATES = [
-  { name: 'Corte masculino', price: 45, duration: '45 min' },
-  { name: 'Barba completa', price: 35, duration: '30 min' },
-  { name: 'Corte + barba', price: 70, duration: '1h' },
+  { name: 'Corte masculino', price: 45, duration: '45 min', bookingIcon: 'cut' },
+  { name: 'Barba completa', price: 35, duration: '30 min', bookingIcon: 'beard' },
+  { name: 'Corte + barba', price: 70, duration: '1h', bookingIcon: 'combo' },
   { name: 'Sobrancelha', price: 20, duration: '15 min' },
   { name: 'Pezinho e nuca', price: 25, duration: '20 min' },
   { name: 'Hidratação capilar', price: 55, duration: '45 min' },
   { name: 'Pigmentação barba', price: 40, duration: '30 min' },
-  { name: 'Corte infantil', price: 40, duration: '40 min' },
+  { name: 'Corte infantil', price: 40, duration: '40 min', bookingIcon: 'cut' },
   { name: 'Relaxamento', price: 60, duration: '50 min' },
   { name: 'Pacote vip', price: 120, duration: '1h 30 min' },
 ];
@@ -88,6 +88,7 @@ async function main() {
     name: `${s.name} (teste ${stamp % 10000}-${idx + 1})`,
     price: s.price,
     duration: s.duration,
+    bookingIcon: s.bookingIcon || 'generic',
   }));
 
   const { count: serviceCount } = await prisma.service.createMany({ data: serviceData });
