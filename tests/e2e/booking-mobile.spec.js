@@ -51,9 +51,14 @@ test.describe('agendamento mobile definitivo', () => {
         viewport: window.innerWidth,
         scrollWidth: document.documentElement.scrollWidth,
         contentWidth: document.querySelector('.mbh__content')?.getBoundingClientRect().width,
+        brandOverflow: (() => {
+          const brand = document.querySelector('.mbh__brand h1');
+          return brand ? brand.scrollWidth > brand.clientWidth + 1 : false;
+        })(),
       }));
       expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewport);
       expect(layout.contentWidth).toBeLessThanOrEqual(520);
+      expect(layout.brandOverflow).toBe(false);
     });
   }
 

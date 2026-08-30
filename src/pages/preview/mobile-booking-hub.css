@@ -92,6 +92,7 @@
   font-weight: 400;
   letter-spacing: -.035em;
 }
+.mbh__brand-mark--long h1 { font-size: clamp(1rem, 4.6vw, 1.28rem); letter-spacing: -.05em; }
 .mbh__brand p {
   margin: 5px 0 0;
   overflow: hidden;
