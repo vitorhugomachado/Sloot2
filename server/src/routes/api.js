@@ -144,6 +144,13 @@ const bookingMediaUploadRateLimit = rateLimit({
   keyGenerator: (req) => `${req.tenant?.id || 'unknown'}:${req.user?.id || 'unknown'}`,
   message: { message: 'Limite de uploads atingido. Tente novamente mais tarde.' },
 });
+const privateApiRateLimit = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 3000,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { message: 'Muitas requisições autenticadas. Tente novamente em instantes.' },
+});
 
 function requireBillingManager(req, res, next) {
   if (req.user?.role !== 'Gerente') {
@@ -196,7 +203,7 @@ const { getPublicScheduleBlocks } = require('../controllers/scheduleBlockControl
 router.get('/schedule-blocks/public', cachePublic(60), getPublicScheduleBlocks);
 
 // A partir daqui todas as rotas são privadas: autentique antes de comparar o tenant.
-router.use(authMiddleware, requireTenantAuthMatch);
+router.use(privateApiRateLimit, authMiddleware, requireTenantAuthMatch);
 
 router.use('/barbers', barberRoutes);
 router.use('/clients', authMiddleware, requireTenantModule('clients'), clientRoutes);

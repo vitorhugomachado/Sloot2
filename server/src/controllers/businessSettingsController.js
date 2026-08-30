@@ -148,7 +148,8 @@ async function uploadBookingPageMedia(req, res, next) {
     if (!isBookingMediaStorageConfigured()) {
       return res.status(503).json({ message: 'Armazenamento de imagens não configurado.' });
     }
-    if (!['cover', 'gallery'].includes(String(req.query.purpose || ''))) {
+    const purpose = typeof req.query.purpose === 'string' ? req.query.purpose : '';
+    if (!['cover', 'gallery'].includes(purpose)) {
       return res.status(400).json({ message: 'Informe purpose=cover ou purpose=gallery.' });
     }
     if (!isJpeg(req.body)) {
