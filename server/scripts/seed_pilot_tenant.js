@@ -78,6 +78,22 @@ async function ensureServices(tenantId) {
   }
 }
 
+async function ensureBusinessHours(tenantId) {
+  const existing = await prisma.workingHours.count({ where: { tenantId } });
+  if (existing > 0) return;
+  await prisma.workingHours.createMany({
+    data: WEEKDAYS.map((dia_semana) => ({
+      tenantId,
+      dia_semana,
+      is_aberto: true,
+      hora_abertura: new Date('1970-01-01T09:00:00.000Z'),
+      hora_fechamento: new Date('1970-01-01T19:00:00.000Z'),
+      almoco_inicio: new Date('1970-01-01T12:00:00.000Z'),
+      almoco_fim: new Date('1970-01-01T13:00:00.000Z'),
+    })),
+  });
+}
+
 async function main() {
   if (recreate) {
     const existing = await prisma.tenant.findUnique({ where: { slug } });
@@ -181,6 +197,7 @@ async function main() {
 
   await ensureShifts(barber.id);
   await ensureServices(tenant.id);
+  await ensureBusinessHours(tenant.id);
 
   invalidatePublicCache(slug);
 
@@ -191,12 +208,14 @@ async function main() {
   const shiftCount = await prisma.workingShifts.count({
     where: { id_barbeiro: { in: [manager.id, barber.id] }, ativo: true },
   });
+  const hoursCount = await prisma.workingHours.count({ where: { tenantId: tenant.id } });
 
   console.log('\n--- Resumo piloto ---');
   console.log(`  Slug: ${slug}`);
   console.log(`  Serviços: ${serviceCount}`);
   console.log(`  Profissionais ativos: ${barberCount}`);
   console.log(`  Turnos ativos: ${shiftCount}`);
+  console.log(`  Dias com expediente informado: ${hoursCount}`);
   console.log(`  Gerente: ${MANAGER_EMAIL} / ${MANAGER_PASSWORD}`);
   console.log(`  Barbeiro: ${BARBER_EMAIL} / ${BARBER_PASSWORD}`);
   console.log(`  Público: /${slug}`);

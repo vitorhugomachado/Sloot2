@@ -22,7 +22,8 @@ function scrollEmbedBookingFlowToTop() {
     ?.scrollTo({ top: 0, behavior: 'auto' });
 }
 
-export default function PublicBookingPreview({
+export function PublicBookingPreviewView({
+  flow,
   showPreviewBanner = true,
   forceMobile = false,
   embedMode = false,
@@ -31,10 +32,10 @@ export default function PublicBookingPreview({
   onExit,
   loginRequestBump = 0,
   mobileHubStyle = false,
+  onNewBooking,
 }) {
   const { slug } = useTenant();
   const navigate = useNavigate();
-  const flow = usePublicBookingFlow();
   const isWideScreen = useMediaQuery(BOOKING_DESKTOP_MIN_WIDTH);
   const isDesktop = !forceMobile && isWideScreen;
   const officialUrl = `/${slug}`;
@@ -122,7 +123,7 @@ export default function PublicBookingPreview({
           selectedBarber={selectedBarber}
           selectedDate={selectedDate}
           selectedTime={selectedTime}
-          onNewBooking={resetBooking}
+          onNewBooking={onNewBooking || resetBooking}
           onOpenPortal={openPortal}
         />
       </div>
@@ -154,7 +155,7 @@ export default function PublicBookingPreview({
         previewBanner={previewBanner}
         mobileHubStyle={mobileHubStyle}
         businessTitle={flow.businessInfo?.name || 'Slooti Barbers'}
-        businessTagline={flow.businessInfo?.tagline || flow.businessInfo?.slogan || 'Gestão. Agenda. Crescimento.'}
+        businessTagline={flow.businessInfo?.tagline || flow.businessInfo?.slogan || ''}
       />,
     );
   }
@@ -170,7 +171,7 @@ export default function PublicBookingPreview({
         previewBanner={previewBanner}
         mobileHubStyle={mobileHubStyle}
         businessTitle={flow.businessInfo?.name || 'Slooti Barbers'}
-        businessTagline={flow.businessInfo?.tagline || flow.businessInfo?.slogan || 'Gestão. Agenda. Crescimento.'}
+        businessTagline={flow.businessInfo?.tagline || flow.businessInfo?.slogan || ''}
       />,
     );
   }
@@ -190,7 +191,7 @@ export default function PublicBookingPreview({
         previewBanner={previewBanner}
         mobileHubStyle={mobileHubStyle}
         businessTitle={flow.businessInfo?.name || 'Slooti Barbers'}
-        businessTagline={flow.businessInfo?.tagline || flow.businessInfo?.slogan || 'Gestão. Agenda. Crescimento.'}
+        businessTagline={flow.businessInfo?.tagline || flow.businessInfo?.slogan || ''}
       />,
     );
   }
@@ -223,10 +224,15 @@ export default function PublicBookingPreview({
         previewBanner={previewBanner}
         mobileHubStyle={mobileHubStyle}
         businessTitle={flow.businessInfo?.name || 'Slooti Barbers'}
-        businessTagline={flow.businessInfo?.tagline || flow.businessInfo?.slogan || 'Gestão. Agenda. Crescimento.'}
+        businessTagline={flow.businessInfo?.tagline || flow.businessInfo?.slogan || ''}
       />,
     );
   }
 
   return null;
+}
+
+export default function PublicBookingPreview(props) {
+  const flow = usePublicBookingFlow();
+  return <PublicBookingPreviewView {...props} flow={flow} />;
 }

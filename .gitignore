@@ -38,3 +38,10 @@ server/test_*.js
 # Artefatos de design / agentes (opcional local)
 .kombai/
 server/.agents/
+
+# Mídia local da página de agendamento (desenvolvimento)
+server/.data/booking-media/
+server/.npm-cache/
+.npm-cache/
+test-results/
+playwright-report/

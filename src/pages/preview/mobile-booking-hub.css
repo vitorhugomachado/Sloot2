@@ -7,6 +7,7 @@
 .mbh__brand p { margin:3px 0 0; color:#aaa; font-family:Georgia,serif; font-size:.75rem; font-style:italic; }
 .mbh__header-actions { display:flex; gap:7px; }
 .mbh__header-actions button { width:38px; height:38px; display:grid; place-items:center; border:1px solid #5d5d5d; border-radius:50%; background:#111; color:#fff; cursor:pointer; }
+.mbh button:disabled { cursor:not-allowed; opacity:.5; }
 .mbh__cover { position:relative; height:205px; overflow:hidden; border:1px solid #565656; border-radius:17px; background:#171719; }
 .mbh__cover img { width:100%; height:100%; object-fit:cover; filter:saturate(.35) contrast(1.08); }
 .mbh__cover--empty { display:grid; place-items:center; color:#777; background:linear-gradient(135deg,#242529,#0c0d0f); }
@@ -15,9 +16,10 @@
 .mbh__intro h2 { max-width:330px; margin:0 0 9px; font-size:2rem; line-height:.98; letter-spacing:-.055em; }
 .mbh__intro p,.mbh__about p { margin:0; color:#aaa; font-size:.86rem; line-height:1.45; }
 .mbh__book { width:100%; min-height:49px; display:flex; align-items:center; justify-content:center; gap:8px; border:0; border-radius:13px; background:#f7f7f7; color:#111; font-weight:800; cursor:pointer; }
-.mbh__facts { margin:12px 0 19px; padding:15px 4px; display:grid; grid-template-columns:.85fr 1.3fr 1fr; border:1px solid #4f4f4f; border-radius:15px; }
+.mbh__facts { margin:12px 0 19px; padding:15px 4px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border:1px solid #4f4f4f; border-radius:15px; }
+.mbh__facts--1 { grid-template-columns:1fr; }
 .mbh__facts div { min-width:0; display:grid; justify-items:center; gap:4px; padding:0 8px; text-align:center; border-right:1px solid #424242; }
-.mbh__facts div:last-child { border:0; }.mbh__facts strong { font-size:.73rem; white-space:nowrap; }.mbh__facts span { width:100%; overflow:hidden; color:#929292; font-size:.63rem; text-overflow:ellipsis; white-space:nowrap; }
+.mbh__facts div:last-child { border:0; }.mbh__facts strong { font-size:.73rem; white-space:nowrap; }.mbh__facts span { width:100%; color:#929292; font-size:.63rem; line-height:1.35; overflow-wrap:anywhere; }
 .mbh__section { margin:0 0 19px; }.mbh__section-title { display:flex; justify-content:space-between; align-items:center; margin:0 2px 8px; }.mbh__section-title h3,.mbh__about h3 { margin:0; font-size:.9rem; }.mbh__section-title button { border:0; background:none; color:#bbb; font-size:.72rem; cursor:pointer; }
 .mbh__services { display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; -ms-overflow-style:none; }.mbh__services button { flex:0 0 116px; min-height:105px; display:grid; grid-template-columns:auto 1fr; gap:8px; padding:11px; border:1px solid #4b4b4b; border-radius:14px; background:#101112; color:#fff; text-align:left; cursor:pointer; }.mbh__services span { display:flex; flex-direction:column; gap:5px; min-width:0; }.mbh__services strong { overflow:hidden; font-size:.73rem; text-overflow:ellipsis; white-space:nowrap; }.mbh__services small { display:flex; gap:4px; align-items:center; color:#999; font-size:.61rem; }.mbh__services b { grid-column:1/-1; justify-self:end; font-size:.72rem; }
 .mbh__professionals { display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; -ms-overflow-style:none; }.mbh__professionals button { flex:0 0 105px; display:flex; flex-direction:column; align-items:center; padding:10px 7px; border:1px solid #4b4b4b; border-radius:14px; background:#101112; color:#fff; cursor:pointer; }.mbh__professionals img,.mbh__avatar { width:61px; height:61px; display:grid; place-items:center; object-fit:cover; border-radius:50%; background:linear-gradient(145deg,#555,#151515); font-weight:800; }.mbh__professionals strong { margin-top:7px; font-size:.75rem; }.mbh__professionals small { color:#999; font-size:.63rem; }

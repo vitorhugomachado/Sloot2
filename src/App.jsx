@@ -208,13 +208,9 @@ function StaffTabPanels({ activeTab }) {
   );
 }
 
-// A prévia fica disponível no ambiente local e no domínio isolado de staging,
-// sem expor a rota de teste no domínio de produção.
-const MOBILE_BOOKING_TEST_HOSTS = new Set(['sloot2-staging.up.railway.app']);
-const isMobileBookingStagingHost = typeof window !== 'undefined'
-  && MOBILE_BOOKING_TEST_HOSTS.has(window.location.hostname);
-const mobileBookingTestEnabled = import.meta.env.DEV
-  || isMobileBookingStagingHost;
+// A moldura de avaliação existe apenas em desenvolvimento. Staging e produção
+// exercitam a mesma rota canônica /:tenant.
+const mobileBookingTestEnabled = import.meta.env.DEV;
 
 const BookingPreviewShell = import.meta.env.DEV
   ? lazy(() => import('./pages/preview/BookingPreviewShell'))
@@ -390,7 +386,7 @@ function TenantAppContent() {
           </Suspense>
         )}
       >
-        {!isMobileBookingStagingHost ? <Route index element={<CustomerBookingIndex />} /> : null}
+        <Route index element={<CustomerBookingIndex />} />
         <Route path="portal" element={<TenantPortalWrapper />} />
         <Route
           path="redefinir-senha"
@@ -401,16 +397,6 @@ function TenantAppContent() {
           )}
         />
       </Route>
-      {isMobileBookingStagingHost && MobileBookingTestPage ? (
-        <Route
-          index
-          element={(
-            <Suspense fallback={<TabLoadingFallback />}>
-              <MobileBookingTestPage tenantSlug={tenantSlug} />
-            </Suspense>
-          )}
-        />
-      ) : null}
       <Route path="login" element={<StaffLoginPage />} />
       <Route path="dashboard" element={<StaffArea />} />
       <Route path="dashboard/:tab" element={<StaffArea />} />
@@ -506,18 +492,7 @@ function App() {
           <Route path="/telateste" element={<Navigate to="/" replace />} />
           <Route path="/telaloginteste" element={<Navigate to="/" replace />} />
           <Route path="/agenda-teste" element={<Navigate to="/" replace />} />
-          {MobileBookingTestPage ? (
-            <Route
-              path="/agendamentomobile-teste"
-              element={(
-                <Suspense fallback={<TabLoadingFallback />}>
-                  <MobileBookingTestPage />
-                </Suspense>
-              )}
-            />
-          ) : (
-            <Route path="/agendamentomobile-teste" element={<Navigate to="/" replace />} />
-          )}
+          <Route path="/agendamentomobile-teste" element={<Navigate to="/" replace />} />
         </>
       )}
       <Route path="/landingteste" element={<Navigate to="/" replace />} />

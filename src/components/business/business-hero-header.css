@@ -299,7 +299,7 @@
 }
 
 /* Mobile / tablet */
-@media (max-width: 1023px) {
+@media (max-width: 1023.98px) {
   .bp-hero-header {
     min-height: 150px;
   }

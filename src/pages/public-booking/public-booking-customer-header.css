@@ -91,3 +91,52 @@
     min-height: 0;
   }
 }
+
+.public-booking-page__selection-notice {
+  position: fixed;
+  z-index: 120;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  width: min(calc(100% - 24px), 520px);
+  transform: translateX(-50%);
+  padding: 10px 14px;
+  border: 1px solid #f3c96b;
+  border-radius: 12px;
+  background: #fff8df;
+  color: #5d4300;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .16);
+  font-size: .85rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+@media (max-width: 1023.98px) {
+  .public-booking-page.public-booking-page--mobile-hub {
+    width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+    padding: 0;
+    background: #090a0b;
+  }
+
+  .public-booking-page--mobile-hub > .mbh {
+    width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+    padding-top: max(18px, env(safe-area-inset-top, 0px));
+    padding-right: max(18px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(28px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(18px, env(safe-area-inset-left, 0px));
+  }
+
+  .public-booking-page--mobile-hub > .booking-preview.booking-preview--v2,
+  .public-booking-page--mobile-hub .bp-flow {
+    width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}

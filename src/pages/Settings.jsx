@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   User, Scissors, Settings as SettingsIcon, Save, Trash2, Plus, Edit2, ShieldAlert,
@@ -12,7 +12,13 @@ import SettingsNotificationsSection from '../components/SettingsNotificationsSec
 import PublicCustomerLinkField from '../components/PublicCustomerLinkField';
 import BusinessBrandingForm from '../components/business/BusinessBrandingForm';
 import MobileHubSettingsPanel from '../components/business/MobileHubSettingsPanel';
-import { compressImageFileToDataUrl } from '../utils/compressImageFile';
+import { compressImageFileToDataUrl, compressImageFileToJpegBlob } from '../utils/compressImageFile';
+import { API_URL } from '../config/apiUrl';
+import {
+  EMPTY_BOOKING_PAGE_CONFIG,
+  managerHoursFromPublic,
+  normalizeBookingPageConfig,
+} from '../utils/bookingPage';
 import { getStaffStatusColors } from '../utils/staffStatus';
 import { SETTINGS_TABS, MOBILE_MQ, ICON_BLACK, ICON_STROKE } from './settingsConstants';
 
@@ -67,11 +73,39 @@ function buildBarberUpdateBody(state) {
   return body;
 }
 
+function businessProfilePayload(value) {
+  const info = value || {};
+  return {
+    name: info.name || '',
+    phone: info.phone || '',
+    email: info.email || '',
+    address: info.address || '',
+    logo_url: info.logo_url || null,
+    banner_url: info.banner_url || null,
+    tagline: String(info.tagline || '').trim(),
+    slogan: String(info.slogan || '').trim(),
+    instagram_url: String(info.instagram_url || '').trim(),
+    facebook_url: String(info.facebook_url || '').trim(),
+    whatsapp_url: String(info.whatsapp_url || '').trim(),
+    show_instagram: Boolean(info.show_instagram),
+    show_facebook: Boolean(info.show_facebook),
+    show_whatsapp: Boolean(info.show_whatsapp),
+  };
+}
+
+function businessSettingsSnapshot(profile, bookingPageConfig, hours) {
+  return JSON.stringify({
+    profile: businessProfilePayload(profile),
+    bookingPageConfig: normalizeBookingPageConfig(bookingPageConfig),
+    weeklyHours: hours,
+  });
+}
+
 const Settings = () => {
   const { 
     barbers, addBarber, updateBarber, removeBarber, 
     services, addService, updateService, removeService, 
-    businessInfo, updateBusinessInfo,
+    businessInfo, refreshPublicBootstrap,
     fetchBarberScheduleBlocks, createBarberScheduleBlock, deleteBarberScheduleBlock,
     apiFetch, tenantSlug, token,
   } = useApp();
@@ -101,6 +135,15 @@ const Settings = () => {
   const [newService, setNewService] = useState({ name: '', duration: '30 min', price: '', commissionPct: '50' });
   const [bInfo, setBInfo] = useState(businessInfo);
   const [saving, setSaving] = useState(false);
+  const [businessSettingsLoaded, setBusinessSettingsLoaded] = useState(false);
+  const [settingsRevision, setSettingsRevision] = useState('');
+  const [bookingDraft, setBookingDraft] = useState({ ...EMPTY_BOOKING_PAGE_CONFIG });
+  const [weeklyHours, setWeeklyHours] = useState(() => managerHoursFromPublic([]));
+  const [publishedMedia, setPublishedMedia] = useState({ coverUrl: '', galleryById: {} });
+  const [pendingMedia, setPendingMedia] = useState({ cover: null, gallery: [] });
+  const [storageConfigured, setStorageConfigured] = useState(false);
+  const settingsSnapshotRef = useRef('');
+  const pendingMediaRef = useRef(pendingMedia);
   const [scheduleBlocks, setScheduleBlocks] = useState([]);
   const [blockForm, setBlockForm] = useState({
     date: '',
@@ -124,10 +167,69 @@ const Settings = () => {
   }, []);
 
   useEffect(() => {
-    if (businessInfo && Object.keys(businessInfo).length > 0) {
+    if (!businessSettingsLoaded && businessInfo && Object.keys(businessInfo).length > 0) {
       setBInfo(businessInfo);
     }
-  }, [businessInfo]);
+  }, [businessInfo, businessSettingsLoaded]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setBusinessSettingsLoaded(false);
+    const load = async () => {
+      try {
+        const response = await apiFetch(`${API_URL}/business/settings`, { authScope: 'staff' });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.message || 'Não foi possível carregar as configurações.');
+        if (cancelled) return;
+        const config = normalizeBookingPageConfig(data.bookingPageConfig);
+        const hours = managerHoursFromPublic(data.weeklyHours);
+        const galleryById = Object.fromEntries(
+          config.galleryAssetIds.map((assetId, index) => [assetId, data.media?.galleryUrls?.[index] || '']),
+        );
+        setBInfo(data.profile || {});
+        setSettingsRevision(data.revision || '');
+        setBookingDraft(config);
+        setWeeklyHours(hours);
+        setPublishedMedia({ coverUrl: data.media?.coverUrl || '', galleryById });
+        setStorageConfigured(Boolean(data.storageConfigured));
+        settingsSnapshotRef.current = businessSettingsSnapshot(data.profile, config, hours);
+        setBusinessSettingsLoaded(true);
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to load business settings:', error);
+          setBusinessSettingsLoaded(false);
+        }
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [apiFetch, tenantSlug]);
+
+  useEffect(() => {
+    pendingMediaRef.current = pendingMedia;
+  }, [pendingMedia]);
+
+  useEffect(() => () => {
+    const pending = pendingMediaRef.current;
+    if (pending.cover?.url) URL.revokeObjectURL(pending.cover.url);
+    pending.gallery.forEach((item) => item.url && URL.revokeObjectURL(item.url));
+  }, []);
+
+  const businessSettingsDirty = useMemo(() => {
+    if (!businessSettingsLoaded) return false;
+    return Boolean(pendingMedia.cover || pendingMedia.gallery.length)
+      || businessSettingsSnapshot(bInfo, bookingDraft, weeklyHours) !== settingsSnapshotRef.current;
+  }, [bInfo, bookingDraft, businessSettingsLoaded, pendingMedia, weeklyHours]);
+
+  useEffect(() => {
+    if (!businessSettingsDirty) return undefined;
+    const warn = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [businessSettingsDirty]);
 
   const handleAddBarber = async () => {
     if (!newBarber.name) return alert("O nome é obrigatório.");
@@ -305,26 +407,80 @@ const Settings = () => {
   };
 
   const handleSaveBusinessInfo = async () => {
+    if (!businessSettingsLoaded) {
+      alert('Aguarde as configurações terminarem de carregar.');
+      return;
+    }
+    const uploadedAssetIds = [];
+    let published = false;
     try {
       setSaving(true);
-      await updateBusinessInfo({
-        name: bInfo.name,
-        phone: bInfo.phone,
-        email: bInfo.email,
-        address: bInfo.address,
-        logo_url: bInfo.logo_url,
-        banner_url: bInfo.banner_url,
-        tagline: String(bInfo.tagline ?? '').trim(),
-        slogan: String(bInfo.slogan ?? '').trim(),
-        instagram_url: String(bInfo.instagram_url ?? '').trim(),
-        facebook_url: String(bInfo.facebook_url ?? '').trim(),
-        whatsapp_url: String(bInfo.whatsapp_url ?? '').trim(),
-        show_instagram: !!bInfo.show_instagram,
-        show_facebook: !!bInfo.show_facebook,
-        show_whatsapp: !!bInfo.show_whatsapp,
+      const upload = async (item, purpose) => {
+        const blob = await compressImageFileToJpegBlob(item.file);
+        const response = await apiFetch(`${API_URL}/business/booking-page/media?purpose=${purpose}`, {
+          method: 'POST',
+          authScope: 'staff',
+          headers: { 'Content-Type': 'image/jpeg' },
+          body: blob,
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.message || 'Falha ao enviar uma imagem.');
+        uploadedAssetIds.push(data.assetId);
+        return data.assetId;
+      };
+
+      const coverAssetId = pendingMedia.cover
+        ? await upload(pendingMedia.cover, 'cover')
+        : bookingDraft.coverAssetId;
+      const newGalleryAssetIds = [];
+      for (const item of pendingMedia.gallery) {
+        newGalleryAssetIds.push(await upload(item, 'gallery'));
+      }
+      const nextConfig = normalizeBookingPageConfig({
+        ...bookingDraft,
+        coverAssetId,
+        galleryAssetIds: [...bookingDraft.galleryAssetIds, ...newGalleryAssetIds],
       });
-      alert('Informações salvas!');
+      const response = await apiFetch(`${API_URL}/business/settings`, {
+        method: 'PUT',
+        authScope: 'staff',
+        body: JSON.stringify({
+          revision: settingsRevision,
+          profile: businessProfilePayload(bInfo),
+          bookingPageConfig: nextConfig,
+          weeklyHours: weeklyHours.filter((day) => day.configured),
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const details = Array.isArray(data.issues) && data.issues.length ? `\n${data.issues.join('\n')}` : '';
+        throw new Error(`${data.message || 'Não foi possível publicar.'}${details}`);
+      }
+      published = true;
+      const config = normalizeBookingPageConfig(data.bookingPageConfig);
+      const hours = managerHoursFromPublic(data.weeklyHours);
+      const galleryById = Object.fromEntries(
+        config.galleryAssetIds.map((assetId, index) => [assetId, data.media?.galleryUrls?.[index] || '']),
+      );
+      if (pendingMedia.cover?.url) URL.revokeObjectURL(pendingMedia.cover.url);
+      pendingMedia.gallery.forEach((item) => item.url && URL.revokeObjectURL(item.url));
+      setPendingMedia({ cover: null, gallery: [] });
+      setBInfo(data.profile || bInfo);
+      setSettingsRevision(data.revision);
+      setBookingDraft(config);
+      setWeeklyHours(hours);
+      setPublishedMedia({ coverUrl: data.media?.coverUrl || '', galleryById });
+      setStorageConfigured(Boolean(data.storageConfigured));
+      settingsSnapshotRef.current = businessSettingsSnapshot(data.profile || bInfo, config, hours);
+      await refreshPublicBootstrap().catch((error) => console.warn('Public bootstrap refresh failed:', error));
+      alert('Página de agendamento publicada!');
     } catch (e) {
+      if (!published && uploadedAssetIds.length) {
+        await Promise.allSettled(uploadedAssetIds.map((assetId) => apiFetch(
+          `${API_URL}/business/booking-page/media/${assetId}`,
+          { method: 'DELETE', authScope: 'staff', skipLogout: true },
+        )));
+      }
       alert('Erro: ' + e.message);
     } finally {
       setSaving(false);
@@ -395,6 +551,18 @@ const Settings = () => {
       </div>
     </>
   );
+
+  const hubSettingsProps = {
+    draft: bookingDraft,
+    onDraftChange: setBookingDraft,
+    weeklyHours,
+    onWeeklyHoursChange: setWeeklyHours,
+    media: publishedMedia,
+    pendingMedia,
+    onPendingMediaChange: setPendingMedia,
+    storageConfigured,
+    businessInfo: bInfo,
+  };
 
   return (
     <div className={`settings-page fade-in${isMobile ? ' settings-page--mobile' : ''}`}>
@@ -857,6 +1025,8 @@ const Settings = () => {
           apiFetch={apiFetch}
           tenantSlug={tenantSlug}
           isStaffSession={Boolean(token)}
+          hubSettingsProps={hubSettingsProps}
+          businessSettingsLoaded={businessSettingsLoaded}
         />
       ) : (
       <div className="settings-desktop-grid">
@@ -997,10 +1167,10 @@ const Settings = () => {
           {activeTab === 'business' && (
             <div className="fade-in">
               <h2 style={{ fontSize: '1.3rem', marginBottom: '2rem' }}>Perfil do Negócio</h2>
-              <div style={{ maxWidth: '640px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ maxWidth: '1180px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <BusinessBrandingForm bInfo={bInfo} setBInfo={setBInfo} />
 
-                <MobileHubSettingsPanel key={tenantSlug} slug={tenantSlug} />
+                <MobileHubSettingsPanel key={tenantSlug} {...hubSettingsProps} />
 
                 <PublicCustomerLinkField />
 
@@ -1058,8 +1228,8 @@ const Settings = () => {
                   </div>
                 </div>
 
-                <button type="button" className="btn-primary" onClick={handleSaveBusinessInfo} style={{ padding: '14px', marginTop: '4px' }} disabled={saving}>
-                  {saving ? 'Salvando…' : 'Salvar'}
+                <button type="button" className="btn-primary" onClick={handleSaveBusinessInfo} style={{ padding: '14px', marginTop: '4px' }} disabled={saving || !businessSettingsLoaded}>
+                  {saving ? 'Publicando…' : 'Salvar e publicar'}
                 </button>
               </div>
             </div>

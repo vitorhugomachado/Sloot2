@@ -78,6 +78,7 @@ export function usePublicBookingFlow() {
   const [clientInfo, setClientInfo] = useState({ name: '', phone: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingError, setBookingError] = useState('');
+  const [selectionWarning, setSelectionWarning] = useState('');
   const [authMode, setAuthMode] = useState('login');
   const [authData, setAuthData] = useState({ email: '', password: '', name: '', phone: '' });
   const [authError, setAuthError] = useState('');
@@ -127,7 +128,7 @@ export function usePublicBookingFlow() {
       allWorkingDayIsosInHorizon: workingIsos,
       visibleBookingDateIsos: workingIsos.slice(0, take),
     };
-  }, [selectedBarber, activeBarbers, visibleDaysCount]);
+  }, [selectedBarber, visibleDaysCount]);
 
   const canLoadMore = visibleDaysCount < allWorkingDayIsosInHorizon.length;
 
@@ -173,29 +174,56 @@ export function usePublicBookingFlow() {
   }, []);
 
   const pickService = (service) => {
+    setSelectionWarning('');
     setSelectedService(service);
   };
 
   const selectServiceAndContinue = useCallback(
     (service) => {
+      setSelectionWarning('');
       setSelectedService(service);
-      goToStep(2);
+      const preferredIsActive = selectedBarber
+        && activeBarbers.some((barber) => Number(barber.id) === Number(selectedBarber.id));
+      goToStep(preferredIsActive ? 3 : 2);
     },
-    [goToStep],
+    [activeBarbers, goToStep, selectedBarber],
   );
 
   const confirmServiceStep = () => {
     if (!selectedService) return;
-    goToStep(2);
+    const preferredIsActive = selectedBarber
+      && activeBarbers.some((barber) => Number(barber.id) === Number(selectedBarber.id));
+    if (selectedBarber && !preferredIsActive) setSelectedBarber(null);
+    goToStep(preferredIsActive ? 3 : 2);
   };
 
+  useEffect(() => {
+    if (!selectedBarber) return;
+    if (activeBarbers.some((barber) => Number(barber.id) === Number(selectedBarber.id))) return;
+    setSelectedBarber(null);
+    setSelectedTime(null);
+    setSelectionWarning('O profissional selecionado não está mais disponível e foi removido.');
+    if (step >= 3 && step < 5) goToStep(2);
+  }, [activeBarbers, goToStep, selectedBarber, step]);
+
+  useEffect(() => {
+    if (!selectedService) return;
+    if (services.some((service) => Number(service.id) === Number(selectedService.id))) return;
+    setSelectedService(null);
+    setSelectedTime(null);
+    setSelectionWarning('O serviço selecionado não está mais disponível e foi removido.');
+    if (step >= 2 && step < 5) goToStep(1);
+  }, [goToStep, selectedService, services, step]);
+
   const pickBarber = (barber) => {
+    setSelectionWarning('');
     setSelectedBarber(barber);
     setSelectedTime(null);
   };
 
   const selectBarberAndContinue = useCallback(
     (barber) => {
+      setSelectionWarning('');
       setSelectedBarber(barber);
       setSelectedTime(null);
       goToStep(3);
@@ -239,6 +267,7 @@ export function usePublicBookingFlow() {
     setSelectedBarber(null);
     setSelectedTime(null);
     setBookingError('');
+    setSelectionWarning('');
   };
 
   const resolveBookingBarber = () => selectedBarber ?? null;
@@ -391,6 +420,8 @@ export function usePublicBookingFlow() {
     setClientInfo,
     isSubmitting,
     bookingError,
+    selectionWarning,
+    clearSelectionWarning: () => setSelectionWarning(''),
     authMode,
     setAuthMode,
     authData,

@@ -30,6 +30,28 @@ const IN_SERVICE_STATUSES = new Set(['Em progresso', 'Em atendimento']);
 const BLOCKING_STATUSES = ['Agendado', 'Confirmado', 'Em progresso'];
 const includeBarber = { Barber: { select: { name: true } } };
 
+class AppointmentSlotConflictError extends Error {
+  constructor() {
+    super('Este horário acabou de ser ocupado. Escolha outro horário.');
+    this.code = 'SLOT_TAKEN';
+  }
+}
+
+function timeToMinutes(value) {
+  const normalized = normalizeBookingTime(value);
+  if (!normalized) return null;
+  const [hours, minutes] = normalized.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+function slotsOverlap(firstTime, firstDuration, secondTime, secondDuration) {
+  const firstStart = timeToMinutes(firstTime);
+  const secondStart = timeToMinutes(secondTime);
+  if (firstStart == null || secondStart == null) return false;
+  return firstStart < secondStart + parseDurationMinutes(secondDuration)
+    && secondStart < firstStart + parseDurationMinutes(firstDuration);
+}
+
 function appointmentStartDate(existing) {
   const parts = existing.date?.split('-').map(Number);
   if (!parts || parts.length !== 3) return new Date(0);
@@ -168,9 +190,36 @@ const createAppointment = async (req, res) => {
       customer_id,
     };
 
-    const appointment = await prisma.appointment.create({
-      data,
-      include: includeBarber,
+    const appointment = await prisma.$transaction(async (tx) => {
+      // Serializa alterações da agenda deste profissional/dia. Isso impede que
+      // dois navegadores passem pela checagem antes de qualquer insert existir.
+      const lockKey = `booking:${tenantId}:${normalizedBarberId}:${String(date)}`;
+      await tx.$queryRaw`SELECT 1 AS "locked" FROM pg_advisory_xact_lock(hashtext(${lockKey}))`;
+
+      const existing = await tx.appointment.findMany({
+        where: {
+          tenantId,
+          barberId: normalizedBarberId,
+          date: String(date),
+          status: { in: BLOCKING_STATUSES },
+        },
+        select: { service: true, time: true },
+      });
+      const serviceNames = [...new Set([String(service), ...existing.map((item) => item.service)])];
+      const durations = await tx.service.findMany({
+        where: { tenantId, name: { in: serviceNames } },
+        select: { name: true, duration: true },
+      });
+      const durationByService = new Map(durations.map((item) => [item.name, item.duration]));
+      const hasConflict = existing.some((item) => slotsOverlap(
+        normalizedTime,
+        durationMinutes,
+        item.time,
+        durationByService.get(item.service) || 30,
+      ));
+      if (hasConflict) throw new AppointmentSlotConflictError();
+
+      return tx.appointment.create({ data, include: includeBarber });
     });
     invalidatePublicCache(req.tenantSlug);
     scheduleNewAppointmentPush({
@@ -180,6 +229,9 @@ const createAppointment = async (req, res) => {
     });
     res.status(201).json(appointment);
   } catch (error) {
+    if (error instanceof AppointmentSlotConflictError || error?.code === 'SLOT_TAKEN') {
+      return res.status(409).json({ code: 'SLOT_TAKEN', message: error.message });
+    }
     console.error('Create appointment error:', error);
     res.status(500).json({
       message: 'Erro ao criar agendamento',

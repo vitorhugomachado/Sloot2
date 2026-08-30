@@ -119,6 +119,14 @@ const {
   createPortalSession,
   getBillingStatus,
 } = require('../controllers/billingController');
+const {
+  getBusinessSettings,
+  getPublicBookingMedia,
+  removeBookingPageMedia,
+  requireManager,
+  updateBusinessSettings,
+  uploadBookingPageMedia,
+} = require('../controllers/businessSettingsController');
 
 const router = express.Router();
 const financeManagerRateLimit = rateLimit({
@@ -127,6 +135,14 @@ const financeManagerRateLimit = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { message: 'Muitas requisições financeiras. Tente novamente em instantes.' },
+});
+const bookingMediaUploadRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  keyGenerator: (req) => `${req.tenant?.id || 'unknown'}:${req.user?.id || 'unknown'}`,
+  message: { message: 'Limite de uploads atingido. Tente novamente mais tarde.' },
 });
 
 function requireBillingManager(req, res, next) {
@@ -162,6 +178,7 @@ platformRouter.use('/tenants/:id', platformAuthMiddleware, requirePlatformTenant
 router.use('/platform', platformRouter);
 
 router.get('/tenant/resolve/:slug', resolveTenant);
+router.get('/public/booking-media/:slug/:assetId', getPublicBookingMedia);
 
 // Rotas com escopo de barbearia
 router.use(requireTenant);
@@ -178,7 +195,8 @@ router.post('/appointments', optionalAuthMiddleware, requireTenantAuthMatch, cre
 const { getPublicScheduleBlocks } = require('../controllers/scheduleBlockController');
 router.get('/schedule-blocks/public', cachePublic(60), getPublicScheduleBlocks);
 
-router.use(requireTenantAuthMatch);
+// A partir daqui todas as rotas são privadas: autentique antes de comparar o tenant.
+router.use(authMiddleware, requireTenantAuthMatch);
 
 router.use('/barbers', barberRoutes);
 router.use('/clients', authMiddleware, requireTenantModule('clients'), clientRoutes);
@@ -221,6 +239,22 @@ router.get('/month-closings', authMiddleware, requireTenantModule('finance'), fi
 router.post('/month-closings', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, createMonthClosing);
 
 router.put('/business', authMiddleware, requireTenantModule('settings'), updateBusinessInfo);
+router.get('/business/settings', requireTenantModule('settings'), requireManager, getBusinessSettings);
+router.put('/business/settings', requireTenantModule('settings'), requireManager, updateBusinessSettings);
+router.post(
+  '/business/booking-page/media',
+  requireTenantModule('settings'),
+  requireManager,
+  bookingMediaUploadRateLimit,
+  express.raw({ type: 'image/jpeg', limit: '2mb' }),
+  uploadBookingPageMedia,
+);
+router.delete(
+  '/business/booking-page/media/:assetId',
+  requireTenantModule('settings'),
+  requireManager,
+  removeBookingPageMedia,
+);
 
 router.get('/period-closings', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, getPeriodClosings);
 router.post('/period-closings', authMiddleware, requireTenantModule('finance'), financeManagerRateLimit, requireFinanceManager, createPeriodClosing);

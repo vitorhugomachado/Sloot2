@@ -26,6 +26,7 @@ model Tenant {
   show_instagram Boolean  @default(false)
   show_facebook  Boolean  @default(false)
   show_whatsapp  Boolean  @default(false)
+  bookingPageConfig Json  @default("{}")
   enabledModules Json     @default("[\"dashboard\",\"scheduler\",\"clients\",\"finance\",\"users\",\"inventory\",\"settings\"]")
   /// Meta mensal de receita (KPIs Financeiro V2)
   monthlyRevenueGoal Float?
