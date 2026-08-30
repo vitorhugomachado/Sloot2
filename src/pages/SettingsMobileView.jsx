@@ -24,6 +24,8 @@ export default function SettingsMobileView({
   apiFetch,
   tenantSlug,
   isStaffSession,
+  hubSettingsProps,
+  businessSettingsLoaded,
 }) {
   return (
     <>
@@ -160,7 +162,7 @@ export default function SettingsMobileView({
             <h2 className="set-mobile-section-title">Perfil do Negócio</h2>
             <p className="set-mobile-section-sub set-mobile-section-sub--spaced">Dados exibidos na reserva online</p>
             <BusinessBrandingForm bInfo={bInfo} setBInfo={setBInfo} compact />
-            <MobileHubSettingsPanel key={tenantSlug} slug={tenantSlug} />
+            <MobileHubSettingsPanel key={tenantSlug} {...hubSettingsProps} />
             <PublicCustomerLinkField className="set-mobile-business-link" compact />
             <h3 className="set-mobile-business__heading">Redes sociais</h3>
             <div className="set-mobile-business-blocks">
@@ -223,9 +225,9 @@ export default function SettingsMobileView({
               type="button"
               className="btn-primary set-mobile-new-full set-mobile-save-business"
               onClick={onSaveBusiness}
-              disabled={saving}
+              disabled={saving || !businessSettingsLoaded}
             >
-              {saving ? 'Salvando…' : 'Salvar alterações'}
+              {saving ? 'Publicando…' : 'Salvar e publicar'}
             </button>
           </div>
         )}

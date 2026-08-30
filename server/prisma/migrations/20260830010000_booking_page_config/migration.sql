@@ -1,0 +1,2 @@
+ALTER TABLE "Tenant"
+ADD COLUMN IF NOT EXISTS "bookingPageConfig" JSONB NOT NULL DEFAULT '{}'::jsonb;

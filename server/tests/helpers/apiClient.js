@@ -64,6 +64,7 @@ export function api(token, slug = PILOT_SLUG) {
   return {
     get: (url) => withAuth(withTenant(agent.get(url))),
     post: (url) => withAuth(withTenant(agent.post(url))),
+    put: (url) => withAuth(withTenant(agent.put(url))),
     patch: (url) => withAuth(withTenant(agent.patch(url))),
     delete: (url) => withAuth(withTenant(agent.delete(url))),
     raw: agent,

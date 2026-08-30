@@ -26,6 +26,7 @@ model Tenant {
   show_instagram Boolean  @default(false)
   show_facebook  Boolean  @default(false)
   show_whatsapp  Boolean  @default(false)
+  bookingPageConfig Json  @default("{}")
   enabledModules Json     @default("[\"dashboard\",\"scheduler\",\"clients\",\"finance\",\"users\",\"inventory\",\"settings\"]")
   /// Meta mensal de receita (KPIs Financeiro V2)
   monthlyRevenueGoal Float?
@@ -123,6 +124,7 @@ model Service {
   name          String
   price         Float
   duration      String
+  bookingIcon   String @default("generic")
   /// % que o profissional recebe sobre o preço do serviço (0–100). Default 50.
   commissionPct Float? @default(50)
   tenant        Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)

@@ -5,6 +5,7 @@ const compression = require('compression');
 const apiRoutes = require('./routes/api');
 const { resolveLegacyRedirect } = require('./lib/legacyRouteRedirects');
 const { isSupabaseAuthConfigured } = require('./lib/supabaseAdmin');
+const { isBookingMediaStorageConfigured } = require('./lib/bookingMediaStorage');
 const { stripeWebhook } = require('./controllers/stripeWebhookController');
 const prisma = require('./lib/prisma');
 
@@ -62,6 +63,7 @@ app.get('/health', (req, res) => {
     dbConfigured: Boolean(process.env.DATABASE_URL?.trim()),
     dbHost: getDbHostHint(),
     supabaseAuthConfigured: isSupabaseAuthConfigured(),
+    bookingMediaStorageConfigured: isBookingMediaStorageConfigured(),
     runtime: process.env.RAILWAY_ENVIRONMENT ? 'railway' : 'node',
   });
 });

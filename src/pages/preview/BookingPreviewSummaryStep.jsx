@@ -89,8 +89,11 @@ export default function BookingPreviewSummaryStep({
   useEffect(() => {
     if (!currentCustomer || !pendingConfirmRef.current) return;
     pendingConfirmRef.current = false;
-    setShowAuthCard(false);
-    onConfirm();
+    const timer = window.setTimeout(() => {
+      setShowAuthCard(false);
+      onConfirm();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [currentCustomer, onConfirm]);
 
   useEffect(() => {
@@ -180,7 +183,7 @@ export default function BookingPreviewSummaryStep({
         {mobileHubStyle ? (
           <div className="bp-time-info bp-mobile-confirm-info">
             <Info size={18} strokeWidth={1.8} aria-hidden />
-            <span>Você receberá a confirmação pelo WhatsApp.</span>
+            <span>Confira os dados antes de confirmar o agendamento.</span>
           </div>
         ) : null}
 

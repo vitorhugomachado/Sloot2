@@ -59,6 +59,7 @@ export const AppProvider = ({ children }) => {
   const [appointments, setAppointments] = useState(initialBootstrap.appointments);
   const [services, setServices] = useState(initialBootstrap.services);
   const [businessInfo, setBusinessInfo] = useState(initialBootstrap.businessInfo);
+  const [features, setFeatures] = useState({ mobileBookingHub: true });
   const [products, setProducts] = useState([]);
   const [productSales, setProductSales] = useState([]);
   const [bootstrapLoading, setBootstrapLoading] = useState(
@@ -147,6 +148,9 @@ export const AppProvider = ({ children }) => {
       setAppointments(data.appointments);
       writeCache('appointmentsPublic', data.appointments, tenantSlug);
     }
+    if (data.features && typeof data.features === 'object') {
+      setFeatures((current) => ({ ...current, ...data.features }));
+    }
   }, [tenantSlug]);
 
   const loadPublicBootstrap = useCallback(async (signal) => {
@@ -178,6 +182,11 @@ export const AppProvider = ({ children }) => {
       cached.businessInfo && typeof cached.businessInfo === 'object' ? cached.businessInfo : {},
     );
   }, [tenantSlug]);
+
+  const refreshPublicBootstrap = useCallback(
+    () => loadPublicBootstrap(),
+    [loadPublicBootstrap],
+  );
 
   useEffect(() => {
     if (tenantLoading || !tenant) return undefined;
@@ -1460,14 +1469,14 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      barbers, appointments, services, businessInfo, products, productSales,
+      barbers, appointments, services, businessInfo, features, products, productSales,
       addAppointment, updateAppointmentStatus, cancelAppointment,
       addBarber, updateBarberPermissions, removeBarber, updateBarber, toggleBarberStatus,
       fetchBarberScheduleBlocks, createBarberScheduleBlock, deleteBarberScheduleBlock,
       addService, removeService, updateService,
       addProduct, removeProduct, updateProduct, adjustProductStock, refreshProducts,
       sellProduct, updateBusinessInfo,
-      refreshStaffAppointments,
+      refreshStaffAppointments, refreshPublicBootstrap,
       purchaseOrders,
       financeV2,
       login, logout, currentUser, tenantModules, token, tenantSlug, apiFetch, loading, bootstrapLoading, staffLoading,

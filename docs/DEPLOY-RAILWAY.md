@@ -13,6 +13,7 @@ Base de dados: **PostgreSQL no Railway** (não Supabase, não Vercel).
 flowchart LR
   User[Browser] --> App[Servico App Docker]
   App --> PG[(PostgreSQL Railway)]
+  App --> Bucket[(Railway Storage Bucket privado)]
 ```
 
 ## 1. Projeto Railway
@@ -40,6 +41,13 @@ SUPABASE_URL=https://SEU_PROJECT_REF.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=
 VITE_SUPABASE_URL=https://SEU_PROJECT_REF.supabase.co
 VITE_SUPABASE_ANON_KEY=
+BOOKING_MEDIA_DRIVER=s3
+BUCKET=${{BookingMedia.BUCKET}}
+ACCESS_KEY_ID=${{BookingMedia.ACCESS_KEY_ID}}
+SECRET_ACCESS_KEY=${{BookingMedia.SECRET_ACCESS_KEY}}
+REGION=${{BookingMedia.REGION}}
+ENDPOINT=${{BookingMedia.ENDPOINT}}
+MOBILE_BOOKING_HUB_ENABLED=true
 ```
 
 | Regra | Detalhe |
@@ -50,6 +58,11 @@ VITE_SUPABASE_ANON_KEY=
 | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` | **Backend** — recuperação de senha (ver [SUPABASE-RESET-SENHA.md](./SUPABASE-RESET-SENHA.md)) |
 | `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` | **Frontend** — página `/:slug/redefinir-senha` |
 | `VITE_*` | Entram no **build** Docker — após alterar, faça novo Pull Request e promova pelo fluxo protegido |
+| `BOOKING_MEDIA_DRIVER` | `s3` no Railway; localmente use `local` e nunca credenciais de staging/produção |
+| `BUCKET` / `ACCESS_KEY_ID` / `SECRET_ACCESS_KEY` / `REGION` / `ENDPOINT` | Referências do Storage Bucket privado, somente no backend; nunca use prefixo `VITE_` |
+| `MOBILE_BOOKING_HUB_ENABLED` | Kill switch global. Use `false` para recuperar imediatamente o fluxo mobile anterior |
+
+Crie um Storage Bucket chamado `BookingMedia` em **cada ambiente**. Staging e produção não podem compartilhar bucket, banco ou credenciais. Veja [BOOKING-MEDIA-STORAGE.md](./BOOKING-MEDIA-STORAGE.md).
 
 ## 3. Banco novo (primeira vez)
 
@@ -84,7 +97,7 @@ Substitui `TEU-DOMINIO`:
 
 | URL | Esperado |
 |-----|----------|
-| `/health` | `"dbConfigured": true`, `"supabaseAuthConfigured": true`, `"dbHost"` com `railway` (não `supabase.com`) |
+| `/health` | `"dbConfigured": true`, `"bookingMediaStorageConfigured": true`, `"dbHost"` com `railway` (não `supabase.com`) |
 | `/api/tenant/resolve/two-brothers` | JSON do tenant |
 | `/two-brothers` | Agendamento |
 | `/two-brothers/login` | `carlos@barberpro.com` / `123` (se usaste seed) |

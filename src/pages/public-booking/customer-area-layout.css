@@ -20,3 +20,9 @@
   min-height: 0;
   width: 100%;
 }
+
+@media (max-width: 1023.98px) {
+  .customer-area-layout:has(.public-booking-page--mobile-hub) > .slooti-brand-header {
+    display: none;
+  }
+}

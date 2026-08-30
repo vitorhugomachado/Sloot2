@@ -6,6 +6,7 @@ const { normalizeModuleList, intersectPermissions } = require('../lib/tenantModu
 const { invalidatePublicCache } = require('../middlewares/publicCache');
 const { parseStaffDateRangeFromQuery } = require('../lib/bookingHorizon');
 const { buildClientsIndex, findClientByKey } = require('../controllers/clientController');
+const { normalizeServiceBookingIcon } = require('../lib/serviceBookingIcons');
 
 const includeBarber = { Barber: { select: { name: true } } };
 
@@ -289,8 +290,10 @@ const listServices = async (req, res) => {
 
 const createService = async (req, res) => {
   try {
+    const bookingIcon = normalizeServiceBookingIcon(req.body.bookingIcon);
+    if (!bookingIcon) return res.status(400).json({ message: 'Ícone de agendamento inválido.' });
     const service = await prisma.service.create({
-      data: { ...req.body, tenantId: tenantIdFromPlatformReq(req) },
+      data: { ...req.body, bookingIcon, tenantId: tenantIdFromPlatformReq(req) },
     });
     invalidatePublicCache(req.tenantSlug);
     res.status(201).json(service);
@@ -306,7 +309,13 @@ const updateService = async (req, res) => {
       where: { id, ...tenantWhereFromPlatformReq(req) },
     });
     if (!existing) return res.status(404).json({ message: 'Serviço não encontrado.' });
-    const service = await prisma.service.update({ where: { id }, data: req.body });
+    const data = { ...req.body };
+    if (data.bookingIcon != null) {
+      const bookingIcon = normalizeServiceBookingIcon(data.bookingIcon, existing.bookingIcon || 'generic');
+      if (!bookingIcon) return res.status(400).json({ message: 'Ícone de agendamento inválido.' });
+      data.bookingIcon = bookingIcon;
+    }
+    const service = await prisma.service.update({ where: { id }, data });
     invalidatePublicCache(req.tenantSlug);
     res.json(service);
   } catch (err) {

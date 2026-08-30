@@ -36,3 +36,34 @@ export async function compressImageFileToDataUrl(file, maxEdge = 1400, quality =
     img.src = rawDataUrl;
   });
 }
+
+/** Converte uma foto para JPEG pequeno antes do upload binário. */
+export async function compressImageFileToJpegBlob(file, maxEdge = 1600, quality = 0.85) {
+  if (!file?.type?.startsWith('image/') || file.type === 'image/svg+xml') {
+    throw new Error('Selecione uma imagem JPG, PNG ou WebP.');
+  }
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Não foi possível abrir a imagem.'));
+      img.src = objectUrl;
+    });
+    const width = image.naturalWidth || image.width;
+    const height = image.naturalHeight || image.height;
+    const scale = Math.min(1, maxEdge / Math.max(width, height, 1));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Seu navegador não conseguiu processar a imagem.');
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+    if (!blob) throw new Error('Não foi possível comprimir a imagem.');
+    if (blob.size > 2 * 1024 * 1024) throw new Error('A imagem continua maior que 2 MB após a compressão.');
+    return blob;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}

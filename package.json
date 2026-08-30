@@ -18,7 +18,8 @@
     "test:run": "vitest run",
     "test:unit": "vitest run --exclude server/tests/**",
     "test:api": "vitest run server/tests",
-    "test:security": "vitest run server/tests/security server/src/utils/auth.test.js server/src/lib/tenantModules.test.js"
+    "test:security": "vitest run server/tests/security server/src/utils/auth.test.js server/src/lib/tenantModules.test.js",
+    "test:e2e:booking": "playwright test --config=playwright.booking.config.js"
   },
   "engines": {
     "node": ">=20"
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.2.4",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",

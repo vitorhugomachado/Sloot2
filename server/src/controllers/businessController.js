@@ -68,4 +68,4 @@ const updateBusinessInfo = async (req, res, next) => {
   }
 };
 
-module.exports = { getBusinessInfo, updateBusinessInfo };
+module.exports = { buildBusinessUpdatePayload, getBusinessInfo, updateBusinessInfo };

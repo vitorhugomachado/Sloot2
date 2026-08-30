@@ -78,9 +78,9 @@ async function main() {
 
   await prisma.service.createMany({
     data: [
-      { tenantId: tenant.id, name: 'Corte de Cabelo', price: 50, duration: '45 min' },
-      { tenantId: tenant.id, name: 'Barba Completa', price: 35, duration: '30 min' },
-      { tenantId: tenant.id, name: 'Corte + Barba', price: 75, duration: '1h 15 min' },
+      { tenantId: tenant.id, name: 'Corte de Cabelo', price: 50, duration: '45 min', bookingIcon: 'cut' },
+      { tenantId: tenant.id, name: 'Barba Completa', price: 35, duration: '30 min', bookingIcon: 'beard' },
+      { tenantId: tenant.id, name: 'Corte + Barba', price: 75, duration: '1h 15 min', bookingIcon: 'combo' },
       { tenantId: tenant.id, name: 'Limpeza de Pele', price: 40, duration: '30 min' },
     ],
   });

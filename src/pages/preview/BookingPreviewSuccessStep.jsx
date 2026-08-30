@@ -103,7 +103,7 @@ export default function BookingPreviewSuccessStep({
             <ChevronRight size={20} strokeWidth={2.5} aria-hidden />
           </button>
           <button type="button" className="bp-success__btn bp-success__btn--secondary" onClick={onOpenPortal}>
-            <span>Meus agendamentos</span>
+            <span>Minha agenda</span>
             <ChevronRight size={20} strokeWidth={2.5} aria-hidden />
           </button>
         </div>
