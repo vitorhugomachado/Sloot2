@@ -135,12 +135,11 @@ async function updateBusinessSettings(req, res, next) {
   }
 }
 
-function isJpeg(buffer) {
-  return Buffer.isBuffer(buffer)
-    && buffer.length >= 4
-    && buffer[0] === 0xff
-    && buffer[1] === 0xd8
-    && buffer[2] === 0xff;
+const JPEG_SIGNATURE = Buffer.from([0xff, 0xd8, 0xff]);
+
+function isJpeg(value) {
+  if (!Buffer.isBuffer(value)) return false;
+  return value.subarray(0, JPEG_SIGNATURE.byteLength).equals(JPEG_SIGNATURE);
 }
 
 async function uploadBookingPageMedia(req, res, next) {
